@@ -9,8 +9,8 @@
 //
 // The real objects are hidden within this package so that users cannot
 // accidentally create an incomplete object (for example, the spec states
-// that the root element must contain an "info" key, but if the entity.OpenAPI
-// was a struct you would be able to create an empty entity.OpenAPI{},
+// that the root element must contain an "info" key, but if the openapi.OpenAPI
+// was a struct you would be able to create an empty openapi.OpenAPI{},
 // which would be invalid)
 //
 // The API limits your ability to accidentally create empty values (and also
@@ -41,7 +41,7 @@
 // no default values, and everything else can be optionally passed via methods.
 // When all values are handed, you call `Build()` to obtain the object.
 //
-//   entity.NewParameter(name). // name parameter is required
+//   openapi.NewParameter(name). // name parameter is required
 //     Required(true). // required parameter is optional
 //     Build()
 //
@@ -50,7 +50,7 @@
 // just want to change them: To workaround this issue, we provide mutators
 // which work almost identically as the builders.
 //
-//   entity.MutatePrameter(p).
+//   openapi.MutatePrameter(p).
 //     Required(false).
 //     Get()
 //
