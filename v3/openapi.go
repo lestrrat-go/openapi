@@ -52,7 +52,7 @@
 //
 //   openapi.MutatePrameter(p).
 //     Required(false).
-//     Get()
+//     Do()
 //
 // When we assign entity objects, the objects are automatically cloned to
 // avoid mutation from outside of the OpenAPI tree
