@@ -9,74 +9,74 @@ import (
 	openapi "github.com/lestrrat-go/openapi/v3"
 )
 
-func ExampleBuild() {
+func ExampleDo() {
 	errReference := openapi.NewSchema().
 		Reference("#/components/schemas/Error").
-		Build()
+		Do()
 	errResponse := openapi.NewResponse("unexpected error").
 		Content("application/json",
 			openapi.NewMediaType().
 				Schema(errReference).
-				Build(),
+				Do(),
 		).
-		Build()
+		Do()
 	petSchema :=
 		openapi.NewSchema().
 			Required([]string{"id", "name"}).
 			Property("id", openapi.NewSchema().
 				Type(openapi.Integer).
 				Format("int64").
-				Build(),
+				Do(),
 			).
 			Property("name", openapi.NewSchema().
 				Type(openapi.String).
-				Build(),
+				Do(),
 			).
 			Property("tag", openapi.NewSchema().
 				Type(openapi.String).
-				Build(),
+				Do(),
 			).
-			Build()
+			Do()
 	petsSchema := openapi.NewSchema().
 		Type(openapi.Array).
 		Items(openapi.NewSchema().
 			Reference("#/components/schemas/Pet").
-			Build(),
+			Do(),
 		).
-		Build()
+		Do()
 	errSchema := openapi.NewSchema().
 		Required([]string{"code", "message"}).
 		Property("code", openapi.NewSchema().
 			Type(openapi.Integer).
 			Format("int32").
-			Build(),
+			Do(),
 		).
 		Property("message", openapi.NewSchema().
 			Type(openapi.String).
-			Build(),
+			Do(),
 		).
-		Build()
+		Do()
 
 	components := openapi.NewComponents().
 		Schema("Pet", petSchema).
 		Schema("Pets", petsSchema).
 		Schema("Error", errSchema).
-		Build()
+		Do()
 
 	petsPostOperation := openapi.NewOperation(
 		openapi.NewResponses().
 			Response(
 				"201",
 				openapi.NewResponse("Null response").
-					Build(),
+					Do(),
 			).
 			Default(errResponse).
-			Build(),
+			Do(),
 	).
 		Summary("Create a pet").
 		OperationID("createPets").
 		Tag("pets").
-		Build()
+		Do()
 
 	petsGetOperation := openapi.NewOperation(
 		openapi.NewResponses().
@@ -89,23 +89,23 @@ func ExampleBuild() {
 							Schema(
 								openapi.NewSchema().
 									Type("string").
-									Build(),
+									Do(),
 							).
-							Build(),
+							Do(),
 					).
 					Content("application/json",
 						openapi.NewMediaType().
 							Schema(
 								openapi.NewSchema().
 									Reference("#/components/schemas/Pets").
-									Build(),
+									Do(),
 							).
-							Build(),
+							Do(),
 					).
-					Build(),
+					Do(),
 			).
 			Default(errResponse).
-			Build(),
+			Do(),
 	).
 		Summary("List all pets").
 		OperationID("listPets").
@@ -116,16 +116,16 @@ func ExampleBuild() {
 				Schema(openapi.NewSchema().
 					Type(openapi.Integer).
 					Format("int32").
-					Build(),
+					Do(),
 				).
-				Build(),
+				Do(),
 		).
-		Build()
+		Do()
 
 	petsPath := openapi.NewPathItem().
 		Post(petsPostOperation).
 		Get(petsGetOperation).
-		Build()
+		Do()
 
 	petsIDPath := openapi.NewPathItem().
 		Get(
@@ -139,14 +139,14 @@ func ExampleBuild() {
 									Schema(
 										openapi.NewSchema().
 											Reference("#/components/schemas/Pets").
-											Build(),
+											Do(),
 									).
-									Build(),
+									Do(),
 							).
-							Build(),
+							Do(),
 					).
 					Default(errResponse).
-					Build(),
+					Do(),
 			).
 				Summary("Info for a specific pet").
 				OperationID("showPetById").
@@ -155,27 +155,27 @@ func ExampleBuild() {
 					openapi.NewParameter("petId", openapi.InPath).
 						Description("The id of the pet to retrieve").
 						Schema(
-							openapi.NewSchema().Type(openapi.String).Build(),
+							openapi.NewSchema().Type(openapi.String).Do(),
 						).
-						Build(),
+						Do(),
 				).
-				Build(),
+				Do(),
 		).
-		Build()
+		Do()
 
 	o := openapi.NewOpenAPI(
 		openapi.NewInfo("Swagger Petstore").
 			Version("1.0.0").
 			License(
-				openapi.NewLicense("MIT").Build(),
-			).Build(),
+				openapi.NewLicense("MIT").Do(),
+			).Do(),
 		openapi.NewPaths().
 			Path("/pets", petsPath).
 			Path("/pets/{petId}", petsIDPath).
-			Build(),
+			Do(),
 	).
 		Components(components).
-		Build()
+		Do()
 
 	buf, err := yaml.Marshal(o)
 	if err != nil {
@@ -390,9 +390,15 @@ paths:
 	for pathIter := spec.Paths().Items(); pathIter.Next(); {
 		p := pathIter.Item()
 		for operIter := p.Operations(); operIter.Next(); {
-			operIter.Operation()
+			oper := operIter.Operation()
+			log.Printf("%s", oper.OperationID())
+			openapi.MutateOperation(oper).
+				OperationID("foo").
+				Do()
+			log.Printf("%s", oper.OperationID())
 			// log.Printf("%s", operIter.Operation().Verb())
 		}
 	}
+
 	// OUTPUT:
 }

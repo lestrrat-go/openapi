@@ -69,12 +69,17 @@ func GenerateCode() error {
 		if err := generateJSONHandlersFromEntity(e); err != nil {
 			return errors.Wrap(err, `failed to generate JSON handlers from entity`)
 		}
+
 		if err := generateAccessorsFromEntity(e); err != nil {
 			return errors.Wrap(err, `failed to generate accessors from entity`)
 		}
 
 		if err := generateBuildersFromEntity(e); err != nil {
 			return errors.Wrap(err, `failed to generate builders from entity`)
+		}
+
+		if err := generateMutatorsFromEntity(e); err != nil {
+			return errors.Wrap(err, `failed to generate mutators from entity`)
 		}
 	}
 
@@ -442,14 +447,14 @@ func generateBuildersFromEntity(e interface{}) error {
 	structname := rv.Type().Name()
 
 	fmt.Fprintf(dst, "\n\n// %sBuilder is used to build an instance of %s. The user must", ifacename, ifacename)
-	fmt.Fprintf(dst, "\n// call `Build()` after providing all the necessary information to")
+	fmt.Fprintf(dst, "\n// call `Do()` after providing all the necessary information to")
 	fmt.Fprintf(dst, "\n// build an instance of %s", ifacename)
 	fmt.Fprintf(dst, "\ntype %sBuilder struct {", ifacename)
 	fmt.Fprintf(dst, "\ntarget *%s", structname)
 	fmt.Fprintf(dst, "\n}")
 
 	fmt.Fprintf(dst, "\n\n// Build finalizes the building process for %s and returns the result", ifacename)
-	fmt.Fprintf(dst, "\nfunc (b *%sBuilder) Build() %s {", ifacename, ifacename)
+	fmt.Fprintf(dst, "\nfunc (b *%sBuilder) Do() %s {", ifacename, ifacename)
 	fmt.Fprintf(dst, "\nreturn b.target")
 	fmt.Fprintf(dst, "\n}")
 
@@ -513,7 +518,60 @@ func generateBuildersFromEntity(e interface{}) error {
 		fmt.Fprintf(dst, "\n}")
 	}
 
-	//	fmt.Fprintf(dst, "\n\nfunc Muatate%s(target *%s) *%sMutator {", rv.Type().Name(), rv.Type().Name(), rv.Type().Name())
+	if err := writeFormattedSource(&buf, filename); err != nil {
+		return errors.Wrap(err, `failed to write result to file`)
+	}
+	return nil
+}
+
+func generateMutatorsFromEntity(e interface{}) error {
+	rv := reflect.ValueOf(e)
+	filename := fmt.Sprintf("%s_mutator_gen.go", snakeCase(rv.Type().Name()))
+	log.Printf("Generating %s", filename)
+
+	var buf bytes.Buffer
+	var dst io.Writer = &buf
+
+	writePreamble(dst)
+
+	ifacename := ucfirst(rv.Type().Name())
+	structname := rv.Type().Name()
+
+	fmt.Fprintf(dst, "\n\n// %sMutator is used to build an instance of %s. The user must", ifacename, ifacename)
+	fmt.Fprintf(dst, "\n// call `Do()` after providing all the necessary information to")
+	fmt.Fprintf(dst, "\n// the new instance of %s with new values", ifacename)
+	fmt.Fprintf(dst, "\ntype %sMutator struct {", ifacename)
+	fmt.Fprintf(dst, "\nproxy *%s", structname)
+	fmt.Fprintf(dst, "\ntarget *%s", structname)
+	fmt.Fprintf(dst, "\n}")
+
+	fmt.Fprintf(dst, "\n\n// Get finalizes the matuation process for %s and returns the result", ifacename)
+	fmt.Fprintf(dst, "\nfunc (b *%sMutator) Do() error {", ifacename)
+	// TODO: validation
+	fmt.Fprintf(dst, "\n*b.target = *b.proxy")
+	fmt.Fprintf(dst, "\nreturn nil")
+	fmt.Fprintf(dst, "\n}")
+
+
+	fmt.Fprintf(dst, "\n\n// Mutate%s creates a new mutator object for %s", ifacename, ifacename)
+	fmt.Fprintf(dst, "\nfunc Mutate%s(v %s) *%sMutator {", ifacename, ifacename, ifacename)
+	fmt.Fprintf(dst, "\nreturn &%sMutator{", ifacename)
+	fmt.Fprintf(dst, "\ntarget: v.(*%s),", structname)
+	fmt.Fprintf(dst, "\nproxy: v.Clone().(*%s),", structname)
+	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\n}")
+	for i := 0; i < rv.NumField(); i++ {
+		fv := rv.Type().Field(i)
+		if fv.Tag.Get("builder") == "-" {
+			continue
+		}
+
+		fmt.Fprintf(dst, "\n\n// %s sets the %s field for object %s.", exportedFieldName(fv.Name), exportedFieldName(fv.Name), ifacename)
+		fmt.Fprintf(dst, "\nfunc (b *%sMutator) %s(v %s) *%sMutator {", ifacename, exportedFieldName(fv.Name), typname(fv.Type), ifacename)
+		fmt.Fprintf(dst, "\nb.proxy.%s = v", fv.Name)
+		fmt.Fprintf(dst, "\nreturn b")
+		fmt.Fprintf(dst, "\n}")
+	}
 
 	if err := writeFormattedSource(&buf, filename); err != nil {
 		return errors.Wrap(err, `failed to write result to file`)

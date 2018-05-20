@@ -39,11 +39,11 @@
 // Building objects must happen through a builder object: The constructor for
 // the object builder asks the user to pass the required parameters that have
 // no default values, and everything else can be optionally passed via methods.
-// When all values are handed, you call `Build()` to obtain the object.
+// When all values are handed, you call `Do()` to obtain the object.
 //
 //   openapi.NewParameter(name). // name parameter is required
 //     Required(true). // required parameter is optional
-//     Build()
+//     Do()
 //
 // The objects are *generally* immutable and therefore provide no mutator
 // methods on themselves. However we realize that there are times when you
