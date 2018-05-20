@@ -1,6 +1,5 @@
 //go:generate go run internal/cmd/gentypes/gentypes.go
 
-package openapi
 // Package openapi implements OpenAPI 3.x.
 //
 // This package contains objects that comprise an OpenAPI spec, but only
@@ -57,6 +56,7 @@ package openapi
 //
 // When we assign entity objects, the objects are automatically cloned to
 // avoid mutation from outside of the OpenAPI tree
+package openapi
 
 import (
 	"encoding/json"
