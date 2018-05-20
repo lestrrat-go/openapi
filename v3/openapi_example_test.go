@@ -3,144 +3,141 @@ package openapi_test
 import (
 	"log"
 	"os"
+	"strings"
 
 	"github.com/ghodss/yaml"
-	"github.com/lestrrat-go/openapi/v3/builder"
-	"github.com/lestrrat-go/openapi/v3/entity"
+	openapi "github.com/lestrrat-go/openapi/v3"
 )
 
 func ExampleBuild() {
-	b := builder.New()
-
-	errSchema := b.NewSchema().
+	errReference := openapi.NewSchema().
 		Reference("#/components/schemas/Error").
 		Build()
-	errResponse := b.NewResponse("unexpected error").
+	errResponse := openapi.NewResponse("unexpected error").
 		Content("application/json",
-			b.NewMediaType().
-				Schema(errSchema).
+			openapi.NewMediaType().
+				Schema(errReference).
 				Build(),
 		).
 		Build()
+	petSchema :=
+		openapi.NewSchema().
+			Required([]string{"id", "name"}).
+			Property("id", openapi.NewSchema().
+				Type(openapi.Integer).
+				Format("int64").
+				Build(),
+			).
+			Property("name", openapi.NewSchema().
+				Type(openapi.String).
+				Build(),
+			).
+			Property("tag", openapi.NewSchema().
+				Type(openapi.String).
+				Build(),
+			).
+			Build()
+	petsSchema := openapi.NewSchema().
+		Type(openapi.Array).
+		Items(openapi.NewSchema().
+			Reference("#/components/schemas/Pet").
+			Build(),
+		).
+		Build()
+	errSchema := openapi.NewSchema().
+		Required([]string{"code", "message"}).
+		Property("code", openapi.NewSchema().
+			Type(openapi.Integer).
+			Format("int32").
+			Build(),
+		).
+		Property("message", openapi.NewSchema().
+			Type(openapi.String).
+			Build(),
+		).
+		Build()
 
-	components := b.NewComponents().
-		Schema("Pet",
-			b.NewSchema().
-				Required([]string{"id", "name"}).
-				Property("id", b.NewSchema().
-					Type(entity.Integer).
-					Format("int64").
+	components := openapi.NewComponents().
+		Schema("Pet", petSchema).
+		Schema("Pets", petsSchema).
+		Schema("Error", errSchema).
+		Build()
+
+	petsPostOperation := openapi.NewOperation(
+		openapi.NewResponses().
+			Response(
+				"201",
+				openapi.NewResponse("Null response").
 					Build(),
-				).
-				Property("name", b.NewSchema().
-					Type(entity.String).
+			).
+			Default(errResponse).
+			Build(),
+	).
+		Summary("Create a pet").
+		OperationID("createPets").
+		Tag("pets").
+		Build()
+
+	petsGetOperation := openapi.NewOperation(
+		openapi.NewResponses().
+			Response(
+				"200",
+				openapi.NewResponse("An paged array of pets").
+					Header("x-next",
+						openapi.NewHeader().
+							Description("A link to the next page of responses").
+							Schema(
+								openapi.NewSchema().
+									Type("string").
+									Build(),
+							).
+							Build(),
+					).
+					Content("application/json",
+						openapi.NewMediaType().
+							Schema(
+								openapi.NewSchema().
+									Reference("#/components/schemas/Pets").
+									Build(),
+							).
+							Build(),
+					).
 					Build(),
-				).
-				Property("tag", b.NewSchema().
-					Type(entity.String).
-					Build(),
-				).
-				Build(),
-		).
-		Schema("Pets",
-			b.NewSchema().
-				Type(entity.Array).
-				Items(b.NewSchema().
-					Reference("#/components/schemas/Pet").
-					Build(),
-				).
-				Build(),
-		).
-		Schema("Error",
-			b.NewSchema().
-				Required([]string{"code", "message"}).
-				Property("code", b.NewSchema().
-					Type(entity.Integer).
+			).
+			Default(errResponse).
+			Build(),
+	).
+		Summary("List all pets").
+		OperationID("listPets").
+		Tag("pets").
+		Parameter(
+			openapi.NewParameter("limit", openapi.InQuery).
+				Description("How many items to return at one time (max 100)").
+				Schema(openapi.NewSchema().
+					Type(openapi.Integer).
 					Format("int32").
 					Build(),
 				).
-				Property("message", b.NewSchema().
-					Type(entity.String).
-					Build(),
-				).
 				Build(),
 		).
 		Build()
 
-	petsPath := b.NewPathItem().
-		Post(
-			b.NewOperation(
-				b.NewResponses().
-					StatusCode(
-						"201",
-						b.NewResponse("Null response").
-							Build(),
-					).
-					Default(errResponse).
-					Build(),
-			).
-				Summary("Create a pet").
-				OperationID("createPets").
-				Tag("pets").
-				Build(),
-		).
-		Get(
-			b.NewOperation(
-				b.NewResponses().
-					StatusCode(
-						"200",
-						b.NewResponse("An paged array of pets").
-							Header("x-next",
-								b.NewHeader().
-									Description("A link to the next page of responses").
-									Schema(
-										b.NewSchema().
-											Type("string").
-											Build(),
-									).
-									Build(),
-							).
-							Content("application/json",
-								b.NewMediaType().
-									Schema(
-										b.NewSchema().
-											Reference("#/components/schemas/Pets").
-											Build(),
-									).
-									Build(),
-							).
-							Build(),
-					).
-					Default(errResponse).
-					Build(),
-			).
-				Summary("List all pets").
-				OperationID("listPets").
-				Tag("pets").
-				Parameter(
-					b.NewParameter("limit", entity.InQuery).
-						Description("How many items to return at one time (max 100)").
-						Schema(b.NewSchema().
-							Type(entity.Integer).
-							Format("int32").
-							Build(),
-						).
-						Build(),
-				).
-				Build(),
-		).Build()
+	petsPath := openapi.NewPathItem().
+		Post(petsPostOperation).
+		Get(petsGetOperation).
+		Build()
 
-	petsIDPath := b.NewPathItem().
+	petsIDPath := openapi.NewPathItem().
 		Get(
-			b.NewOperation(
-				b.NewResponses().
-					StatusCode(
+			openapi.NewOperation(
+				openapi.NewResponses().
+					Response(
 						"200",
-						b.NewResponse("Expected response to a valid request").
+						openapi.NewResponse("Expected response to a valid request").
 							Content("application/json",
-								b.NewMediaType().
+								openapi.NewMediaType().
 									Schema(
-										b.NewSchema().
+										openapi.NewSchema().
 											Reference("#/components/schemas/Pets").
 											Build(),
 									).
@@ -155,10 +152,10 @@ func ExampleBuild() {
 				OperationID("showPetById").
 				Tag("pets").
 				Parameter(
-					b.NewParameter("petId", entity.InPath).
+					openapi.NewParameter("petId", openapi.InPath).
 						Description("The id of the pet to retrieve").
 						Schema(
-							b.NewSchema().Type(entity.String).Build(),
+							openapi.NewSchema().Type(openapi.String).Build(),
 						).
 						Build(),
 				).
@@ -166,13 +163,13 @@ func ExampleBuild() {
 		).
 		Build()
 
-	o := b.NewOpenAPI(
-		b.NewInfo("Swagger Petstore").
+	o := openapi.NewOpenAPI(
+		openapi.NewInfo("Swagger Petstore").
 			Version("1.0.0").
 			License(
-				b.NewLicense("MIT").Build(),
+				openapi.NewLicense("MIT").Build(),
 			).Build(),
-		b.NewPaths().
+		openapi.NewPaths().
 			Path("/pets", petsPath).
 			Path("/pets/{petId}", petsIDPath).
 			Build(),
@@ -293,4 +290,110 @@ func ExampleBuild() {
 	//       summary: Info for a specific pet
 	//       tags:
 	//       - pets
+}
+
+func ExampleParse() {
+	const src = `
+info:
+  license:
+    name: MIT
+  title: Swagger Petstore
+  version: 1.0.0
+  openapi: 3.0.1
+paths:
+  /pets:
+    get:
+      operationId: listPets
+      parameters:
+      - description: How many items to return at one time (max 100)
+        in: query
+        name: limit
+        schema:
+          format: int32
+          type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pets'
+          description: An paged array of pets
+          headers:
+            x-next:
+              description: A link to the next page of responses
+              schema:
+                type: string
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: unexpected error
+      summary: List all pets
+      tags:
+      - pets
+    post:
+      operationId: createPets
+      responses:
+        "201":
+          description: Null response
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: unexpected error
+      summary: Create a pet
+      tags:
+      - pets
+  /pets/{petId}:
+    get:
+      operationId: showPetById
+      parameters:
+      - description: The id of the pet to retrieve
+        in: path
+        name: petId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pets'
+          description: Expected response to a valid request
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: unexpected error
+      summary: Info for a specific pet
+      tags:
+      - pets
+`
+
+	spec, err := openapi.ParseYAML(strings.NewReader(src))
+	if err != nil {
+		log.Printf("%s", err)
+		return
+	}
+
+	buf, err := yaml.Marshal(spec.Info())
+	if err != nil {
+		log.Printf("%s", err)
+		return
+	}
+
+	for pathIter := spec.Paths().Items(); pathIter.Next(); {
+		p := pathIter.Item()
+		for operIter := p.Operations(); operIter.Next(); {
+			log.Printf("%s", operIter.Operation().Verb())
+		}
+	}
+
+	os.Stdout.Write(buf)
+
+	// OUTPUT:
 }
