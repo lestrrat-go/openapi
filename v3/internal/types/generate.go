@@ -453,7 +453,7 @@ func generateBuildersFromEntity(e interface{}) error {
 	fmt.Fprintf(dst, "\ntarget *%s", structname)
 	fmt.Fprintf(dst, "\n}")
 
-	fmt.Fprintf(dst, "\n\n// Build finalizes the building process for %s and returns the result", ifacename)
+	fmt.Fprintf(dst, "\n\n// Do finalizes the building process for %s and returns the result", ifacename)
 	fmt.Fprintf(dst, "\nfunc (b *%sBuilder) Do() %s {", ifacename, ifacename)
 	fmt.Fprintf(dst, "\nreturn b.target")
 	fmt.Fprintf(dst, "\n}")
@@ -545,7 +545,7 @@ func generateMutatorsFromEntity(e interface{}) error {
 	fmt.Fprintf(dst, "\ntarget *%s", structname)
 	fmt.Fprintf(dst, "\n}")
 
-	fmt.Fprintf(dst, "\n\n// Get finalizes the matuation process for %s and returns the result", ifacename)
+	fmt.Fprintf(dst, "\n\n// Do finalizes the matuation process for %s and returns the result", ifacename)
 	fmt.Fprintf(dst, "\nfunc (b *%sMutator) Do() error {", ifacename)
 	// TODO: validation
 	fmt.Fprintf(dst, "\n*b.target = *b.proxy")
