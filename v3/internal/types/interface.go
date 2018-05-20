@@ -154,10 +154,12 @@ type pathItem struct {
 
 type Operation interface {
 	setVerb(string)
+	setPathItem(PathItem)
 }
 
 type operation struct {
-	verb         string                `json:"-"` // This is a secreate variable that gets reset when the operation is added to a pathItem
+	pathItem     PathItem              `json:"-" builder:"-"` // This is a secreate variable that gets reset when the operation is added to a pathItem
+	verb         string                `json:"-" builder:"-"` // This is a secreate variable that gets reset when the operation is added to a pathItem
 	tags         []string              `json:"tags,omitempty"`
 	summary      string                `json:"summary,omitempty"`
 	description  string                `json:"description,omitempty"`

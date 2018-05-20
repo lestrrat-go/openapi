@@ -11,11 +11,18 @@ func (v *pathItem) setVerb(verb string, oper Operation) {
 		return
 	}
 	oper.setVerb(verb)
+	oper.setPathItem(v)
 }
 
 func (v *pathItem) postUnmarshalJSON() {
 	v.setVerb(http.MethodGet, v.get)
+	v.setVerb(http.MethodPut, v.put)
 	v.setVerb(http.MethodPost, v.post)
+	v.setVerb(http.MethodDelete, v.delete)
+	v.setVerb(http.MethodOptions, v.options)
+	v.setVerb(http.MethodHead, v.head)
+	v.setVerb(http.MethodPatch, v.patch)
+	v.setVerb(http.MethodTrace, v.trace)
 }
 
 // Operations returns an iterator that you can use to iterate through

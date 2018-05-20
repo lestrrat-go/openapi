@@ -382,18 +382,17 @@ paths:
 
 	buf, err := yaml.Marshal(spec.Info())
 	if err != nil {
-		log.Printf("%s", err)
+		os.Stdout.Write([]byte(err.Error()))
 		return
 	}
+	_ = buf
 
 	for pathIter := spec.Paths().Items(); pathIter.Next(); {
 		p := pathIter.Item()
 		for operIter := p.Operations(); operIter.Next(); {
-			log.Printf("%s", operIter.Operation().Verb())
+			operIter.Operation()
+			// log.Printf("%s", operIter.Operation().Verb())
 		}
 	}
-
-	os.Stdout.Write(buf)
-
 	// OUTPUT:
 }
