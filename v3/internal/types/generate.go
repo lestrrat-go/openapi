@@ -305,6 +305,10 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 			if _, ok := entityTypes[unexportedFieldName(typname(fv.Type.Elem()))]; ok {
 				fmt.Fprintf(dst, "\n%s []json.RawMessage `%s`", exportedFieldName(fv.Name), fv.Tag)
 			}
+		case reflect.Map:
+			if _, ok := entityTypes[unexportedFieldName(typname(fv.Type.Elem()))]; ok {
+				fmt.Fprintf(dst, "\n%s map[string]json.RawMessage `%s`", exportedFieldName(fv.Name), fv.Tag)
+			}
 		default:
 			if _, ok := entityTypes[unexportedFieldName(typname(fv.Type))]; ok {
 				fmt.Fprintf(dst, "\n%s json.RawMessage `%s`", exportedFieldName(fv.Name), fv.Tag)
@@ -355,6 +359,20 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 				fmt.Fprintf(dst, "\nlist = append(list, &decoded)")
 				fmt.Fprintf(dst, "\n}")
 				fmt.Fprintf(dst, "\nv.%s = list", unexportedFieldName(fv.Name))
+				fmt.Fprintf(dst, "\n}")
+			}
+		case reflect.Map:
+			if _, ok := entityTypes[unexportedFieldName(fv.Type.Elem().Name())]; ok {
+				fmt.Fprintf(dst, "\n\nif len(proxy.%s) > 0 {", exportedFieldName(fv.Name))
+				fmt.Fprintf(dst, "\nm := make(map[string]%s)", exportedFieldName(fv.Type.Elem().Name()))
+				fmt.Fprintf(dst, "\nfor key, pv := range proxy.%s {", exportedFieldName(fv.Name))
+				fmt.Fprintf(dst, "\nvar decoded %s", unexportedFieldName(typname(fv.Type.Elem())))
+				fmt.Fprintf(dst, "\nif err := json.Unmarshal(pv, &decoded); err != nil {")
+				fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to unmasrhal element %%s of field %s`, key)", exportedFieldName(fv.Name))
+				fmt.Fprintf(dst, "\n}")
+				fmt.Fprintf(dst, "\nm[key] = &decoded")
+				fmt.Fprintf(dst, "\n}")
+				fmt.Fprintf(dst, "\nv.%s = m", unexportedFieldName(fv.Name))
 				fmt.Fprintf(dst, "\n}")
 			}
 		default:

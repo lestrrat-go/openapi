@@ -1,7 +1,5 @@
 package openapi_test
 
-/*
-
 import (
 	"bufio"
 	"bytes"
@@ -10,9 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/lestrrat-go/openapi/v3/entity"
+	openapi "github.com/lestrrat-go/openapi/v3"
 	"github.com/stretchr/testify/assert"
-	yaml "gopkg.in/yaml.v2"
 )
 
 func TestOpenAPI(t *testing.T) {
@@ -31,8 +28,8 @@ func TestOpenAPI(t *testing.T) {
 		rdr := bytes.NewReader(buf.Bytes())
 
 		t.Run(path, func(t *testing.T) {
-			var v entity.OpenAPI
-			if !assert.NoError(t, yaml.NewDecoder(rdr).Decode(&v), `Decoding spec should succeed`) {
+			spec, err := openapi.ParseYAML(rdr)
+			if !assert.NoError(t, err, `Decoding spec should succeed`) {
 				rdr.Seek(0, 0)
 				scanner := bufio.NewScanner(rdr)
 				lineno := 1
@@ -42,9 +39,9 @@ func TestOpenAPI(t *testing.T) {
 				}
 				return
 			}
+			_ = spec
 		})
 
 		return nil
 	})
 }
-*/
