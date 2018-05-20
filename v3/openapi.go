@@ -30,29 +30,29 @@
 //
 // In doing so, we are able to provide API like this
 //
-// oper := ... // Operation object
-// if oper.Detached() { // has this been assigned to a PathItem?
-//   path := oper.Path() // path that this Operation belongs to
-//   verb := oper.Verb() // HTTP verb that this Operation is assigned to
-// }
+//   oper := ... // Operation object
+//   if oper.Detached() { // has this been assigned to a PathItem?
+//     path := oper.Path() // path that this Operation belongs to
+//     verb := oper.Verb() // HTTP verb that this Operation is assigned to
+//   }
 //
 // Building objects must happen through a builder object: The constructor for
 // the object builder asks the user to pass the required parameters that have
 // no default values, and everything else can be optionally passed via methods.
 // When all values are handed, you call `Build()` to obtain the object.
 //
-// entity.NewParameter(name). // name parameter is required
-//   Required(true). // required parameter is optional
-//   Build()
+//   entity.NewParameter(name). // name parameter is required
+//     Required(true). // required parameter is optional
+//     Build()
 //
 // The objects are *generally* immutable and therefore provide no mutator
 // methods on themselves. However we realize that there are times when you
 // just want to change them: To workaround this issue, we provide mutators
 // which work almost identically as the builders.
 //
-// entity.MutatePrameter(p).
-//   Required(false).
-//   Get() // or Clone()
+//   entity.MutatePrameter(p).
+//     Required(false).
+//     Get()
 //
 // When we assign entity objects, the objects are automatically cloned to
 // avoid mutation from outside of the OpenAPI tree
