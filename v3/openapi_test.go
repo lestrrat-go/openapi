@@ -45,3 +45,26 @@ func TestOpenAPI(t *testing.T) {
 		return nil
 	})
 }
+
+func TestQuery(t *testing.T) {
+	file := filepath.Join("..", "spec", "examples", "v3.0", "petstore-expanded.yaml")
+	src, err := ioutil.ReadFile(file)
+	if !assert.NoError(t, err, `Reading from file should succeed`) {
+		return
+	}
+
+	spec, err := openapi.ParseYAML(bytes.NewReader(src))
+	if !assert.NoError(t, err, `Parsing spec should succeed`) {
+		return
+	}
+
+	query := "#/components/schemas/NewPet"
+	v, ok := spec.QueryJSON(query)
+	if !assert.True(t, ok, `Querying should succeed`) {
+		return
+	}
+
+	if !assert.Implements(t, (*openapi.Schema)(nil), v, "The result should be a schema") {
+		return
+	}
+}

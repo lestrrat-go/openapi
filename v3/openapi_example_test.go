@@ -9,7 +9,7 @@ import (
 	openapi "github.com/lestrrat-go/openapi/v3"
 )
 
-func ExampleDo() {
+func ExampleBuild() {
 	errReference := openapi.NewSchema().
 		Reference("#/components/schemas/Error").
 		Do()
@@ -390,7 +390,7 @@ paths:
 	for pathIter := spec.Paths().Items(); pathIter.Next(); {
 		p := pathIter.Item()
 		for operIter := p.Operations(); operIter.Next(); {
-			oper := operIter.Operation()
+			oper := operIter.Item()
 			log.Printf("%s", oper.OperationID())
 			openapi.MutateOperation(oper).
 				OperationID("foo").

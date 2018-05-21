@@ -27,40 +27,15 @@ func (v *pathItem) postUnmarshalJSON() {
 
 // Operations returns an iterator that you can use to iterate through
 // all non-nil operations 
-func (v *pathItem) Operations() *OperationIterator {
-	var items []Operation
+func (v *pathItem) Operations() *OperationListIterator {
+	var items []interface{}
 	for _, oper := range []Operation{v.get, v.put, v.post, v.delete, v.options, v.head, v.patch, v.trace} {
 		if oper != nil {
 			items = append(items, oper)
 		}
 	}
 
-	return &OperationIterator{
-		items: items,
-	}
-}
-
-// Next returns true if there are more elements in this iterator
-func (iter *OperationIterator) Next() bool {
-	iter.mu.RLock()
-	defer iter.mu.RUnlock()
-	return iter.nextNoLock()
-}
-
-func (iter *OperationIterator) nextNoLock() bool {
-	return len(iter.items) > 0
-}
-
-// Operation returns the next operation in this iterator
-func (iter *OperationIterator) Operation() Operation {
-	iter.mu.Lock()
-	defer iter.mu.Unlock()
-
-	if !iter.nextNoLock() {
-		return nil
-	}
-
-	item := iter.items[0]
-	iter.items = iter.items[1:]
-	return item
+	var iter OperationListIterator
+	iter.items = items
+	return &iter
 }

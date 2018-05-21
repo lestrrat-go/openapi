@@ -10,47 +10,22 @@ import (
 )
 
 // Items returns an iterator that you can use to iterate through all
-// registered PathItem objects 
-func (p *paths) Items() *PathItemIterator {
+// registered PathItem objects
+func (p *paths) Items() *PathItemListIterator {
 	var keys []string
 	for key := range p.paths {
 		keys = append(keys, key)
 	}
 	sort.Strings(keys)
 
-	var items []PathItem
+	var items []interface{}
 	for _, key := range keys {
 		items = append(items, p.paths[key])
 	}
 
-	return &PathItemIterator{
-		items: items,
-	}
-}
-
-// Next returns true if there are more elements to process in this iterator
-func (iter *PathItemIterator) Next() bool {
-	iter.mu.RLock()
-	defer iter.mu.RUnlock()
-	return iter.nextNoLock()
-}
-
-func (iter *PathItemIterator) nextNoLock() bool {
-	return len(iter.items) > 0
-}
-
-// Item returns the next item in the iterator
-func (iter *PathItemIterator) Item() PathItem {
-	iter.mu.Lock()
-	defer iter.mu.Unlock()
-
-	if !iter.nextNoLock() {
-		return nil
-	}
-
-	item := iter.items[0]
-	iter.items = iter.items[1:]
-	return item
+	var iter PathItemListIterator
+	iter.items = items
+	return &iter
 }
 
 func (p *paths) MarshalJSON() ([]byte, error) {

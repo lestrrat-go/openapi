@@ -5,6 +5,8 @@ func (b *SchemaBuilder) Property(name string, s Schema) *SchemaBuilder {
 	if b.target.properties == nil {
 		b.target.properties = make(map[string]Schema)
 	}
-	b.target.properties[name] = s.Clone()
+	s = s.Clone()
+	b.target.properties[name] = s
+	s.setName(name)
 	return b
 }

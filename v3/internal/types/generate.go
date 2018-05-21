@@ -21,7 +21,8 @@ import (
 
 var entityTypes = map[string]interface{}{}
 var postUnmarshalJSONHooks = map[string]struct{}{
-	"pathItem": struct{}{},
+	"pathItem":    struct{}{},
+	"requestBody": struct{}{},
 }
 
 func GenerateCode() error {
@@ -57,6 +58,25 @@ func GenerateCode() error {
 		tag{},
 	}
 
+	containers := []interface{}{
+		CallbackMap{},
+		EncodingMap{},
+		ExampleMap{},
+		HeaderMap{},
+		InterfaceMap{},
+		LinkMap{},
+		MediaTypeMap{},
+		ParameterMap{},
+		RequestBodyMap{},
+		ResponseMap{},
+		SchemaMap{},
+		ScopeMap{},
+		SecuritySchemeMap{},
+		ServerVariableMap{},
+		StringListMap{},
+		StringMap{},
+	}
+
 	for _, e := range entities {
 		name := reflect.ValueOf(e).Type().Name()
 		entityTypes[name] = e
@@ -85,6 +105,14 @@ func GenerateCode() error {
 
 	if err := generateClonersFromEntity(entities); err != nil {
 		return errors.Wrap(err, `failed to generate cloners from entity list`)
+	}
+
+	if err := generateIteratorsFromEntity(entities); err != nil {
+		return errors.Wrap(err, `failed to generate iterators from entity list`)
+	}
+
+	if err := generateQueryJSONForContainers(containers); err != nil {
+		return errors.Wrap(err, `failed to generate QueryJSON handlers for containers`)
 	}
 
 	return nil
@@ -239,6 +267,9 @@ func copyInterface() error {
 
 	for scanner.Scan() {
 		txt := scanner.Text()
+
+		txt = strings.Replace(txt, "//gen:lazy ", "", -1)
+
 		fmt.Fprintf(dst, "\n%s", txt)
 		if strings.HasPrefix(txt, "type ") && strings.HasSuffix(txt, " interface {") {
 			i := strings.Index(txt[5:], " ")
@@ -263,6 +294,9 @@ func completeInterface(dst io.Writer, ifacename string) {
 
 	for i := 0; i < rv.NumField(); i++ {
 		fv := rv.Type().Field(i)
+		if fv.Tag.Get("accessor") == "-" {
+			continue
+		}
 		fmt.Fprintf(dst, "\n%s() %s", exportedFieldName(fv.Name), typname(fv.Type))
 	}
 	fmt.Fprintf(dst, "\nClone() %s", ifacename)
@@ -283,7 +317,7 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 
 	writePreamble(dst)
 
-	writeImports(dst, []string{"encoding/json", "github.com/pkg/errors"})
+	writeImports(dst, []string{"encoding/json", "strings", "github.com/pkg/errors"})
 
 	mpname := rv.Type().Name() + "MarshalProxy"
 	upname := rv.Type().Name() + "UnmarshalProxy"
@@ -294,7 +328,7 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 		if fv.Tag.Get("json") == "-" {
 			continue
 		}
-		fmt.Fprintf(dst, "\n%s %s `%s`", exportedFieldName(fv.Name), typname(fv.Type), fv.Tag)
+		fmt.Fprintf(dst, "\n%s %s `json:\"%s\"`", exportedFieldName(fv.Name), typname(fv.Type), fv.Tag.Get("json"))
 	}
 	fmt.Fprintf(dst, "\n}")
 
@@ -308,17 +342,17 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 		switch fv.Type.Kind() {
 		case reflect.Slice:
 			if _, ok := entityTypes[unexportedFieldName(typname(fv.Type.Elem()))]; ok {
-				fmt.Fprintf(dst, "\n%s []json.RawMessage `%s`", exportedFieldName(fv.Name), fv.Tag)
+				fmt.Fprintf(dst, "\n%s []json.RawMessage `json:\"%s\"`", exportedFieldName(fv.Name), fv.Tag.Get("json"))
 			}
 		case reflect.Map:
 			if _, ok := entityTypes[unexportedFieldName(typname(fv.Type.Elem()))]; ok {
-				fmt.Fprintf(dst, "\n%s map[string]json.RawMessage `%s`", exportedFieldName(fv.Name), fv.Tag)
+				fmt.Fprintf(dst, "\n%s map[string]json.RawMessage `json:\"%s\"`", exportedFieldName(fv.Name), fv.Tag.Get("json"))
 			}
 		default:
 			if _, ok := entityTypes[unexportedFieldName(typname(fv.Type))]; ok {
-				fmt.Fprintf(dst, "\n%s json.RawMessage `%s`", exportedFieldName(fv.Name), fv.Tag)
+				fmt.Fprintf(dst, "\n%s json.RawMessage `json:\"%s\"`", exportedFieldName(fv.Name), fv.Tag.Get("json"))
 			} else {
-				fmt.Fprintf(dst, "\n%s %s `%s`", exportedFieldName(fv.Name), typname(fv.Type), fv.Tag)
+				fmt.Fprintf(dst, "\n%s %s `json:\"%s\"`", exportedFieldName(fv.Name), typname(fv.Type), fv.Tag.Get("json"))
 			}
 		}
 	}
@@ -326,9 +360,19 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 
 	fmt.Fprintf(dst, "\n\nfunc (v *%s) MarshalJSON() ([]byte, error) {", rv.Type().Name())
 	fmt.Fprintf(dst, "\nvar proxy %s", mpname)
+
+	// First, check for "$ref"
+	_, hasReference := rv.Type().FieldByName("reference")
+	if hasReference {
+		fmt.Fprintf(dst, "\nif len(v.reference) > 0 {")
+		fmt.Fprintf(dst, "\nproxy.Reference = v.reference")
+		fmt.Fprintf(dst, "\nreturn json.Marshal(proxy)")
+		fmt.Fprintf(dst, "\n}")
+	}
+
 	for i := 0; i < rv.NumField(); i++ {
 		fv := rv.Type().Field(i)
-		if fv.Tag.Get("json") == "-" {
+		if fv.Name == "reference" || fv.Tag.Get("json") == "-" {
 			continue
 		}
 		fmt.Fprintf(dst, "\nproxy.%s = v.%s", exportedFieldName(fv.Name), unexportedFieldName(fv.Name))
@@ -344,9 +388,15 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 	fmt.Fprintf(dst, "\nif err := json.Unmarshal(data, &proxy); err != nil {")
 	fmt.Fprintf(dst, "\nreturn err")
 	fmt.Fprintf(dst, "\n}")
+	if hasReference {
+		fmt.Fprintf(dst, "\nif len(proxy.Reference) > 0 {")
+		fmt.Fprintf(dst, "\nv.reference = proxy.Reference")
+		fmt.Fprintf(dst, "\nreturn nil")
+		fmt.Fprintf(dst, "\n}")
+	}
 	for i := 0; i < rv.NumField(); i++ {
 		fv := rv.Type().Field(i)
-		if fv.Tag.Get("json") == "-" {
+		if fv.Name == "reference" || fv.Tag.Get("json") == "-" {
 			continue
 		}
 
@@ -381,7 +431,6 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 				fmt.Fprintf(dst, "\n}")
 			}
 		default:
-
 			if _, ok := entityTypes[unexportedFieldName(fv.Type.Name())]; ok {
 				fmt.Fprintf(dst, "\n\nif len(proxy.%s) > 0 {", exportedFieldName(fv.Name))
 				fmt.Fprintf(dst, "\nvar decoded %s", unexportedFieldName(typname(fv.Type)))
@@ -400,6 +449,55 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 		fmt.Fprintf(dst, "\n\nv.postUnmarshalJSON()")
 	}
 	fmt.Fprintf(dst, "\nreturn nil")
+	fmt.Fprintf(dst, "\n}")
+
+	fmt.Fprintf(dst, "\n\nfunc (v *%s) QueryJSON(path string) (ret interface{}, ok bool)  {", rv.Type().Name())
+	fmt.Fprintf(dst, "\npath = strings.TrimLeftFunc(path, func(r rune) bool { return r == '#' || r == '/' })")
+	fmt.Fprintf(dst, "\nif path == \"\" {")
+	fmt.Fprintf(dst, "\nreturn v, true")
+	fmt.Fprintf(dst, "\n}")
+
+	fmt.Fprintf(dst, "\n\nvar frag string")
+	fmt.Fprintf(dst, "\nif i := strings.Index(path, \"/\"); i > -1 {")
+	fmt.Fprintf(dst, "\nfrag = path[:i]")
+	fmt.Fprintf(dst, "\npath = path[i+1:]")
+	fmt.Fprintf(dst, "\n} else {")
+	fmt.Fprintf(dst, "\nfrag = path")
+	fmt.Fprintf(dst, "\npath = \"\"")
+	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\n\nvar target interface{}")
+	fmt.Fprintf(dst, "\n\nswitch frag {")
+	for i := 0; i < rv.NumField(); i++ {
+		fv := rv.Type().Field(i)
+		if fv.Name == "reference" {
+			continue
+		}
+		jsname := fv.Tag.Get("json")
+		if jsname == "-" {
+			continue
+		}
+		if i := strings.Index(jsname, ","); i > -1 {
+			jsname = jsname[:i]
+		}
+
+		if jsname == "" {
+			jsname = fv.Name
+		}
+
+		fmt.Fprintf(dst, "\ncase %s:", strconv.Quote(jsname))
+		fmt.Fprintf(dst, "\ntarget = v.%s", fv.Name)
+	}
+	fmt.Fprintf(dst, "\ndefault:")
+	fmt.Fprintf(dst, "\nreturn nil, false")
+	fmt.Fprintf(dst, "\n}")
+
+	fmt.Fprintf(dst, "\n\nif qj, ok := target.(QueryJSONer); ok {")
+	fmt.Fprintf(dst, "\nreturn qj.QueryJSON(path)")
+	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\nif path == \"\" {")
+	fmt.Fprintf(dst, "\nreturn target, true")
+	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\nreturn nil, false")
 	fmt.Fprintf(dst, "\n}")
 
 	if err := writeFormattedSource(&buf, filename); err != nil {
@@ -422,6 +520,10 @@ func generateAccessorsFromEntity(e interface{}) error {
 
 	for i := 0; i < rv.NumField(); i++ {
 		fv := rv.Type().Field(i)
+		if fv.Tag.Get("accessor") == "-" {
+			continue
+		}
+
 		fmt.Fprintf(dst, "\n\nfunc (v *%s) %s() %s {", structname, exportedFieldName(fv.Name), typname(fv.Type))
 		fmt.Fprintf(dst, "\nreturn v.%s", unexportedFieldName(fv.Name))
 		fmt.Fprintf(dst, "\n}")
@@ -552,7 +654,6 @@ func generateMutatorsFromEntity(e interface{}) error {
 	fmt.Fprintf(dst, "\nreturn nil")
 	fmt.Fprintf(dst, "\n}")
 
-
 	fmt.Fprintf(dst, "\n\n// Mutate%s creates a new mutator object for %s", ifacename, ifacename)
 	fmt.Fprintf(dst, "\nfunc Mutate%s(v %s) *%sMutator {", ifacename, ifacename, ifacename)
 	fmt.Fprintf(dst, "\nreturn &%sMutator{", ifacename)
@@ -597,6 +698,119 @@ func generateClonersFromEntity(entities []interface{}) error {
 		fmt.Fprintf(dst, "\n}")
 	}
 
+	return writeFormattedSource(&buf, filename)
+}
+
+func generateIteratorsFromEntity(entities []interface{}) error {
+	filename := "iterator_gen.go"
+	log.Printf("Generating %s", filename)
+
+	var buf bytes.Buffer
+	var dst io.Writer = &buf
+
+	writePreamble(dst)
+	writeImports(dst, []string{"sync"})
+
+	fmt.Fprintf(dst, "\n\ntype listIterator struct {")
+	fmt.Fprintf(dst, "\nmu sync.RWMutex")
+	fmt.Fprintf(dst, "\nitems []interface{}")
+	fmt.Fprintf(dst, "\n}")
+
+	fmt.Fprintf(dst, "\n\n// Item returns the next item in this iterator")
+	fmt.Fprintf(dst, "\nfunc (iter *listIterator) Item() interface{} {")
+	fmt.Fprintf(dst, "\niter.mu.Lock()")
+	fmt.Fprintf(dst, "\ndefer iter.mu.Unlock()")
+	fmt.Fprintf(dst, "\n\nif !iter.nextNoLock() {")
+	fmt.Fprintf(dst, "\nreturn nil")
+	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\n\nitem := iter.items[0]")
+	fmt.Fprintf(dst, "\niter.items = iter.items[1:]")
+	fmt.Fprintf(dst, "\nreturn item")
+	fmt.Fprintf(dst, "\n}")
+
+	fmt.Fprintf(dst, "\n\nfunc (iter *listIterator) nextNoLock() bool {")
+	fmt.Fprintf(dst, "\nreturn len(iter.items) > 0")
+	fmt.Fprintf(dst, "\n}")
+
+	fmt.Fprintf(dst, "\n\n// Next returns true if there are more elements in this iterator")
+	fmt.Fprintf(dst, "\nfunc (iter *listIterator) Next() bool {")
+	fmt.Fprintf(dst, "\niter.mu.RLock()")
+	fmt.Fprintf(dst, "\ndefer iter.mu.RUnlock()")
+	fmt.Fprintf(dst, "\nreturn iter.nextNoLock()")
+	fmt.Fprintf(dst, "\n}")
+
+	for _, e := range entities {
+		rv := reflect.ValueOf(e)
+		ifacename := exportedFieldName(rv.Type().Name())
+
+		fmt.Fprintf(dst, "\n\ntype %sListIterator struct {", ifacename)
+		fmt.Fprintf(dst, "\nlistIterator")
+		fmt.Fprintf(dst, "\n}")
+
+		fmt.Fprintf(dst, "\n\n// Item returns the next item in this iterator. Make sure to call Next()")
+		fmt.Fprintf(dst, "\n// before hand to check if the iterator has more items")
+		fmt.Fprintf(dst, "\nfunc (iter *%sListIterator) Item() %s {", ifacename, ifacename)
+		fmt.Fprintf(dst, "\nreturn iter.listIterator.Item().(%s)", ifacename)
+		fmt.Fprintf(dst, "\n}")
+
+	}
+
+	return writeFormattedSource(&buf, filename)
+}
+
+func generateQueryJSONForContainers(containers []interface{}) error {
+	filename := "query_json_gen.go"
+	log.Printf("Generating %s", filename)
+
+	var buf bytes.Buffer
+	var dst io.Writer = &buf
+
+	writePreamble(dst)
+	writeImports(dst, []string{"strings"})
+
+	fmt.Fprintf(dst, "\n\nfunc extractFragFromPath(path string) (string, string) {")
+	fmt.Fprintf(dst, "\n\npath = strings.TrimLeftFunc(path, func(r rune) bool { return r == '#' || r == '/' })")
+	fmt.Fprintf(dst, "\nvar frag string")
+	fmt.Fprintf(dst, "\nif i := strings.Index(path, `/`); i > -1 {")
+	fmt.Fprintf(dst, "\nfrag = path[:i]")
+	fmt.Fprintf(dst, "\npath = path[i+1:]")
+	fmt.Fprintf(dst, "\n} else {")
+	fmt.Fprintf(dst, "\nfrag = path")
+	fmt.Fprintf(dst, "\npath = ``")
+	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\nreturn frag, path")
+	fmt.Fprintf(dst, "\n}")
+
+	for _, c := range containers {
+		rv := reflect.ValueOf(c)
+
+		switch rv.Kind() {
+		case reflect.Map:
+			fmt.Fprintf(dst, "\n\nfunc (v %s) QueryJSON(path string) (ret interface{}, ok bool) {", rv.Type().Name())
+			fmt.Fprintf(dst, "\nif path == `` {")
+			fmt.Fprintf(dst, "\nreturn v, true")
+			fmt.Fprintf(dst, "\n}")
+
+			fmt.Fprintf(dst, "\n\nvar frag string")
+			fmt.Fprintf(dst, "\nfrag, path = extractFragFromPath(path)")
+			fmt.Fprintf(dst, "\ntarget, ok := v[frag]")
+			fmt.Fprintf(dst, "\nif !ok {")
+			fmt.Fprintf(dst, "\nreturn nil, false")
+			fmt.Fprintf(dst, "\n}")
+
+			if rv.Type().Elem().Kind() == reflect.Interface {
+				fmt.Fprintf(dst, "\n\nif qj, ok := target.(QueryJSONer); ok {")
+				fmt.Fprintf(dst, "\nreturn qj.QueryJSON(path)")
+				fmt.Fprintf(dst, "\n}")
+			}
+
+			fmt.Fprintf(dst, "\n\nif path == `` {")
+			fmt.Fprintf(dst, "\nreturn target, true")
+			fmt.Fprintf(dst, "\n}")
+			fmt.Fprintf(dst, "\nreturn nil, false")
+			fmt.Fprintf(dst, "\n}")
+		}
+	}
 	return writeFormattedSource(&buf, filename)
 }
 

@@ -104,3 +104,13 @@ func ParseJSON(src io.Reader) (OpenAPI, error) {
 
 	return &spec, nil
 }
+
+func (v *openAPI) Servers() *ServerListIterator {
+	var items []interface{}
+	for _, s := range v.servers {
+		items = append(items, s)
+	}
+	var iter ServerListIterator
+	iter.items = items
+	return &iter
+}
