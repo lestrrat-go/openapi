@@ -42,6 +42,11 @@ structure is immutable once the tree is created, and in doing so we can
 automatically memoizing some of the information in the components towards the
 inner scope.
 
-# TODO
+# CAVEATS
 
-* Disable direct access to composite types such as `map[string]Schema`
+*JSON Reference* (those pesky `$ref`s) are supported, but only if it's internal to the document itself.
+I plan on incorporating external references, but in a separate level. I believe external references
+should be resolved before we do anything with this library.
+
+*Code Generation* for clients are still pending. I plan on supporting HTTP client generator, and a
+protobuf (and therefore gRPC) definition generator.
