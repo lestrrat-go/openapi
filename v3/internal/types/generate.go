@@ -330,7 +330,6 @@ func completeInterface(dst io.Writer, ifacename string) {
 		fieldType := fv.Type.Name()
 		exportedField := exportedFieldName(fv.Name)
 		if _, ok := containerTypes[fieldType]; ok {
-			log.Printf("iterator name for %s is %s", fv.Type.String(), iteratorName(fv.Type))
 			fmt.Fprintf(dst, "\n%s() *%s", exportedField, iteratorName(fv.Type))
 		} else {
 			fmt.Fprintf(dst, "\n%s() %s", exportedFieldName(fv.Name), typname(fv.Type))
@@ -489,7 +488,6 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 	}
 
 	fmt.Fprintf(dst, "\n\nfunc (v *%s) Resolve(resolver *Resolver) error {", rv.Type().Name())
-	fmt.Fprintf(dst, "\nlog.Printf(`%s.Resolve`)", rv.Type().Name())
 	fmt.Fprintf(dst, "\nif v.IsUnresolved() {")
 	fmt.Fprintf(dst, "\n\nresolved, err := resolver.Resolve(v.Reference())")
 	fmt.Fprintf(dst, "\nif err != nil {")
@@ -499,7 +497,6 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 	fmt.Fprintf(dst, "\nif !ok {")
 	fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `expected resolved reference to be of type %s, but got %%T`, resolved)", exportedFieldName(rv.Type().Name()))
 	fmt.Fprintf(dst, "\n}")
-	fmt.Fprintf(dst, "\nlog.Printf(`Setting fields for %s to those of resolved object`)", rv.Type().Name())
 	fmt.Fprintf(dst, "\nmutator := Mutate%s(v)", exportedFieldName(rv.Type().Name()))
 	for i := 0; i < rv.NumField(); i++ {
 		fv := rv.Type().Field(i)
@@ -833,7 +830,6 @@ func generateMutatorsFromEntity(e interface{}) error {
 			fmt.Fprintf(dst, "\nif b.proxy.%s == nil {", unexportedName)
 			fmt.Fprintf(dst, "\nb.proxy.%s = %s{}", unexportedName, fieldType)
 			fmt.Fprintf(dst, "\n}")
-fmt.Fprintf(dst, "\nlog.Printf(`Setting %s.%s[%%s] to %%#v`, key, value)", ifacename, unexportedName)
 			fmt.Fprintf(dst, "\n\nb.proxy.%s[key] = value", unexportedName)
 			if isEntity(fv.Type.Elem().Name()) {
 				fmt.Fprintf(dst, ".Clone()")
