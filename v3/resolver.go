@@ -2,7 +2,6 @@ package openapi
 
 import (
 	"errors"
-	"log"
 	"sync"
 )
 
@@ -20,10 +19,8 @@ func NewResolver(ctx OpenAPI) *Resolver {
 }
 
 func (r *Resolver) Resolve(path string) (interface{}, error) {
-	log.Printf("resolve %s", path)
 	r.mu.RLock()
 	if v, ok := r.cache[path]; ok {
-		log.Printf("%s resolved to %T (CACHE HIT)", path, v)
 		defer r.mu.RUnlock()
 		return v, nil
 	}
@@ -31,11 +28,9 @@ func (r *Resolver) Resolve(path string) (interface{}, error) {
 
 	v, ok := r.ctx.QueryJSON(path)
 	if !ok {
-		log.Printf("%s did not resolve", path)
 		return nil, errors.New(`could not resolve reference`)
 	}
 
-	log.Printf("%s resolved to %T", path, v)
 	r.mu.Lock()
 	r.cache[path] = v
 	r.mu.Unlock()

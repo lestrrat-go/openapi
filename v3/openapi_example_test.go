@@ -394,12 +394,9 @@ paths:
 		_, p := pathIter.Item()
 		for operIter := p.Operations(); operIter.Next(); {
 			oper := operIter.Item()
-			log.Printf("%s", oper.OperationID())
 			openapi.MutateOperation(oper).
 				OperationID("foo").
 				Do()
-			log.Printf("%s", oper.OperationID())
-			// log.Printf("%s", operIter.Operation().Verb())
 		}
 	}
 
@@ -422,7 +419,6 @@ func ExampleGenerateClient() {
 
 	c := client.New()
 	if err := c.Generate(context.Background(), spec); err != nil {
-		os.Stdout.Write([]byte(err.Error()))
 		return
 	}
 	// OUTPUT:
