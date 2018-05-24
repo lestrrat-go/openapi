@@ -73,7 +73,8 @@ func (c *Client) Generate(ctx context.Context, spec openapi.OpenAPI) error {
 		return errors.Wrap(err, `failed to format source`)
 	}
 
-	os.Stdout.Write(formatted)
+	_ = formatted
+	// os.Stdout.Write(formatted)
 	return nil
 }
 
