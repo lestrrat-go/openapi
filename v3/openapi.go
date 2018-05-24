@@ -62,6 +62,7 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
+	"strings"
 
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
@@ -75,6 +76,19 @@ import (
 //    value is false.
 func defaultParameterRequiredFromLocation(in Location) bool {
 	return in == InPath
+}
+
+func extractFragFromPath(path string) (string, string) {
+	path = strings.TrimLeftFunc(path, func(r rune) bool { return r == '#' || r == '/' })
+	var frag string
+	if i := strings.Index(path, `/`); i > -1 {
+		frag = path[:i]
+		path = path[i+1:]
+	} else {
+		frag = path
+		path = ``
+	}
+	return frag, path
 }
 
 func ParseYAML(src io.Reader) (OpenAPI, error) {
@@ -103,14 +117,4 @@ func ParseJSON(src io.Reader) (OpenAPI, error) {
 	}
 
 	return &spec, nil
-}
-
-func (v *openAPI) Servers() *ServerListIterator {
-	var items []interface{}
-	for _, s := range v.servers {
-		items = append(items, s)
-	}
-	var iter ServerListIterator
-	iter.items = items
-	return &iter
 }

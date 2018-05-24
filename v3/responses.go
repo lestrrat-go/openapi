@@ -52,3 +52,42 @@ func (r *responses) MarshalJSON() ([]byte, error) {
 	buf.WriteByte('}')
 	return buf.Bytes(), nil
 }
+
+func (r *responses) UnmarshalJSON(data []byte) error {
+	var m map[string]json.RawMessage
+	if err := json.Unmarshal(data, &m); err != nil {
+		return errors.Wrap(err, `failed to unmarshal responses object`)
+	}
+
+	if raw, ok := m["default"]; ok {
+		var res response
+		if err := json.Unmarshal(raw, &res); err != nil {
+			return errors.Wrap(err, `failed to unmarshal responses.default`)
+		}
+		r.defaultValue = &res
+		delete(m, "default")
+	}
+
+	if len(m) > 0 {
+		r.responses = make(ResponseMap)
+		for code, raw := range m {
+			// only work with status codes
+			codeNum, err := strconv.Atoi(code)
+			if err != nil {
+				continue
+			}
+			if codeNum < 100 || codeNum >= 600 {
+				continue
+			}
+
+			var res response
+			if err := json.Unmarshal(raw, &res); err != nil {
+				return errors.Wrapf(err, `failed to unmarshal responses.%s`, code)
+			}
+
+			r.responses[code] = &res
+			delete(m, code)
+		}
+	}
+	return nil
+}

@@ -18,11 +18,3 @@ func (v *operation) Path() string {
 	}
 	return v.pathItem.Path()
 }
-
-func (v *operation) Parameters() *ParameterListIterator{
-	var iter ParameterListIterator
-	for _, p := range v.parameters {
-		iter.items = append(iter.items, p)
-	}
-	return &iter
-}

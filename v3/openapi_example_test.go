@@ -1,12 +1,15 @@
 package openapi_test
 
 import (
+	"context"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/ghodss/yaml"
 	openapi "github.com/lestrrat-go/openapi/v3"
+	client "github.com/lestrrat-go/openapi/v3/generator/client"
 )
 
 func ExampleBuild() {
@@ -387,8 +390,8 @@ paths:
 	}
 	_ = buf
 
-	for pathIter := spec.Paths().Items(); pathIter.Next(); {
-		p := pathIter.Item()
+	for pathIter := spec.Paths().Paths(); pathIter.Next(); {
+		_, p := pathIter.Item()
 		for operIter := p.Operations(); operIter.Next(); {
 			oper := operIter.Item()
 			log.Printf("%s", oper.OperationID())
@@ -400,5 +403,27 @@ paths:
 		}
 	}
 
+	// OUTPUT:
+}
+
+func ExampleGenerateClient() {
+	f, err := os.Open(filepath.Join("..", "spec", "examples", "v3.0", "petstore-expanded.yaml"))
+	if err != nil {
+		os.Stdout.Write([]byte(err.Error()))
+		return
+	}
+	defer f.Close()
+
+	spec, err := openapi.ParseYAML(f)
+	if err != nil {
+		os.Stdout.Write([]byte(err.Error()))
+		return
+	}
+
+	c := client.New()
+	if err := c.Generate(context.Background(), spec); err != nil {
+		os.Stdout.Write([]byte(err.Error()))
+		return
+	}
 	// OUTPUT:
 }

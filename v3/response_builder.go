@@ -8,17 +8,20 @@ func (b *ResponseBuilder) Header(name string, hdr Header) *ResponseBuilder {
 		b.target.headers = make(map[string]Header)
 	}
 
-	b.target.headers[name] = hdr.Clone()
+	hdr = hdr.Clone()
+	b.target.headers[name] = hdr
+	hdr.setName(name)
 	return b
 }
 
-// Content sets th content type `name` to `desc`
-func (b *ResponseBuilder) Content(name string, desc MediaType) *ResponseBuilder {
+// Content sets th content type `mime` to `desc`
+func (b *ResponseBuilder) Content(mime string, desc MediaType) *ResponseBuilder {
 	if b.target.content == nil {
 		b.target.content = make(map[string]MediaType)
 	}
 
-	b.target.content[name] = desc.Clone()
+	desc = desc.Clone()
+	b.target.content[mime] = desc
+	desc.setMime(mime)
 	return b
 }
-

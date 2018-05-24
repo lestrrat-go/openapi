@@ -34,17 +34,16 @@ const (
 
 type OpenAPI interface {
 	QueryJSON(string) (interface{}, bool)
-	//gen:lazy Servers() *ServerListIterator
 }
 
 type openAPI struct {
 	version      string                `json:"openapi" builder:"required" default:"DefaultVersion"`
 	info         Info                  `json:"info" builder:"required"`
-	servers      []Server              `json:"servers,omitempty" accessor:"-"`
+	servers      ServerList            `json:"servers,omitempty"`
 	paths        Paths                 `json:"paths" builder:"required"`
 	components   Components            `json:"components,omitempty"`
 	security     SecurityRequirement   `json:"security,omitempty"`
-	tags         []Tag                 `json:"tags,omitempty"`
+	tags         TagList               `json:"tags,omitempty"`
 	externalDocs ExternalDocumentation `json:"externalDocs,omitempty"`
 }
 
@@ -88,15 +87,13 @@ type server struct {
 	variables   ServerVariableMap `json:"variables,omitempty"`
 }
 
-type ServerVariableMap map[string]ServerVariable
-
 type ServerVariable interface {
 }
 
 type serverVariable struct {
-	enum         []string `json:"enum"`
-	defaultValue string   `json:"default" builder:"required"`
-	description  string   `json:"description"`
+	enum         StringList `json:"enum"`
+	defaultValue string     `json:"default" builder:"required"`
+	description  string     `json:"description"`
 }
 
 type Components interface {
@@ -115,35 +112,31 @@ type components struct {
 }
 
 type Paths interface {
-	//gen:lazy Items() *PathItemListIterator
 }
 
 type paths struct {
 	paths PathItemMap `json:"-"`
 }
 
-type PathItemMap map[string]PathItem
-
 type PathItem interface {
-	//gen:lazy Operations() *OperationListIterator
 	setPath(string)
+	//gen:lazy Operations() *OperationListIterator
 }
 
 type pathItem struct {
-	path        string      `json:"-"` // This is a secret variable that gets reset when the item is added to a path
-	reference   string      `json:"$ref,omitempty"`
-	summary     string      `json:"summary,omitempty"`
-	description string      `json:"description,omitempty"`
-	get         Operation   `json:"get,omitempty"`
-	put         Operation   `json:"put,omitempty"`
-	post        Operation   `json:"post,omitempty"`
-	delete      Operation   `json:"delete,omitempty"`
-	options     Operation   `json:"options,omitempty"`
-	head        Operation   `json:"head,omitempty"`
-	patch       Operation   `json:"patch,omitempty"`
-	trace       Operation   `json:"trace,omitempty"`
-	servers     []Server    `json:"servers,omitempty"`
-	parameters  []Parameter `json:"parameters,omitempty"` // or Reference
+	path        string        `json:"-" resolve:"-"` // This is a secret variable that gets reset when the item is added to a path
+	summary     string        `json:"summary,omitempty"`
+	description string        `json:"description,omitempty"`
+	get         Operation     `json:"get,omitempty" mutator:"-"`
+	put         Operation     `json:"put,omitempty" mutator:"-"`
+	post        Operation     `json:"post,omitempty" mutator:"-"`
+	delete      Operation     `json:"delete,omitempty" mutator:"-"`
+	options     Operation     `json:"options,omitempty" mutator:"-"`
+	head        Operation     `json:"head,omitempty" mutator:"-"`
+	patch       Operation     `json:"patch,omitempty" mutator:"-"`
+	trace       Operation     `json:"trace,omitempty" mutator:"-"`
+	servers     ServerList    `json:"servers,omitempty"`
+	parameters  ParameterList `json:"parameters,omitempty"` // or Reference
 }
 
 type Operation interface {
@@ -151,24 +144,23 @@ type Operation interface {
 	setPathItem(PathItem)
 	Path() string
 	Detached() bool
-	//gen:lazy Parameters() *ParameterListIterator
 }
 
 type operation struct {
-	pathItem     PathItem              `json:"-" builder:"-"` // This is a secreate variable that gets reset when the operation is added to a pathItem
-	verb         string                `json:"-" builder:"-"` // This is a secreate variable that gets reset when the operation is added to a pathItem
-	tags         []string              `json:"tags,omitempty"`
-	summary      string                `json:"summary,omitempty"`
-	description  string                `json:"description,omitempty"`
-	externalDocs ExternalDocumentation `json:"externalDocs,omitempty"`
-	operationID  string                `json:"operationId,omitempty"`
-	parameters   []Parameter           `json:"parameters,omitempty" accessor:"-"` // or Reference
-	requestBody  RequestBody           `json:"requestBody,omitempty"`             // or Reference
-	responses    Responses             `json:"responses" builder:"required"`
-	callbacks    CallbackMap           `json:"callbacks,omitempty"` // or Reference
-	deprecated   bool                  `json:"deprecated,omitempty"`
-	security     []SecurityRequirement `json:"security,omitempty"`
-	servers      []Server              `json:"servers,omitempty"`
+	verb         string                  `json:"-" builder:"-" mutator:"-" resolve:"-"`
+	pathItem     PathItem                `json:"-" builder:"-" mutator:"-" resolve:"-"`
+	tags         StringList              `json:"tags,omitempty"`
+	summary      string                  `json:"summary,omitempty"`
+	description  string                  `json:"description,omitempty"`
+	externalDocs ExternalDocumentation   `json:"externalDocs,omitempty"`
+	operationID  string                  `json:"operationId,omitempty"`
+	parameters   ParameterList           `json:"parameters,omitempty"`  // or Reference
+	requestBody  RequestBody             `json:"requestBody,omitempty"` // or Reference
+	responses    Responses               `json:"responses" builder:"required"`
+	callbacks    CallbackMap             `json:"callbacks,omitempty"` // or Reference
+	deprecated   bool                    `json:"deprecated,omitempty"`
+	security     SecurityRequirementList `json:"security,omitempty"`
+	servers      ServerList              `json:"servers,omitempty"`
 }
 
 type ExternalDocumentation interface {
@@ -179,18 +171,14 @@ type externalDocumentation struct {
 	uRL         string `json:"url" builder:"required"` // REQUIRED
 }
 
-type RequestBodyMap map[string]RequestBody
 type RequestBody interface {
-	//gen:lazy Contents() *MediaTypeListIterator
 }
 
 type requestBody struct {
 	description string       `json:"description,omitempty"`
-	content     MediaTypeMap `json:"content,omitempty" builder:"-" accessor:"-"`
+	content     MediaTypeMap `json:"content,omitempty" builder:"-" mutator:"-"`
 	required    bool         `json:"required,omitempty"`
 }
-
-type MediaTypeMap map[string]MediaType
 
 type MediaType interface {
 	setMime(string)
@@ -199,12 +187,10 @@ type MediaType interface {
 type mediaType struct {
 	mime     string      `json:"-" builder:"-"`    // This is a secret variable that gets reset when the  is added to the container
 	schema   Schema      `json:"schema,omitempty"` // or Reference
-	example  interface{} `json:"example,omitempty"`
 	examples ExampleMap  `json:"examples,omitempty"`
 	encoding EncodingMap `json:"encoding,omitempty"`
 }
 
-type EncodingMap map[string]Encoding
 type Encoding interface {
 }
 
@@ -223,19 +209,15 @@ type responses struct {
 	responses    ResponseMap `json:"-" builder:"-"`     // or Reference
 }
 
-type ResponseMap map[string]Response
-
 type Response interface {
 }
 
 type response struct {
 	description string       `json:"description" builder:"required"`
-	headers     HeaderMap    `json:"headers,omitempty" builder:"-"` // or Reference
-	content     MediaTypeMap `json:"content,omitempty" builder:"-"`
+	headers     HeaderMap    `json:"headers,omitempty"` // or Reference
+	content     MediaTypeMap `json:"content,omitempty" builder:"-" mutator:"-"`
 	links       LinkMap      `json:"links,omitempty" builder:"-"` // or Reference
 }
-
-type CallbackMap map[string]Callback
 
 type Callback interface {
 }
@@ -243,8 +225,6 @@ type Callback interface {
 type callback struct {
 	uRLs map[string]PathItem
 }
-
-type ExampleMap map[string]Example
 
 type Example interface {
 }
@@ -255,20 +235,16 @@ type example struct {
 	externalValue string      `json:"externalValue"`
 }
 
-type LinkMap map[string]Link
-
 type Link interface {
 }
 
-type InterfaceMap map[string]interface{}
-
 type link struct {
-	operationRef string                 `json:"operationRef"`
-	operationID  string                 `json:"operationId"`
+	operationRef string       `json:"operationRef"`
+	operationID  string       `json:"operationId"`
 	parameters   InterfaceMap `json:"parameters"`
-	requestBody  interface{}            `json:"requestBody"`
-	description  string                 `json:"description"`
-	server       Server                 `json:"server"`
+	requestBody  interface{}  `json:"requestBody"`
+	description  string       `json:"description"`
+	server       Server       `json:"server"`
 }
 
 type Tag interface {
@@ -280,23 +256,12 @@ type tag struct {
 	externalDocs ExternalDocumentation `json:"externalDocs,omitempty"`
 }
 
-type Reference interface {
-}
-
-type reference struct {
-	uRL string `json:"-"` // REQUIRED
-}
-
-type SchemaMap map[string]Schema
-
 type Schema interface {
-	//gen:lazy Properties() *SchemaListIterator
 	setName(string)
 }
 
 type schema struct {
 	name             string                `json:"-" builder:"-"`
-	reference        string                `json:"$ref,omitempty"`
 	title            string                `json:"title,omitempty"`
 	multipleOf       float64               `json:"multipleOf,omitempty"`
 	maximum          float64               `json:"maximum,omitempty"`
@@ -311,15 +276,15 @@ type schema struct {
 	uniqueItems      bool                  `json:"uniqueItems,omitempty"`
 	maxProperties    int                   `json:"maxProperties,omitempty"`
 	minProperties    int                   `json:"minProperties,omitempty"`
-	required         []string              `json:"required,omitempty"`
-	enum             []interface{}         `json:"enum,omitempty"`
+	required         StringList            `json:"required,omitempty"`
+	enum             InterfaceList         `json:"enum,omitempty"`
 	typ              PrimitiveType         `json:"type,omitempty"`
-	allOf            []Schema              `json:"allOf,omitempty"`
-	oneOf            []Schema              `json:"oneOf,omitempty"`
-	anyOf            []Schema              `json:"anyOf,omitempty"`
+	allOf            SchemaList            `json:"allOf,omitempty"`
+	oneOf            SchemaList            `json:"oneOf,omitempty"`
+	anyOf            SchemaList            `json:"anyOf,omitempty"`
 	not              Schema                `json:"not,omitempty"`
 	items            Schema                `json:"items,omitempty"`
-	properties       SchemaMap             `json:"properties,omitempty" accessor:"-" builder:"-"`
+	properties       SchemaMap             `json:"properties,omitempty"`
 	format           string                `json:"format,omitempty"`
 	defaultValue     interface{}           `json:"default,omitempty"`
 	nullable         bool                  `json:"nullable,omitempty"`
@@ -334,15 +299,10 @@ type schema struct {
 type Discriminator interface {
 }
 
-type StringMap map[string]string
-type StringListMap map[string][]string
-
 type discriminator struct {
-	propertyName string            `json:"propertyName" builder:"required"`
+	propertyName string    `json:"propertyName" builder:"required"`
 	mapping      StringMap `json:"mapping"`
 }
-
-type SecuritySchemeMap map[string]SecurityScheme
 
 type SecurityScheme interface {
 }
@@ -368,8 +328,6 @@ type oAuthFlows struct {
 	authorizationCode OAuthFlow `json:"authorizationCode"`
 }
 
-type ScopeMap map[string]string
-
 type OAuthFlow interface {
 }
 
@@ -387,11 +345,12 @@ type securityRequirement struct {
 	schemes StringListMap
 }
 
-type HeaderMap map[string]Header
 type Header interface {
+	//gen:lazy setName(string)
 }
 
 type header struct {
+	name            string       `json:"-" builder:"-" mutator:"-"`
 	in              Location     `json:"-" builder:"required" default:"InHeader"`
 	required        bool         `json:"required,omitempty"`
 	description     string       `json:"description,omitempty"`
@@ -400,12 +359,9 @@ type header struct {
 	explode         bool         `json:"explode,omitempty"`
 	allowReserved   bool         `json:"allowReserved,omitempty"`
 	schema          Schema       `json:"schema,omitempty"`
-	example         interface{}  `json:"example,omitempty"`
 	examples        ExampleMap   `json:"examples,omitempty"`
 	content         MediaTypeMap `json:"content,omitempty"`
 }
-
-type ParameterMap map[string]Parameter
 
 type Parameter interface {
 }
@@ -420,7 +376,55 @@ type parameter struct {
 	explode         bool         `json:"explode,omitempty"`
 	allowReserved   bool         `json:"allowReserved,omitempty"`
 	schema          Schema       `json:"schema,omitempty"`
-	example         interface{}  `json:"example,omitempty"`
 	examples        ExampleMap   `json:"examples,omitempty"`
 	content         MediaTypeMap `json:"content,omitempty"`
 }
+
+// note: using type aliases for key types effectively allow us to refer
+// to every key type as "base type name" + "key", which is a win for
+// code generation (no reflect trickeries). And yet since it is
+// treated as the underlying key, casual users are affected by errors like
+//
+//    "cannot use s (type string) as type FooBarKey in map index"
+
+type CallbackMapKey = string
+type CallbackMap map[CallbackMapKey]Callback
+type EncodingMapKey = string
+type EncodingMap map[EncodingMapKey]Encoding
+type ExampleMapKey = string
+type ExampleMap map[ExampleMapKey]Example
+type HeaderMapKey = string
+type HeaderMap map[HeaderMapKey]Header
+type InterfaceList []interface{}
+type InterfaceMapKey = string
+type InterfaceMap map[InterfaceMapKey]interface{}
+type LinkMapKey = string
+type LinkMap map[LinkMapKey]Link
+type MediaTypeMapKey = string
+type MediaTypeMap map[MediaTypeMapKey]MediaType
+type ParameterList []Parameter
+type ParameterMapKey = string
+type ParameterMap map[ParameterMapKey]Parameter
+type PathItemMapKey = string
+type PathItemMap map[PathItemMapKey]PathItem
+type RequestBodyMapKey = string
+type RequestBodyMap map[RequestBodyMapKey]RequestBody
+type ResponseMapKey = string
+type ResponseMap map[ResponseMapKey]Response
+type ServerList []Server
+type ServerVariableMapKey = string
+type ServerVariableMap map[ServerVariableMapKey]ServerVariable
+type SchemaList []Schema
+type SchemaMapKey = string
+type SchemaMap map[SchemaMapKey]Schema
+type ScopeMapKey = string
+type ScopeMap map[ScopeMapKey]string
+type SecurityRequirementList []SecurityRequirement
+type SecuritySchemeMapKey = string
+type SecuritySchemeMap map[SecuritySchemeMapKey]SecurityScheme
+type StringList []string
+type StringListMapKey = string
+type StringListMap map[StringListMapKey][]string
+type StringMapKey = string
+type StringMap map[StringMapKey]string
+type TagList []Tag
