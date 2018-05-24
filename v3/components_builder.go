@@ -5,7 +5,9 @@ func (b *ComponentsBuilder) Schema(name string, s Schema) *ComponentsBuilder {
 	if b.target.schemas == nil {
 		b.target.schemas = make(map[string]Schema)
 	}
-	b.target.schemas[name] = s.Clone()
+	s = s.Clone()
+	b.target.schemas[name] = s
+	s.setName(name)
 	return b
 }
 

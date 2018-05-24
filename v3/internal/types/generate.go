@@ -24,6 +24,7 @@ import (
 var entityTypes = map[string]interface{}{}
 var containerTypes = map[string]interface{}{}
 var postUnmarshalJSONHooks = map[string]struct{}{
+	"SchemaMap":   struct{}{},
 	"pathItem":    struct{}{},
 	"requestBody": struct{}{},
 }
@@ -240,7 +241,8 @@ func writePreamble(dst io.Writer) {
 
 var importDummies = map[string]string{
 	"github.com/pkg/errors": "errors.Cause",
-	"log": "log.Printf",
+	"encoding/json":         "json.Unmarshal",
+	"log":                   "log.Printf",
 }
 
 func writeImports(dst io.Writer, pkgs []string) {
@@ -368,7 +370,13 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 			if fv.Tag.Get("json") == "-" {
 				continue
 			}
-			fmt.Fprintf(dst, "\n%s %s `json:\"%s\"`", exportedFieldName(fv.Name), typname(fv.Type), fv.Tag.Get("json"))
+
+			fieldType := fv.Type.Name()
+			if fieldType == "" {
+				fieldType = typname(fv.Type)
+			}
+
+			fmt.Fprintf(dst, "\n%s %s `json:\"%s\"`", exportedFieldName(fv.Name), fieldType, fv.Tag.Get("json"))
 		}
 		fmt.Fprintf(dst, "\n}")
 
@@ -380,12 +388,14 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 				continue
 			}
 
-			switch fv.Type.Kind() {
-			case reflect.Slice:
+			switch {
+			case isContainer(fv.Type.Name()):
+				fmt.Fprintf(dst, "\n%s %s `json:\"%s\"`", exportedFieldName(fv.Name), fv.Type.Name(), fv.Tag.Get("json"))
+			case fv.Type.Kind() == reflect.Slice:
 				if _, ok := entityTypes[unexportedFieldName(typname(fv.Type.Elem()))]; ok {
 					fmt.Fprintf(dst, "\n%s []json.RawMessage `json:\"%s\"`", exportedFieldName(fv.Name), fv.Tag.Get("json"))
 				}
-			case reflect.Map:
+			case fv.Type.Kind() == reflect.Map:
 				if _, ok := entityTypes[unexportedFieldName(typname(fv.Type.Elem()))]; ok {
 					fmt.Fprintf(dst, "\n%s map[string]json.RawMessage `json:\"%s\"`", exportedFieldName(fv.Name), fv.Tag.Get("json"))
 				}
@@ -435,9 +445,10 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 				continue
 			}
 
-			// If we have a container of openapi stuff, we need to work with it too
-			switch fv.Type.Kind() {
-			case reflect.Slice:
+			switch {
+			case isContainer(fv.Type.Name()):
+				fmt.Fprintf(dst, "\nv.%s = proxy.%s", unexportedFieldName(fv.Name), exportedFieldName(fv.Name))
+			case fv.Type.Kind() == reflect.Slice:
 				if _, ok := entityTypes[unexportedFieldName(fv.Type.Elem().Name())]; ok {
 					fmt.Fprintf(dst, "\n\nif len(proxy.%s) > 0 {", exportedFieldName(fv.Name))
 					fmt.Fprintf(dst, "\nvar list []%s", exportedFieldName(fv.Type.Elem().Name()))
@@ -451,7 +462,7 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 					fmt.Fprintf(dst, "\nv.%s = list", unexportedFieldName(fv.Name))
 					fmt.Fprintf(dst, "\n}")
 				}
-			case reflect.Map:
+			case fv.Type.Kind() == reflect.Map:
 				if _, ok := entityTypes[unexportedFieldName(fv.Type.Elem().Name())]; ok {
 					fmt.Fprintf(dst, "\n\nif len(proxy.%s) > 0 {", exportedFieldName(fv.Name))
 					fmt.Fprintf(dst, "\nm := make(map[string]%s)", exportedFieldName(fv.Type.Elem().Name()))
@@ -1011,16 +1022,17 @@ func generateContainers(c interface{}) error {
 	var dst io.Writer = &buf
 
 	writePreamble(dst)
-	writeImports(dst, []string{"github.com/pkg/errors"})
+	writeImports(dst, []string{"encoding/json", "github.com/pkg/errors"})
 
+	typeName := rv.Type().Name()
 	switch {
-	case isList(rv.Type().Name()):
-		fmt.Fprintf(dst, "\n\nfunc (v *%s) Clear() error {", rv.Type().Name())
+	case isList(typeName):
+		fmt.Fprintf(dst, "\n\nfunc (v *%s) Clear() error {", typeName)
 		fmt.Fprintf(dst, "\n*v = %s(nil)", rv.Type().Name())
 		fmt.Fprintf(dst, "\nreturn nil")
 		fmt.Fprintf(dst, "\n}")
 
-		fmt.Fprintf(dst, "\n\nfunc (v %s) Resolve(resolver *Resolver) error {", rv.Type().Name())
+		fmt.Fprintf(dst, "\n\nfunc (v %s) Resolve(resolver *Resolver) error {", typeName)
 		if _, ok := entityTypes[unexportedFieldName(rv.Type().Elem().Name())]; ok {
 			fmt.Fprintf(dst, "\nif len(v) > 0 {")
 			fmt.Fprintf(dst, "\nfor i, elem := range v {")
@@ -1032,6 +1044,25 @@ func generateContainers(c interface{}) error {
 		}
 		fmt.Fprintf(dst, "\nreturn nil")
 		fmt.Fprintf(dst, "\n}")
+
+		if rv.Type().Elem().Name() != "" && rv.Type().Elem().Kind() == reflect.Interface {
+		fmt.Fprintf(dst, "\n\nfunc (v *%s) UnmarshalJSON(data []byte) error {", typeName)
+		fmt.Fprintf(dst, "\nvar proxy []*%s", unexportedFieldName(typname(rv.Type().Elem())))
+		fmt.Fprintf(dst, "\nif err := json.Unmarshal(data, &proxy); err != nil {")
+		fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to unmarshal`)")
+		fmt.Fprintf(dst, "\n}")
+		fmt.Fprintf(dst, "\n\nif len(proxy) == 0 {")
+		fmt.Fprintf(dst, "\n*v = %s(nil)", typeName)
+		fmt.Fprintf(dst, "\nreturn nil")
+		fmt.Fprintf(dst, "\n}")
+		fmt.Fprintf(dst, "\n\ntmp := make(%s, len(proxy))", typeName)
+		fmt.Fprintf(dst, "\nfor i, value := range proxy {")
+		fmt.Fprintf(dst, "\ntmp[i] = value")
+		fmt.Fprintf(dst, "\n}")
+		fmt.Fprintf(dst, "\n*v = tmp")
+		fmt.Fprintf(dst, "\nreturn nil")
+		fmt.Fprintf(dst, "\n}")
+		}
 	case isMap(rv.Type().Name()):
 		fmt.Fprintf(dst, "\n\nfunc (v *%s) Clear() error {", rv.Type().Name())
 		fmt.Fprintf(dst, "\n*v = make(%s)", rv.Type().Name())
@@ -1073,6 +1104,30 @@ func generateContainers(c interface{}) error {
 		fmt.Fprintf(dst, "\n}")
 		fmt.Fprintf(dst, "\nreturn nil, false")
 		fmt.Fprintf(dst, "\n}")
+
+		if rv.Type().Elem().Name() != "" && rv.Type().Elem().Kind() == reflect.Interface {
+			fmt.Fprintf(dst, "\n\nfunc (v *%s) UnmarshalJSON(data []byte) error {", typeName)
+			fmt.Fprintf(dst, "\nvar proxy map[%s]*%s", typname(rv.Type().Key()), unexportedFieldName(typname(rv.Type().Elem())))
+			fmt.Fprintf(dst, "\nif err := json.Unmarshal(data, &proxy); err != nil {")
+			fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to unmarshal`)")
+			fmt.Fprintf(dst, "\n}")
+
+			fmt.Fprintf(dst, "\ntmp := make(map[%s]%s)", typname(rv.Type().Key()), typname(rv.Type().Elem()))
+			fmt.Fprintf(dst, "\nfor name, value := range proxy {")
+			switch typeName {
+			case "ParameterMap", "SecuritySchemeMap":
+			default:
+				// assume they all have setName(string)
+				if isEntity(unexportedFieldName(rv.Type().Elem().Name())) {
+					fmt.Fprintf(dst, "\nvalue.setName(name)")
+				}
+			}
+			fmt.Fprintf(dst, "\ntmp[name] = value")
+			fmt.Fprintf(dst, "\n}")
+			fmt.Fprintf(dst, "\n*v = tmp")
+			fmt.Fprintf(dst, "\nreturn nil")
+			fmt.Fprintf(dst, "\n}")
+		}
 	}
 
 	return writeFormattedSource(&buf, filename)

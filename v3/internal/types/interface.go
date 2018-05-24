@@ -89,9 +89,11 @@ type server struct {
 }
 
 type ServerVariable interface {
+	setName(string)
 }
 
 type serverVariable struct {
+	name         string     `json:"-" builder:"-"`
 	enum         StringList `json:"enum"`
 	defaultValue string     `json:"default" builder:"required"`
 	description  string     `json:"description"`
@@ -121,10 +123,12 @@ type paths struct {
 
 type PathItem interface {
 	setPath(string)
+	setName(string)
 	//gen:lazy Operations() *OperationListIterator
 }
 
 type pathItem struct {
+	name        string        `json:"-" builder:"-"` // This is a secret variable that gets reset when the item is added to a path
 	path        string        `json:"-" resolve:"-"` // This is a secret variable that gets reset when the item is added to a path
 	summary     string        `json:"summary,omitempty"`
 	description string        `json:"description,omitempty"`
@@ -173,9 +177,11 @@ type externalDocumentation struct {
 }
 
 type RequestBody interface {
+	setName(string)
 }
 
 type requestBody struct {
+	name        string       `json:"-" builder:"-"`
 	description string       `json:"description,omitempty"`
 	content     MediaTypeMap `json:"content,omitempty" builder:"-" mutator:"-"`
 	required    bool         `json:"required,omitempty"`
@@ -183,9 +189,11 @@ type requestBody struct {
 
 type MediaType interface {
 	setMime(string)
+	setName(string)
 }
 
 type mediaType struct {
+	name     string      `json:"-" builder:"-"`    // This is a secret variable that gets reset when the  is added to the container
 	mime     string      `json:"-" builder:"-"`    // This is a secret variable that gets reset when the  is added to the container
 	schema   Schema      `json:"schema,omitempty"` // or Reference
 	examples ExampleMap  `json:"examples,omitempty"`
@@ -193,9 +201,11 @@ type mediaType struct {
 }
 
 type Encoding interface {
+	setName(string)
 }
 
 type encoding struct {
+	name          string    `json:"-" builder:"-"`
 	contentType   string    `json:"contentType"`
 	headers       HeaderMap `json:"headers"`
 	explode       bool      `json:"explode"`
@@ -211,9 +221,11 @@ type responses struct {
 }
 
 type Response interface {
+	setName(string)
 }
 
 type response struct {
+	name        string       `json:"-" builder:"-"`
 	description string       `json:"description" builder:"required"`
 	headers     HeaderMap    `json:"headers,omitempty"` // or Reference
 	content     MediaTypeMap `json:"content,omitempty" builder:"-"`
@@ -221,25 +233,31 @@ type response struct {
 }
 
 type Callback interface {
+	setName(string)
 }
 
 type callback struct {
-	uRLs map[string]PathItem
+	name string `json:"-" builder:"-"`
+	urls map[string]PathItem
 }
 
 type Example interface {
+	setName(string)
 }
 
 type example struct {
+	name          string      `json:"-" builder:"-"`
 	description   string      `json:"description"`
 	value         interface{} `json:"value"`
 	externalValue string      `json:"externalValue"`
 }
 
 type Link interface {
+	setName(string)
 }
 
 type link struct {
+	name         string       `json:"-" builder:"-"` // This is only populated when applicable
 	operationRef string       `json:"operationRef"`
 	operationID  string       `json:"operationId"`
 	parameters   InterfaceMap `json:"parameters"`
@@ -263,7 +281,7 @@ type Schema interface {
 }
 
 type schema struct {
-	name             string                `json:"-" builder:"-"`
+	name             string                `json:"-" builder:"-"` // This is only populated when applicable
 	title            string                `json:"title,omitempty"`
 	multipleOf       float64               `json:"multipleOf,omitempty"`
 	maximum          float64               `json:"maximum,omitempty"`

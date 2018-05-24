@@ -1,5 +1,9 @@
 package openapi
 
+func (v *requestBody) setName(s string) {
+	v.name = s
+}
+
 func (v *requestBody) postUnmarshalJSON() {
 	for mime, content := range v.content {
 		content.setMime(mime)
