@@ -240,6 +240,7 @@ func writePreamble(dst io.Writer) {
 
 var importDummies = map[string]string{
 	"github.com/pkg/errors": "errors.Cause",
+	"log": "log.Printf",
 }
 
 func writeImports(dst io.Writer, pkgs []string) {
@@ -336,7 +337,8 @@ func completeInterface(dst io.Writer, ifacename string) {
 		}
 	}
 
-	fmt.Fprintf(dst, "\nIsReference() bool")
+	fmt.Fprintf(dst, "\nMarshalJSON() ([]byte, error)")
+	fmt.Fprintf(dst, "\nIsUnresolved() bool")
 	fmt.Fprintf(dst, "\nResolve(*Resolver) error")
 	fmt.Fprintf(dst, "\nClone() %s", ifacename)
 }
@@ -350,13 +352,12 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 	var buf bytes.Buffer
 	var dst io.Writer = &buf
 	writePreamble(dst)
-	writeImports(dst, []string{"log"})
 
 	switch rv.Type().Name() {
 	case "paths", "responses":
-		writeImports(dst, []string{"strings", "github.com/pkg/errors"})
+		writeImports(dst, []string{"log", "strings", "github.com/pkg/errors"})
 	default:
-		writeImports(dst, []string{"encoding/json", "strings", "github.com/pkg/errors"})
+		writeImports(dst, []string{"log", "encoding/json", "strings", "github.com/pkg/errors"})
 
 		mpname := rv.Type().Name() + "MarshalProxy"
 		upname := rv.Type().Name() + "UnmarshalProxy"
@@ -489,8 +490,8 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 
 	fmt.Fprintf(dst, "\n\nfunc (v *%s) Resolve(resolver *Resolver) error {", rv.Type().Name())
 	fmt.Fprintf(dst, "\nlog.Printf(`%s.Resolve`)", rv.Type().Name())
-	fmt.Fprintf(dst, "\nif v.IsReference() {")
-	fmt.Fprintf(dst, "\nresolved, err := resolver.Resolve(v.Reference())")
+	fmt.Fprintf(dst, "\nif v.IsUnresolved() {")
+	fmt.Fprintf(dst, "\n\nresolved, err := resolver.Resolve(v.Reference())")
 	fmt.Fprintf(dst, "\nif err != nil {")
 	fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to resolve reference %%s`, v.Reference())")
 	fmt.Fprintf(dst, "\n}")
@@ -498,10 +499,11 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 	fmt.Fprintf(dst, "\nif !ok {")
 	fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `expected resolved reference to be of type %s, but got %%T`, resolved)", exportedFieldName(rv.Type().Name()))
 	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\nlog.Printf(`Setting fields for %s to those of resolved object`)", rv.Type().Name())
 	fmt.Fprintf(dst, "\nmutator := Mutate%s(v)", exportedFieldName(rv.Type().Name()))
 	for i := 0; i < rv.NumField(); i++ {
 		fv := rv.Type().Field(i)
-		if fv.Tag.Get("builder") == "-" {
+		if fv.Tag.Get("resolve") == "-" {
 			continue
 		}
 
@@ -509,7 +511,10 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 		// Use the iterator to assign new values
 		exported := exportedFieldName(fv.Name)
 		fieldType := fv.Type.Name()
-		if _, ok := containerTypes[fieldType]; ok {
+		switch {
+		default:
+			fmt.Fprintf(dst, "\nmutator.%s(asserted.%s())", exported, exported)
+		case isContainer(fieldType):
 			switch {
 			case isMap(fieldType):
 				fmt.Fprintf(dst, "\nfor iter := asserted.%s(); iter.Next(); {", exported)
@@ -524,11 +529,12 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 			default:
 				return errors.Errorf(`unknown cotainer %s`, exported)
 			}
-		} else {
-			fmt.Fprintf(dst, "\nmutator.%s(asserted.%s())", exported, exported)
 		}
 	}
-	fmt.Fprintf(dst, "\nreturn errors.Wrap(mutator.Do(), `failed to mutate`)")
+	fmt.Fprintf(dst, "\nif err := mutator.Do(); err != nil {")
+	fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to mutate`)")
+	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\nv.resolved = true")
 	fmt.Fprintf(dst, "\n}")
 
 	for i := 0; i < rv.NumField(); i++ {
@@ -665,7 +671,7 @@ func generateAccessorsFromEntity(e interface{}) error {
 	fmt.Fprintf(dst, "\n\nfunc (v *%s) Reference() string {", structname)
 	fmt.Fprintf(dst, "\nreturn v.reference")
 	fmt.Fprintf(dst, "\n}")
-	fmt.Fprintf(dst, "\n\nfunc (v *%s) IsReference() bool {", structname)
+	fmt.Fprintf(dst, "\n\nfunc (v *%s) IsUnresolved() bool {", structname)
 	fmt.Fprintf(dst, "\nreturn v.reference != \"\" && !v.resolved")
 	fmt.Fprintf(dst, "\n}")
 
@@ -781,6 +787,7 @@ func generateMutatorsFromEntity(e interface{}) error {
 	var dst io.Writer = &buf
 
 	writePreamble(dst)
+	writeImports(dst, []string{"log"})
 
 	ifacename := ucfirst(rv.Type().Name())
 	structname := rv.Type().Name()
@@ -826,6 +833,7 @@ func generateMutatorsFromEntity(e interface{}) error {
 			fmt.Fprintf(dst, "\nif b.proxy.%s == nil {", unexportedName)
 			fmt.Fprintf(dst, "\nb.proxy.%s = %s{}", unexportedName, fieldType)
 			fmt.Fprintf(dst, "\n}")
+fmt.Fprintf(dst, "\nlog.Printf(`Setting %s.%s[%%s] to %%#v`, key, value)", ifacename, unexportedName)
 			fmt.Fprintf(dst, "\n\nb.proxy.%s[key] = value", unexportedName)
 			if isEntity(fv.Type.Elem().Name()) {
 				fmt.Fprintf(dst, ".Clone()")

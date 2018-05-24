@@ -20,9 +20,10 @@ func NewResolver(ctx OpenAPI) *Resolver {
 }
 
 func (r *Resolver) Resolve(path string) (interface{}, error) {
-	log.Printf("revolve %s", path)
+	log.Printf("resolve %s", path)
 	r.mu.RLock()
 	if v, ok := r.cache[path]; ok {
+		log.Printf("%s resolved to %T (CACHE HIT)", path, v)
 		defer r.mu.RUnlock()
 		return v, nil
 	}

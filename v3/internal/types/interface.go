@@ -23,6 +23,7 @@ const (
 type PrimitiveType string
 
 const (
+	Invalid PrimitiveType = "invalid"
 	Integer PrimitiveType = "integer"
 	Number  PrimitiveType = "number"
 	String  PrimitiveType = "string"
@@ -215,7 +216,7 @@ type Response interface {
 type response struct {
 	description string       `json:"description" builder:"required"`
 	headers     HeaderMap    `json:"headers,omitempty"` // or Reference
-	content     MediaTypeMap `json:"content,omitempty" builder:"-" mutator:"-"`
+	content     MediaTypeMap `json:"content,omitempty" builder:"-"`
 	links       LinkMap      `json:"links,omitempty" builder:"-"` // or Reference
 }
 
@@ -257,6 +258,7 @@ type tag struct {
 }
 
 type Schema interface {
+	Type() PrimitiveType
 	setName(string)
 }
 
@@ -278,7 +280,7 @@ type schema struct {
 	minProperties    int                   `json:"minProperties,omitempty"`
 	required         StringList            `json:"required,omitempty"`
 	enum             InterfaceList         `json:"enum,omitempty"`
-	typ              PrimitiveType         `json:"type,omitempty"`
+	typ              PrimitiveType         `json:"type,omitempty" accessor:"-"`
 	allOf            SchemaList            `json:"allOf,omitempty"`
 	oneOf            SchemaList            `json:"oneOf,omitempty"`
 	anyOf            SchemaList            `json:"anyOf,omitempty"`
@@ -350,7 +352,7 @@ type Header interface {
 }
 
 type header struct {
-	name            string       `json:"-" builder:"-" mutator:"-"`
+	name            string       `json:"-" builder:"-" mutator:"-" resolve:"-"`
 	in              Location     `json:"-" builder:"required" default:"InHeader"`
 	required        bool         `json:"required,omitempty"`
 	description     string       `json:"description,omitempty"`
@@ -367,7 +369,7 @@ type Parameter interface {
 }
 
 type parameter struct {
-	name            string       `json:"name,omitempty" builder:"required"`
+	name            string       `json:"name,omitempty" builder:"required" resolve:"-"`
 	in              Location     `json:"in" builder:"required"`
 	required        bool         `json:"required,omitempty" default:"defaultParameterRequiredFromLocation(in)"`
 	description     string       `json:"description,omitempty"`
