@@ -9,25 +9,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Items returns an iterator that you can use to iterate through all
-// registered PathItem objects
-func (p *paths) Items() *PathItemListIterator {
-	var keys []string
-	for key := range p.paths {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-
-	var items []interface{}
-	for _, key := range keys {
-		items = append(items, p.paths[key])
-	}
-
-	var iter PathItemListIterator
-	iter.items = items
-	return &iter
-}
-
 func (p *paths) MarshalJSON() ([]byte, error) {
 	if p == nil {
 		return []byte("null"), nil
