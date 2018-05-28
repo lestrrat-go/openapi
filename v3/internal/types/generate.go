@@ -809,11 +809,14 @@ func generateMutatorsFromEntity(e interface{}) error {
 	fmt.Fprintf(dst, "\n}")
 	for i := 0; i < rv.NumField(); i++ {
 		fv := rv.Type().Field(i)
+		exportedName := exportedName(fv.Name)
+
 		if fv.Tag.Get("mutator") == "-" {
+			log.Printf(" * [SKIP] %s", exportedName)
 			continue
 		}
+		log.Printf(" * %s", exportedName)
 
-		exportedName := exportedName(fv.Name)
 		unexportedName := unexportedName(fv.Name)
 		fieldType := fv.Type.Name()
 		switch {

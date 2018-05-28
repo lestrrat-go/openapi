@@ -44,9 +44,11 @@ func (p *paths) UnmarshalJSON(data []byte) error {
 		return errors.Wrap(err, `failed to unmarshal JSON`)
 	}
 
-	*p = paths{
+	tmp := paths{
 		paths: make(map[string]PathItem),
 	}
+
+	mutator := MutatePaths(&tmp)
 
 	for path, data := range m {
 		var pi pathItem
@@ -54,8 +56,13 @@ func (p *paths) UnmarshalJSON(data []byte) error {
 			return errors.Wrap(err, `failed to unmarshal JSON`)
 		}
 
-		p.paths[path] = &pi
-		pi.setPath(path)
+		mutator.Path(path, &pi)
 	}
+
+	if err := mutator.Do(); err != nil {
+		return errors.Wrap(err, `failed to mutate path`)
+	}
+
+	*p = tmp
 	return nil
 }

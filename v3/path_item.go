@@ -6,31 +6,35 @@ func (v *pathItem) setName(s string) {
 	v.name = s
 }
 
-func (v *pathItem) setPath(s string) {
-	v.path = s
-}
-
-func (v *pathItem) setVerb(verb string, oper Operation) {
-	if oper == nil {
-		return
-	}
-	oper.setVerb(verb)
-	oper.setPathItem(v)
-}
-
 func (v *pathItem) postUnmarshalJSON() {
-	v.setVerb(http.MethodGet, v.get)
-	v.setVerb(http.MethodPut, v.put)
-	v.setVerb(http.MethodPost, v.post)
-	v.setVerb(http.MethodDelete, v.delete)
-	v.setVerb(http.MethodOptions, v.options)
-	v.setVerb(http.MethodHead, v.head)
-	v.setVerb(http.MethodPatch, v.patch)
-	v.setVerb(http.MethodTrace, v.trace)
+}
+
+func (v *pathItem) acceptOperation(method string, oper Operation) {
+	cloned := oper.Clone()
+	cloned.setVerb(method)
+	cloned.setPathItem(v)
+	switch method {
+	case http.MethodGet:
+		v.get = cloned
+	case http.MethodPut:
+		v.put = cloned
+	case http.MethodPost:
+		v.post = cloned
+	case http.MethodDelete:
+		v.delete = cloned
+	case http.MethodOptions:
+		v.options = cloned
+	case http.MethodHead:
+		v.head = cloned
+	case http.MethodPatch:
+		v.patch = cloned
+	case http.MethodTrace:
+		v.trace = cloned
+	}
 }
 
 // Operations returns an iterator that you can use to iterate through
-// all non-nil operations 
+// all non-nil operations
 func (v *pathItem) Operations() *OperationListIterator {
 	var items []interface{}
 	for _, oper := range []Operation{v.get, v.put, v.post, v.delete, v.options, v.head, v.patch, v.trace} {
