@@ -50,14 +50,14 @@ type Swagger interface {
 }
 
 type swagger struct {
-	version             string                  `json:"swagger" default:"defaultSwaggerVersion"`
+	version             string                  `json:"swagger" builder:"-" default:"defaultSwaggerVersion"`
 	info                Info                    `json:"info" builder:"required"`
 	host                string                  `json:"host"`
 	basePath            string                  `json:"basePath"`
 	schemes             SchemeList              `json:"schemes"`
 	consumes            MIMETypeList            `json:"consumes,omitempty"`
 	produces            MIMETypeList            `json:"produces,omitempty"`
-	paths               Paths                   `json:"paths"`
+	paths               Paths                   `json:"paths" builder:"required"`
 	definitions         SchemaMap               `json:"definitions"`
 	parameters          ParameterMap            `json:"parameters"`
 	responses           ResponseMap             `json:"responses"`
@@ -104,6 +104,8 @@ type paths struct {
 }
 
 type PathItem interface {
+	//gen:lazy setName(string)
+	//gen:lazy setPath(string)
 }
 
 type pathItem struct {

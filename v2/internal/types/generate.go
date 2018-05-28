@@ -68,7 +68,9 @@ func GenerateCode() error {
 	for _, e := range entities {
 		name := reflect.TypeOf(e).Name()
 		entityTypes[name] = e
-		if name != "parameter" {
+		switch name {
+		case "swagger", "parameter":
+		default:
 			validators[name] = struct{}{}
 		}
 	}
@@ -558,7 +560,14 @@ func generateBuilderFromEntity(e interface{}) error {
 		if _, ok := hasDefault[fv.Name]; ok {
 			fmt.Fprintf(dst, " If this is not called,\n// a default value (%s) is assigned to this field", fv.Tag.Get("default"))
 		}
-		fmt.Fprintf(dst, "\nfunc (b *%sBuilder) %s(v %s) *%sBuilder {", ifacename, exportedName(fv.Name), typname(fv.Type), ifacename)
+
+		// if the inferred argument type is a list, we should allow a
+		// variadic expression in the argument
+		argType := typname(fv.Type)
+		if strings.HasPrefix(argType, "[]") {
+			argType = "..." + strings.TrimPrefix(argType, "[]")
+		}
+		fmt.Fprintf(dst, "\nfunc (b *%sBuilder) %s(v %s) *%sBuilder {", ifacename, exportedName(fv.Name), argType, ifacename)
 		fmt.Fprintf(dst, "\nb.target.%s = v", fv.Name)
 		fmt.Fprintf(dst, "\nreturn b")
 		fmt.Fprintf(dst, "\n}")
