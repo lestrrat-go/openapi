@@ -347,6 +347,7 @@ func copyInterface() error {
 			if isEntity(txt[5 : 5+i]) {
 				fmt.Fprintf(dst, "\nreference string `json:\"$ref,omitempty\"`")
 				fmt.Fprintf(dst, "\nresolved bool `json:\"-\"`")
+				fmt.Fprintf(dst, "\nextras Extensions `json:\"-\"`")
 			}
 		}
 	}
@@ -690,10 +691,9 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 	case "paths", "responses":
 		writeImports(dst, []string{"log", "strings", "github.com/pkg/errors"})
 	default:
-		writeImports(dst, []string{"log", "encoding/json", "strings", "github.com/pkg/errors"})
+		writeImports(dst, []string{"encoding/json", "fmt", "log", "strings", "strconv", "github.com/pkg/errors"})
 
 		mpname := rv.Type().Name() + "MarshalProxy"
-		upname := rv.Type().Name() + "UnmarshalProxy"
 
 		fmt.Fprintf(dst, "\n\ntype %s struct {", mpname)
 		fmt.Fprintf(dst, "\nReference string `json:\"$ref,omitempty\"`")
@@ -712,41 +712,11 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 		}
 		fmt.Fprintf(dst, "\n}")
 
-		fmt.Fprintf(dst, "\n\ntype %s struct {", upname)
-		fmt.Fprintf(dst, "\nReference string `json:\"$ref,omitempty\"`")
-		for i := 0; i < rv.NumField(); i++ {
-			fv := rv.Type().Field(i)
-			if fv.Tag.Get("json") == "-" {
-				continue
-			}
-
-			switch {
-			case isContainer(fv.Type.Name()):
-				fmt.Fprintf(dst, "\n%s %s `json:\"%s\"`", exportedName(fv.Name), fv.Type.Name(), fv.Tag.Get("json"))
-			case fv.Type.Kind() == reflect.Slice:
-				if _, ok := entityTypes[unexportedName(typname(fv.Type.Elem()))]; ok {
-					fmt.Fprintf(dst, "\n%s []json.RawMessage `json:\"%s\"`", exportedName(fv.Name), fv.Tag.Get("json"))
-				}
-			case fv.Type.Kind() == reflect.Map:
-				if _, ok := entityTypes[unexportedName(typname(fv.Type.Elem()))]; ok {
-					fmt.Fprintf(dst, "\n%s map[string]json.RawMessage `json:\"%s\"`", exportedName(fv.Name), fv.Tag.Get("json"))
-				}
-			default:
-				if _, ok := entityTypes[unexportedName(typname(fv.Type))]; ok {
-					fmt.Fprintf(dst, "\n%s json.RawMessage `json:\"%s\"`", exportedName(fv.Name), fv.Tag.Get("json"))
-				} else {
-					fmt.Fprintf(dst, "\n%s %s `json:\"%s\"`", exportedName(fv.Name), typname(fv.Type), fv.Tag.Get("json"))
-				}
-			}
-		}
-		fmt.Fprintf(dst, "\n}")
-
 		fmt.Fprintf(dst, "\n\nfunc (v *%s) MarshalJSON() ([]byte, error) {", rv.Type().Name())
 		fmt.Fprintf(dst, "\nvar proxy %s", mpname)
 
-		fmt.Fprintf(dst, "\nif len(v.reference) > 0 {")
-		fmt.Fprintf(dst, "\nproxy.Reference = v.reference")
-		fmt.Fprintf(dst, "\nreturn json.Marshal(proxy)")
+		fmt.Fprintf(dst, "\nif s := v.reference; len(s) > 0 {")
+		fmt.Fprintf(dst, "\nreturn []byte(fmt.Sprintf(refOnlyTmpl, strconv.Quote(s))), nil")
 		fmt.Fprintf(dst, "\n}")
 
 		for i := 0; i < rv.NumField(); i++ {
@@ -756,72 +726,83 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 			}
 			fmt.Fprintf(dst, "\nproxy.%s = v.%s", exportedName(fv.Name), unexportedName(fv.Name))
 		}
-		fmt.Fprintf(dst, "\nreturn json.Marshal(proxy)")
+		fmt.Fprintf(dst, "\nbuf, err := json.Marshal(proxy)")
+		fmt.Fprintf(dst, "\nif err != nil {")
+		fmt.Fprintf(dst, "\nreturn nil, errors.Wrap(err, `failed to marshal struct`)")
+		fmt.Fprintf(dst, "\n}")
+		fmt.Fprintf(dst, "\nif len(v.extras) > 0 {")
+		fmt.Fprintf(dst, "\nextrasBuf, err := json.Marshal(v.extras)")
+		fmt.Fprintf(dst, "\nif err != nil || len(extrasBuf) <= 2 {")
+		fmt.Fprintf(dst, "\nreturn nil, errors.Wrap(err, `failed to marshal struct (extras)`)")
+		fmt.Fprintf(dst, "\n}")
+		fmt.Fprintf(dst, "\nbuf = append(append(buf[:len(buf)-1], ','), extrasBuf[1:]...)")
+		fmt.Fprintf(dst, "\n}")
+		fmt.Fprintf(dst, "\nreturn buf, nil")
 		fmt.Fprintf(dst, "\n}")
 
 		// Unmarshaling interfaces is tricky. We need to construct a concrete
 		// type that fulfills the interface, and unmarshal using that.
 
 		fmt.Fprintf(dst, "\n\nfunc (v *%s) UnmarshalJSON(data []byte) error {", rv.Type().Name())
-		fmt.Fprintf(dst, "\nvar proxy %s", upname)
+		fmt.Fprintf(dst, "\nvar proxy map[string]json.RawMessage")
 		fmt.Fprintf(dst, "\nif err := json.Unmarshal(data, &proxy); err != nil {")
 		fmt.Fprintf(dst, "\nreturn err")
 		fmt.Fprintf(dst, "\n}")
-		fmt.Fprintf(dst, "\nif len(proxy.Reference) > 0 {")
-		fmt.Fprintf(dst, "\nv.reference = proxy.Reference")
+
+		fmt.Fprintf(dst, "\nif raw := proxy[\"$ref\"]; len(raw) > 0 {")
+		fmt.Fprintf(dst, "\nif err := json.Unmarshal(raw, &v.reference); err != nil {")
+		fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to unmarshal $ref`)")
+		fmt.Fprintf(dst, "\n}")
 		fmt.Fprintf(dst, "\nreturn nil")
 		fmt.Fprintf(dst, "\n}")
+
 		for i := 0; i < rv.NumField(); i++ {
 			fv := rv.Type().Field(i)
 			if fv.Name == "reference" || fv.Tag.Get("json") == "-" {
 				continue
 			}
 
-			switch {
-			case isContainer(fv.Type.Name()):
-				fmt.Fprintf(dst, "\nv.%s = proxy.%s", unexportedName(fv.Name), exportedName(fv.Name))
-			case fv.Type.Kind() == reflect.Slice:
-				if _, ok := entityTypes[unexportedName(fv.Type.Elem().Name())]; ok {
-					fmt.Fprintf(dst, "\n\nif len(proxy.%s) > 0 {", exportedName(fv.Name))
-					fmt.Fprintf(dst, "\nvar list []%s", exportedName(fv.Type.Elem().Name()))
-					fmt.Fprintf(dst, "\nfor i, pv := range proxy.%s {", exportedName(fv.Name))
-					fmt.Fprintf(dst, "\nvar decoded %s", unexportedName(typname(fv.Type.Elem())))
-					fmt.Fprintf(dst, "\nif err := json.Unmarshal(pv, &decoded); err != nil {")
-					fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to unmasrhal element %%d of field %s`, i)", exportedName(fv.Name))
-					fmt.Fprintf(dst, "\n}")
-					fmt.Fprintf(dst, "\nlist = append(list, &decoded)")
-					fmt.Fprintf(dst, "\n}")
-					fmt.Fprintf(dst, "\nv.%s = list", unexportedName(fv.Name))
-					fmt.Fprintf(dst, "\n}")
-				}
-			case fv.Type.Kind() == reflect.Map:
-				if _, ok := entityTypes[unexportedName(fv.Type.Elem().Name())]; ok {
-					fmt.Fprintf(dst, "\n\nif len(proxy.%s) > 0 {", exportedName(fv.Name))
-					fmt.Fprintf(dst, "\nm := make(map[string]%s)", exportedName(fv.Type.Elem().Name()))
-					fmt.Fprintf(dst, "\nfor key, pv := range proxy.%s {", exportedName(fv.Name))
-					fmt.Fprintf(dst, "\nvar decoded %s", unexportedName(typname(fv.Type.Elem())))
-					fmt.Fprintf(dst, "\nif err := json.Unmarshal(pv, &decoded); err != nil {")
-					fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to unmasrhal element %%s of field %s`, key)", exportedName(fv.Name))
-					fmt.Fprintf(dst, "\n}")
-					fmt.Fprintf(dst, "\nm[key] = &decoded")
-					fmt.Fprintf(dst, "\n}")
-					fmt.Fprintf(dst, "\nv.%s = m", unexportedName(fv.Name))
-					fmt.Fprintf(dst, "\n}")
-				}
-			default:
-				if _, ok := entityTypes[unexportedName(fv.Type.Name())]; ok {
-					fmt.Fprintf(dst, "\n\nif len(proxy.%s) > 0 {", exportedName(fv.Name))
-					fmt.Fprintf(dst, "\nvar decoded %s", unexportedName(typname(fv.Type)))
-					fmt.Fprintf(dst, "\nif err := json.Unmarshal(proxy.%s, &decoded); err != nil {", exportedName(fv.Name))
-					fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to unmarshal field %s`)", exportedName(fv.Name))
-					fmt.Fprintf(dst, "\n}")
-					fmt.Fprintf(dst, "\n\nv.%s = &decoded", unexportedName(fv.Name))
-					fmt.Fprintf(dst, "\n}")
-				} else {
-					fmt.Fprintf(dst, "\nv.%s = proxy.%s", unexportedName(fv.Name), exportedName(fv.Name))
-				}
+			unexportedFieldName := unexportedName(fv.Name)
+			// exportedFieldName := exportedName(fv.Name)
+
+			// XXX assume that we always have a json field name specified
+			jsonName := fv.Tag.Get("json")
+			if i := strings.IndexByte(jsonName, ','); i > -1 {
+				jsonName = jsonName[:i]
+			}
+
+			if _, ok := entityTypes[unexportedName(fv.Type.Name())]; ok {
+				fmt.Fprintf(dst, "\n\nif raw := proxy[%s]; len(raw) > 0 {", strconv.Quote(jsonName))
+				fmt.Fprintf(dst, "\nvar decoded %s", unexportedName(typname(fv.Type)))
+				fmt.Fprintf(dst, "\nif err := json.Unmarshal(raw, &decoded); err != nil {")
+				fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to unmarshal field %s`)", exportedName(fv.Name))
+				fmt.Fprintf(dst, "\n}")
+				fmt.Fprintf(dst, "\n\nv.%s = &decoded", unexportedName(fv.Name))
+				fmt.Fprintf(dst, "\ndelete(proxy, %s)", strconv.Quote(jsonName))
+				fmt.Fprintf(dst, "\n}")
+			} else {
+				fmt.Fprintf(dst, "\n\nif raw := proxy[%s]; len(raw) > 0 {", strconv.Quote(jsonName))
+				fmt.Fprintf(dst, "\nif err := json.Unmarshal(raw, &v.%s); err != nil {", unexportedFieldName)
+				fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to unmarshal field %s`)", jsonName)
+				fmt.Fprintf(dst, "\n}")
+				fmt.Fprintf(dst, "\ndelete(proxy, %s)", strconv.Quote(jsonName))
+				fmt.Fprintf(dst, "\n}")
 			}
 		}
+
+		// iterate through the proxy to look for any element that starts
+		// with a ^x-. Since we don't know what they are supposed to be,
+		// we're just going to store them as json.RawMessage in hopes that
+		// that the user knows better.
+		fmt.Fprintf(dst, "\n\nfor name, raw := range proxy {")
+		fmt.Fprintf(dst, "\nif strings.HasPrefix(name, `x-`) {")
+		fmt.Fprintf(dst, "\nif v.extras == nil {")
+		fmt.Fprintf(dst, "\nv.extras = Extensions{}")
+		fmt.Fprintf(dst, "\n}")
+		fmt.Fprintf(dst, "\nv.extras[name] = raw")
+		fmt.Fprintf(dst, "\n}")
+		fmt.Fprintf(dst, "\n}")
+
 
 		if _, ok := postUnmarshalJSONHooks[rv.Type().Name()]; ok {
 			fmt.Fprintf(dst, "\n\nv.postUnmarshalJSON()")

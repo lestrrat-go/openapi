@@ -1,6 +1,9 @@
 package types
 
+import "encoding/json"
+
 const defaultSwaggerVersion = "2.0"
+const refOnlyTmpl = `{"$ref":%s}`
 
 type CollectionFormat string
 
@@ -45,6 +48,9 @@ const (
 	Null    PrimitiveType = "null"
 )
 
+type Extensions map[string]json.RawMessage
+
+type OpenAPI = Swagger
 type Swagger interface {
 	QueryJSON(string) (interface{}, bool)
 }
@@ -52,19 +58,19 @@ type Swagger interface {
 type swagger struct {
 	version             string                  `json:"swagger" builder:"-" default:"defaultSwaggerVersion"`
 	info                Info                    `json:"info" builder:"required"`
-	host                string                  `json:"host"`
-	basePath            string                  `json:"basePath"`
-	schemes             SchemeList              `json:"schemes"`
+	host                string                  `json:"host,omitempty"`
+	basePath            string                  `json:"basePath,omitempty"`
+	schemes             SchemeList              `json:"schemes,omitempty"`
 	consumes            MIMETypeList            `json:"consumes,omitempty"`
 	produces            MIMETypeList            `json:"produces,omitempty"`
 	paths               Paths                   `json:"paths" builder:"required"`
-	definitions         SchemaMap               `json:"definitions"`
-	parameters          ParameterMap            `json:"parameters"`
-	responses           ResponseMap             `json:"responses"`
-	securityDefinitions SecuritySchemeMap       `json:"securityDefinitions"`
-	security            SecurityRequirementList `json:"security"`
-	tags                TagList                 `json:"tags"`
-	externalDocs        ExternalDocumentation   `json:"externalDocs"`
+	definitions         SchemaMap               `json:"definitions,omitempty"`
+	parameters          ParameterMap            `json:"parameters,omitempty"`
+	responses           ResponseMap             `json:"responses,omitempty"`
+	securityDefinitions SecuritySchemeMap       `json:"securityDefinitions,omitempty"`
+	security            SecurityRequirementList `json:"security,omitempty"`
+	tags                TagList                 `json:"tags,omitempty"`
+	externalDocs        ExternalDocumentation   `json:"externalDocs,omitempty"`
 }
 
 type Info interface {
@@ -135,7 +141,7 @@ type operation struct {
 	produces     MIMETypeList            `json:"produces,omitempty"`
 	parameters   ParameterList           `json:"parameters,omitempty"`
 	responses    Responses               `json:"responses" builder:"required"`
-	schemes      SchemeList              `json:"schemes"`
+	schemes      SchemeList              `json:"schemes,omitempty"`
 	deprecated   bool                    `json:"deprecated,omitempty"`
 	security     SecurityRequirementList `json:"security,omitempty"`
 }
@@ -155,9 +161,9 @@ type parameter struct {
 	name        string   `json:"name" builder:"required"`
 	description string   `json:"description,omitempty"`
 	required    bool     `json:"required,omitempty"`
-	in          Location `jsonm:"in" builder:"required"`
+	in          Location `json:"in" builder:"required"`
 	// Only applicable if when in == body
-	schema Schema `json:"schema"`
+	schema Schema `json:"schema,omitempty"`
 	// Only applicable if when in != body
 	typ              PrimitiveType    `json:"type,omitempty"`
 	format           string           `json:"format,omitempty"`

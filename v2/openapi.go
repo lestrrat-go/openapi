@@ -2,7 +2,15 @@
 
 package openapi
 
-import "strings"
+import (
+	"encoding/json"
+	"io"
+	"io/ioutil"
+	"strings"
+
+	"github.com/ghodss/yaml"
+	"github.com/pkg/errors"
+)
 
 func validLocation(l Location) bool {
 	switch l {
@@ -23,4 +31,32 @@ func extractFragFromPath(path string) (string, string) {
 		path = ``
 	}
 	return frag, path
+}
+
+func ParseYAML(src io.Reader) (Swagger, error) {
+	buf, err := ioutil.ReadAll(src)
+	if err != nil {
+		return nil, errors.Wrap(err, `failed to read from source`)
+	}
+
+	var spec swagger
+	if err := yaml.Unmarshal(buf, &spec); err != nil {
+		return nil, errors.Wrap(err, `failed to unmarshal spec`)
+	}
+
+	return &spec, nil
+}
+
+func ParseJSON(src io.Reader) (Swagger, error) {
+	buf, err := ioutil.ReadAll(src)
+	if err != nil {
+		return nil, errors.Wrap(err, `failed to read from source`)
+	}
+
+	var spec swagger
+	if err := json.Unmarshal(buf, &spec); err != nil {
+		return nil, errors.Wrap(err, `failed to unmarshal spec`)
+	}
+
+	return &spec, nil
 }
