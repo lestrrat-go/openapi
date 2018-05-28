@@ -136,26 +136,11 @@ func GenerateCode() error {
 	return nil
 }
 
-func strcase.ToSnake(in string) string {
-	runes := []rune(in)
-	length := len(runes)
-
-	var out []rune
-	for i := 0; i < length; i++ {
-		if i > 0 && unicode.IsUpper(runes[i]) && ((i+1 < length && unicode.IsLower(runes[i+1])) || unicode.IsLower(runes[i-1])) {
-			out = append(out, '_')
-		}
-		out = append(out, unicode.ToLower(runes[i]))
-	}
-
-	switch s := string(out); {
-	case strings.Contains(s, "open_api"):
-		return strings.Replace(s, "open_api", "openapi", -1)
-	case strings.Contains(s, "o_auth"):
-		return strings.Replace(s, "o_auth", "oauth", -1)
-	default:
-		return s
-	}
+func toSnake(s string) string {
+	s = strcase.ToSnake(s)
+	s = strings.Replace(s, "openap_i", "openapi", -1)
+	s = strings.Replace(s, "o_auth", "oauth", -1)
+	return s
 }
 
 func ucfirst(s string) string {
@@ -187,7 +172,7 @@ func lcfirst(s string) string {
 	return buf.String()
 }
 
-func exportedFieldName(s string) string {
+func exportedName(s string) string {
 	n := ucfirst(s)
 	switch n {
 	case "DefaultValue":
@@ -199,7 +184,7 @@ func exportedFieldName(s string) string {
 	}
 }
 
-func unexportedFieldName(s string) string {
+func unexportedName(s string) string {
 	n := lcfirst(s)
 	switch n {
 	case "default":
@@ -330,11 +315,11 @@ func completeInterface(dst io.Writer, ifacename string) {
 
 		// If it's a container type, we need to return iterators
 		fieldType := fv.Type.Name()
-		exportedField := exportedFieldName(fv.Name)
+		exportedField := exportedName(fv.Name)
 		if _, ok := containerTypes[fieldType]; ok {
 			fmt.Fprintf(dst, "\n%s() *%s", exportedField, iteratorName(fv.Type))
 		} else {
-			fmt.Fprintf(dst, "\n%s() %s", exportedFieldName(fv.Name), typname(fv.Type))
+			fmt.Fprintf(dst, "\n%s() %s", exportedName(fv.Name), typname(fv.Type))
 		}
 	}
 
@@ -347,7 +332,7 @@ func completeInterface(dst io.Writer, ifacename string) {
 func generateJSONHandlersFromEntity(e interface{}) error {
 	rv := reflect.ValueOf(e)
 
-	filename := fmt.Sprintf("%s_json_gen.go", strcase.ToSnake(rv.Type().Name()))
+	filename := fmt.Sprintf("%s_json_gen.go", toSnake(rv.Type().Name()))
 	log.Printf("Generating %s", filename)
 
 	var buf bytes.Buffer
@@ -376,7 +361,7 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 				fieldType = typname(fv.Type)
 			}
 
-			fmt.Fprintf(dst, "\n%s %s `json:\"%s\"`", exportedFieldName(fv.Name), fieldType, fv.Tag.Get("json"))
+			fmt.Fprintf(dst, "\n%s %s `json:\"%s\"`", exportedName(fv.Name), fieldType, fv.Tag.Get("json"))
 		}
 		fmt.Fprintf(dst, "\n}")
 
@@ -390,20 +375,20 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 
 			switch {
 			case isContainer(fv.Type.Name()):
-				fmt.Fprintf(dst, "\n%s %s `json:\"%s\"`", exportedFieldName(fv.Name), fv.Type.Name(), fv.Tag.Get("json"))
+				fmt.Fprintf(dst, "\n%s %s `json:\"%s\"`", exportedName(fv.Name), fv.Type.Name(), fv.Tag.Get("json"))
 			case fv.Type.Kind() == reflect.Slice:
-				if _, ok := entityTypes[unexportedFieldName(typname(fv.Type.Elem()))]; ok {
-					fmt.Fprintf(dst, "\n%s []json.RawMessage `json:\"%s\"`", exportedFieldName(fv.Name), fv.Tag.Get("json"))
+				if _, ok := entityTypes[unexportedName(typname(fv.Type.Elem()))]; ok {
+					fmt.Fprintf(dst, "\n%s []json.RawMessage `json:\"%s\"`", exportedName(fv.Name), fv.Tag.Get("json"))
 				}
 			case fv.Type.Kind() == reflect.Map:
-				if _, ok := entityTypes[unexportedFieldName(typname(fv.Type.Elem()))]; ok {
-					fmt.Fprintf(dst, "\n%s map[string]json.RawMessage `json:\"%s\"`", exportedFieldName(fv.Name), fv.Tag.Get("json"))
+				if _, ok := entityTypes[unexportedName(typname(fv.Type.Elem()))]; ok {
+					fmt.Fprintf(dst, "\n%s map[string]json.RawMessage `json:\"%s\"`", exportedName(fv.Name), fv.Tag.Get("json"))
 				}
 			default:
-				if _, ok := entityTypes[unexportedFieldName(typname(fv.Type))]; ok {
-					fmt.Fprintf(dst, "\n%s json.RawMessage `json:\"%s\"`", exportedFieldName(fv.Name), fv.Tag.Get("json"))
+				if _, ok := entityTypes[unexportedName(typname(fv.Type))]; ok {
+					fmt.Fprintf(dst, "\n%s json.RawMessage `json:\"%s\"`", exportedName(fv.Name), fv.Tag.Get("json"))
 				} else {
-					fmt.Fprintf(dst, "\n%s %s `json:\"%s\"`", exportedFieldName(fv.Name), typname(fv.Type), fv.Tag.Get("json"))
+					fmt.Fprintf(dst, "\n%s %s `json:\"%s\"`", exportedName(fv.Name), typname(fv.Type), fv.Tag.Get("json"))
 				}
 			}
 		}
@@ -422,7 +407,7 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 			if fv.Name == "reference" || fv.Tag.Get("json") == "-" {
 				continue
 			}
-			fmt.Fprintf(dst, "\nproxy.%s = v.%s", exportedFieldName(fv.Name), unexportedFieldName(fv.Name))
+			fmt.Fprintf(dst, "\nproxy.%s = v.%s", exportedName(fv.Name), unexportedName(fv.Name))
 		}
 		fmt.Fprintf(dst, "\nreturn json.Marshal(proxy)")
 		fmt.Fprintf(dst, "\n}")
@@ -447,46 +432,46 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 
 			switch {
 			case isContainer(fv.Type.Name()):
-				fmt.Fprintf(dst, "\nv.%s = proxy.%s", unexportedFieldName(fv.Name), exportedFieldName(fv.Name))
+				fmt.Fprintf(dst, "\nv.%s = proxy.%s", unexportedName(fv.Name), exportedName(fv.Name))
 			case fv.Type.Kind() == reflect.Slice:
-				if _, ok := entityTypes[unexportedFieldName(fv.Type.Elem().Name())]; ok {
-					fmt.Fprintf(dst, "\n\nif len(proxy.%s) > 0 {", exportedFieldName(fv.Name))
-					fmt.Fprintf(dst, "\nvar list []%s", exportedFieldName(fv.Type.Elem().Name()))
-					fmt.Fprintf(dst, "\nfor i, pv := range proxy.%s {", exportedFieldName(fv.Name))
-					fmt.Fprintf(dst, "\nvar decoded %s", unexportedFieldName(typname(fv.Type.Elem())))
+				if _, ok := entityTypes[unexportedName(fv.Type.Elem().Name())]; ok {
+					fmt.Fprintf(dst, "\n\nif len(proxy.%s) > 0 {", exportedName(fv.Name))
+					fmt.Fprintf(dst, "\nvar list []%s", exportedName(fv.Type.Elem().Name()))
+					fmt.Fprintf(dst, "\nfor i, pv := range proxy.%s {", exportedName(fv.Name))
+					fmt.Fprintf(dst, "\nvar decoded %s", unexportedName(typname(fv.Type.Elem())))
 					fmt.Fprintf(dst, "\nif err := json.Unmarshal(pv, &decoded); err != nil {")
-					fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to unmasrhal element %%d of field %s`, i)", exportedFieldName(fv.Name))
+					fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to unmasrhal element %%d of field %s`, i)", exportedName(fv.Name))
 					fmt.Fprintf(dst, "\n}")
 					fmt.Fprintf(dst, "\nlist = append(list, &decoded)")
 					fmt.Fprintf(dst, "\n}")
-					fmt.Fprintf(dst, "\nv.%s = list", unexportedFieldName(fv.Name))
+					fmt.Fprintf(dst, "\nv.%s = list", unexportedName(fv.Name))
 					fmt.Fprintf(dst, "\n}")
 				}
 			case fv.Type.Kind() == reflect.Map:
-				if _, ok := entityTypes[unexportedFieldName(fv.Type.Elem().Name())]; ok {
-					fmt.Fprintf(dst, "\n\nif len(proxy.%s) > 0 {", exportedFieldName(fv.Name))
-					fmt.Fprintf(dst, "\nm := make(map[string]%s)", exportedFieldName(fv.Type.Elem().Name()))
-					fmt.Fprintf(dst, "\nfor key, pv := range proxy.%s {", exportedFieldName(fv.Name))
-					fmt.Fprintf(dst, "\nvar decoded %s", unexportedFieldName(typname(fv.Type.Elem())))
+				if _, ok := entityTypes[unexportedName(fv.Type.Elem().Name())]; ok {
+					fmt.Fprintf(dst, "\n\nif len(proxy.%s) > 0 {", exportedName(fv.Name))
+					fmt.Fprintf(dst, "\nm := make(map[string]%s)", exportedName(fv.Type.Elem().Name()))
+					fmt.Fprintf(dst, "\nfor key, pv := range proxy.%s {", exportedName(fv.Name))
+					fmt.Fprintf(dst, "\nvar decoded %s", unexportedName(typname(fv.Type.Elem())))
 					fmt.Fprintf(dst, "\nif err := json.Unmarshal(pv, &decoded); err != nil {")
-					fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to unmasrhal element %%s of field %s`, key)", exportedFieldName(fv.Name))
+					fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to unmasrhal element %%s of field %s`, key)", exportedName(fv.Name))
 					fmt.Fprintf(dst, "\n}")
 					fmt.Fprintf(dst, "\nm[key] = &decoded")
 					fmt.Fprintf(dst, "\n}")
-					fmt.Fprintf(dst, "\nv.%s = m", unexportedFieldName(fv.Name))
+					fmt.Fprintf(dst, "\nv.%s = m", unexportedName(fv.Name))
 					fmt.Fprintf(dst, "\n}")
 				}
 			default:
-				if _, ok := entityTypes[unexportedFieldName(fv.Type.Name())]; ok {
-					fmt.Fprintf(dst, "\n\nif len(proxy.%s) > 0 {", exportedFieldName(fv.Name))
-					fmt.Fprintf(dst, "\nvar decoded %s", unexportedFieldName(typname(fv.Type)))
-					fmt.Fprintf(dst, "\nif err := json.Unmarshal(proxy.%s, &decoded); err != nil {", exportedFieldName(fv.Name))
-					fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to unmarshal field %s`)", exportedFieldName(fv.Name))
+				if _, ok := entityTypes[unexportedName(fv.Type.Name())]; ok {
+					fmt.Fprintf(dst, "\n\nif len(proxy.%s) > 0 {", exportedName(fv.Name))
+					fmt.Fprintf(dst, "\nvar decoded %s", unexportedName(typname(fv.Type)))
+					fmt.Fprintf(dst, "\nif err := json.Unmarshal(proxy.%s, &decoded); err != nil {", exportedName(fv.Name))
+					fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to unmarshal field %s`)", exportedName(fv.Name))
 					fmt.Fprintf(dst, "\n}")
-					fmt.Fprintf(dst, "\n\nv.%s = &decoded", unexportedFieldName(fv.Name))
+					fmt.Fprintf(dst, "\n\nv.%s = &decoded", unexportedName(fv.Name))
 					fmt.Fprintf(dst, "\n}")
 				} else {
-					fmt.Fprintf(dst, "\nv.%s = proxy.%s", unexportedFieldName(fv.Name), exportedFieldName(fv.Name))
+					fmt.Fprintf(dst, "\nv.%s = proxy.%s", unexportedName(fv.Name), exportedName(fv.Name))
 				}
 			}
 		}
@@ -506,9 +491,9 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 	fmt.Fprintf(dst, "\n}")
 	fmt.Fprintf(dst, "\nasserted, ok := resolved.(*%s)", rv.Type().Name())
 	fmt.Fprintf(dst, "\nif !ok {")
-	fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `expected resolved reference to be of type %s, but got %%T`, resolved)", exportedFieldName(rv.Type().Name()))
+	fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `expected resolved reference to be of type %s, but got %%T`, resolved)", exportedName(rv.Type().Name()))
 	fmt.Fprintf(dst, "\n}")
-	fmt.Fprintf(dst, "\nmutator := Mutate%s(v)", exportedFieldName(rv.Type().Name()))
+	fmt.Fprintf(dst, "\nmutator := Mutate%s(v)", exportedName(rv.Type().Name()))
 	for i := 0; i < rv.NumField(); i++ {
 		fv := rv.Type().Field(i)
 		if fv.Tag.Get("resolve") == "-" {
@@ -517,7 +502,7 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 
 		// If this is a container type, it has a corresponding iterator.
 		// Use the iterator to assign new values
-		exported := exportedFieldName(fv.Name)
+		exported := exportedName(fv.Name)
 		fieldType := fv.Type.Name()
 		switch {
 		default:
@@ -553,16 +538,16 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 
 		// if it's an entity, or a container for entity, resolve
 		var resolve bool
-		if _, ok := entityTypes[unexportedFieldName(fv.Type.Name())]; ok {
+		if _, ok := entityTypes[unexportedName(fv.Type.Name())]; ok {
 			resolve = true
 		} else if _, ok := containerTypes[fv.Type.Name()]; ok {
 			resolve = true
 		}
 
 		if resolve {
-			fmt.Fprintf(dst, "\nif v.%s != nil {", unexportedFieldName(fv.Name))
-			fmt.Fprintf(dst, "\nif err := v.%s.Resolve(resolver); err != nil {", unexportedFieldName(fv.Name))
-			fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to resolve %s`)", exportedFieldName(fv.Name))
+			fmt.Fprintf(dst, "\nif v.%s != nil {", unexportedName(fv.Name))
+			fmt.Fprintf(dst, "\nif err := v.%s.Resolve(resolver); err != nil {", unexportedName(fv.Name))
+			fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to resolve %s`)", exportedName(fv.Name))
 			fmt.Fprintf(dst, "\n}")
 			fmt.Fprintf(dst, "\n}")
 		}
@@ -627,7 +612,7 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 
 func generateAccessorsFromEntity(e interface{}) error {
 	rv := reflect.ValueOf(e)
-	filename := fmt.Sprintf("%s_accessors_gen.go", strcase.ToSnake(rv.Type().Name()))
+	filename := fmt.Sprintf("%s_accessors_gen.go", toSnake(rv.Type().Name()))
 	log.Printf("Generating %s", filename)
 
 	var buf bytes.Buffer
@@ -643,8 +628,8 @@ func generateAccessorsFromEntity(e interface{}) error {
 			continue
 		}
 
-		exportedName := exportedFieldName(fv.Name)
-		unexportedName := unexportedFieldName(fv.Name)
+		exportedName := exportedName(fv.Name)
+		unexportedName := unexportedName(fv.Name)
 		fieldType := fv.Type.Name()
 		switch {
 		case isMap(fieldType):
@@ -671,7 +656,7 @@ func generateAccessorsFromEntity(e interface{}) error {
 			fmt.Fprintf(dst, "\n}")
 		default:
 			fmt.Fprintf(dst, "\n\nfunc (v *%s) %s() %s {", structname, exportedName, typname(fv.Type))
-			fmt.Fprintf(dst, "\nreturn v.%s", unexportedFieldName(fv.Name))
+			fmt.Fprintf(dst, "\nreturn v.%s", unexportedName)
 			fmt.Fprintf(dst, "\n}")
 		}
 	}
@@ -691,7 +676,7 @@ func generateAccessorsFromEntity(e interface{}) error {
 
 func generateBuildersFromEntity(e interface{}) error {
 	rv := reflect.ValueOf(e)
-	filename := fmt.Sprintf("%s_builder_gen.go", strcase.ToSnake(rv.Type().Name()))
+	filename := fmt.Sprintf("%s_builder_gen.go", toSnake(rv.Type().Name()))
 	log.Printf("Generating %s", filename)
 
 	var buf bytes.Buffer
@@ -699,7 +684,7 @@ func generateBuildersFromEntity(e interface{}) error {
 
 	writePreamble(dst)
 
-	ifacename := ucfirst(rv.Type().Name())
+	ifacename := exportedName(rv.Type().Name())
 	structname := rv.Type().Name()
 
 	fmt.Fprintf(dst, "\n\n// %sBuilder is used to build an instance of %s. The user must", ifacename, ifacename)
@@ -742,7 +727,7 @@ func generateBuildersFromEntity(e interface{}) error {
 	fmt.Fprintf(dst, "\n\n// New%s creates a new builder object for %s", ifacename, ifacename)
 	fmt.Fprintf(dst, "\nfunc New%s(", ifacename)
 	for i, fv := range requireds {
-		fmt.Fprintf(dst, "%s %s", unexportedFieldName(fv.Name), typname(fv.Type))
+		fmt.Fprintf(dst, "%s %s", unexportedName(fv.Name), typname(fv.Type))
 		if i < len(requireds)-1 {
 			fmt.Fprintf(dst, ", ")
 		}
@@ -757,18 +742,18 @@ func generateBuildersFromEntity(e interface{}) error {
 		fmt.Fprintf(dst, "\n%s: %s,", fv.Name, fv.Tag.Get("default"))
 	}
 	for _, fv := range requireds {
-		fmt.Fprintf(dst, "\n%s: %s,", fv.Name, unexportedFieldName(fv.Name))
+		fmt.Fprintf(dst, "\n%s: %s,", fv.Name, unexportedName(fv.Name))
 	}
 	fmt.Fprintf(dst, "\n},")
 	fmt.Fprintf(dst, "\n}")
 	fmt.Fprintf(dst, "\n}")
 
 	for _, fv := range optionals {
-		fmt.Fprintf(dst, "\n\n// %s sets the %s field for object %s.", exportedFieldName(fv.Name), exportedFieldName(fv.Name), ifacename)
+		fmt.Fprintf(dst, "\n\n// %s sets the %s field for object %s.", exportedName(fv.Name), exportedName(fv.Name), ifacename)
 		if _, ok := hasDefault[fv.Name]; ok {
 			fmt.Fprintf(dst, " If this is not called,\n// a default value (%s) is assigned to this field", fv.Tag.Get("default"))
 		}
-		fmt.Fprintf(dst, "\nfunc (b *%sBuilder) %s(v %s) *%sBuilder {", ifacename, exportedFieldName(fv.Name), typname(fv.Type), ifacename)
+		fmt.Fprintf(dst, "\nfunc (b *%sBuilder) %s(v %s) *%sBuilder {", ifacename, exportedName(fv.Name), typname(fv.Type), ifacename)
 		fmt.Fprintf(dst, "\nb.target.%s = v", fv.Name)
 		fmt.Fprintf(dst, "\nreturn b")
 		fmt.Fprintf(dst, "\n}")
@@ -788,7 +773,7 @@ func generateBuildersFromEntity(e interface{}) error {
 
 func generateMutatorsFromEntity(e interface{}) error {
 	rv := reflect.ValueOf(e)
-	filename := fmt.Sprintf("%s_mutator_gen.go", strcase.ToSnake(rv.Type().Name()))
+	filename := fmt.Sprintf("%s_mutator_gen.go", toSnake(rv.Type().Name()))
 	log.Printf("Generating %s", filename)
 
 	var buf bytes.Buffer
@@ -797,7 +782,7 @@ func generateMutatorsFromEntity(e interface{}) error {
 	writePreamble(dst)
 	writeImports(dst, []string{"log"})
 
-	ifacename := ucfirst(rv.Type().Name())
+	ifacename := exportedName(rv.Type().Name())
 	structname := rv.Type().Name()
 
 	fmt.Fprintf(dst, "\n\n// %sMutator is used to build an instance of %s. The user must", ifacename, ifacename)
@@ -828,8 +813,8 @@ func generateMutatorsFromEntity(e interface{}) error {
 			continue
 		}
 
-		exportedName := exportedFieldName(fv.Name)
-		unexportedName := unexportedFieldName(fv.Name)
+		exportedName := exportedName(fv.Name)
+		unexportedName := unexportedName(fv.Name)
 		fieldType := fv.Type.Name()
 		switch {
 		case isMap(fieldType):
@@ -881,7 +866,7 @@ func generateClonersFromEntity(entities []interface{}) error {
 
 	for _, e := range entities {
 		rv := reflect.ValueOf(e)
-		fmt.Fprintf(dst, "\n\nfunc (v *%s) Clone() %s {", rv.Type().Name(), ucfirst(rv.Type().Name()))
+		fmt.Fprintf(dst, "\n\nfunc (v *%s) Clone() %s {", rv.Type().Name(), exportedName(rv.Type().Name()))
 		fmt.Fprintf(dst, "\nvar dst %s", rv.Type().Name())
 		fmt.Fprintf(dst, "\ndst = *v")
 		fmt.Fprintf(dst, "\nreturn &dst")
@@ -1004,7 +989,7 @@ func generateIteratorsFromEntity(entities []interface{}) error {
 		if rv.Kind() == reflect.Map {
 			writeMapIterator(dst, rv.Type())
 		} else {
-			ifacename := strings.TrimSuffix(exportedFieldName(rv.Type().Name()), "List")
+			ifacename := strings.TrimSuffix(exportedName(rv.Type().Name()), "List")
 			writeListIterator(dst, ifacename, ifacename)
 		}
 	}
@@ -1015,7 +1000,7 @@ func generateIteratorsFromEntity(entities []interface{}) error {
 func generateContainers(c interface{}) error {
 	rv := reflect.ValueOf(c)
 
-	filename := fmt.Sprintf("%s_gen.go", strcase.ToSnake(rv.Type().Name()))
+	filename := fmt.Sprintf("%s_gen.go", toSnake(rv.Type().Name()))
 	log.Printf("Generating %s", filename)
 
 	var buf bytes.Buffer
@@ -1033,7 +1018,7 @@ func generateContainers(c interface{}) error {
 		fmt.Fprintf(dst, "\n}")
 
 		fmt.Fprintf(dst, "\n\nfunc (v %s) Resolve(resolver *Resolver) error {", typeName)
-		if _, ok := entityTypes[unexportedFieldName(rv.Type().Elem().Name())]; ok {
+		if _, ok := entityTypes[unexportedName(rv.Type().Elem().Name())]; ok {
 			fmt.Fprintf(dst, "\nif len(v) > 0 {")
 			fmt.Fprintf(dst, "\nfor i, elem := range v {")
 			fmt.Fprintf(dst, "\nif err := elem.Resolve(resolver); err != nil {")
@@ -1046,22 +1031,22 @@ func generateContainers(c interface{}) error {
 		fmt.Fprintf(dst, "\n}")
 
 		if rv.Type().Elem().Name() != "" && rv.Type().Elem().Kind() == reflect.Interface {
-		fmt.Fprintf(dst, "\n\nfunc (v *%s) UnmarshalJSON(data []byte) error {", typeName)
-		fmt.Fprintf(dst, "\nvar proxy []*%s", unexportedFieldName(typname(rv.Type().Elem())))
-		fmt.Fprintf(dst, "\nif err := json.Unmarshal(data, &proxy); err != nil {")
-		fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to unmarshal`)")
-		fmt.Fprintf(dst, "\n}")
-		fmt.Fprintf(dst, "\n\nif len(proxy) == 0 {")
-		fmt.Fprintf(dst, "\n*v = %s(nil)", typeName)
-		fmt.Fprintf(dst, "\nreturn nil")
-		fmt.Fprintf(dst, "\n}")
-		fmt.Fprintf(dst, "\n\ntmp := make(%s, len(proxy))", typeName)
-		fmt.Fprintf(dst, "\nfor i, value := range proxy {")
-		fmt.Fprintf(dst, "\ntmp[i] = value")
-		fmt.Fprintf(dst, "\n}")
-		fmt.Fprintf(dst, "\n*v = tmp")
-		fmt.Fprintf(dst, "\nreturn nil")
-		fmt.Fprintf(dst, "\n}")
+			fmt.Fprintf(dst, "\n\nfunc (v *%s) UnmarshalJSON(data []byte) error {", typeName)
+			fmt.Fprintf(dst, "\nvar proxy []*%s", unexportedName(typname(rv.Type().Elem())))
+			fmt.Fprintf(dst, "\nif err := json.Unmarshal(data, &proxy); err != nil {")
+			fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to unmarshal`)")
+			fmt.Fprintf(dst, "\n}")
+			fmt.Fprintf(dst, "\n\nif len(proxy) == 0 {")
+			fmt.Fprintf(dst, "\n*v = %s(nil)", typeName)
+			fmt.Fprintf(dst, "\nreturn nil")
+			fmt.Fprintf(dst, "\n}")
+			fmt.Fprintf(dst, "\n\ntmp := make(%s, len(proxy))", typeName)
+			fmt.Fprintf(dst, "\nfor i, value := range proxy {")
+			fmt.Fprintf(dst, "\ntmp[i] = value")
+			fmt.Fprintf(dst, "\n}")
+			fmt.Fprintf(dst, "\n*v = tmp")
+			fmt.Fprintf(dst, "\nreturn nil")
+			fmt.Fprintf(dst, "\n}")
 		}
 	case isMap(rv.Type().Name()):
 		fmt.Fprintf(dst, "\n\nfunc (v *%s) Clear() error {", rv.Type().Name())
@@ -1069,7 +1054,7 @@ func generateContainers(c interface{}) error {
 		fmt.Fprintf(dst, "\nreturn nil")
 		fmt.Fprintf(dst, "\n}")
 		fmt.Fprintf(dst, "\n\nfunc (v %s) Resolve(resolver *Resolver) error {", rv.Type().Name())
-		if _, ok := entityTypes[unexportedFieldName(rv.Type().Elem().Name())]; ok {
+		if _, ok := entityTypes[unexportedName(rv.Type().Elem().Name())]; ok {
 			fmt.Fprintf(dst, "\nif len(v) > 0 {")
 			fmt.Fprintf(dst, "\nfor name, elem := range v {")
 			fmt.Fprintf(dst, "\nif err := elem.Resolve(resolver); err != nil {")
@@ -1107,7 +1092,7 @@ func generateContainers(c interface{}) error {
 
 		if rv.Type().Elem().Name() != "" && rv.Type().Elem().Kind() == reflect.Interface {
 			fmt.Fprintf(dst, "\n\nfunc (v *%s) UnmarshalJSON(data []byte) error {", typeName)
-			fmt.Fprintf(dst, "\nvar proxy map[%s]*%s", typname(rv.Type().Key()), unexportedFieldName(typname(rv.Type().Elem())))
+			fmt.Fprintf(dst, "\nvar proxy map[%s]*%s", typname(rv.Type().Key()), unexportedName(typname(rv.Type().Elem())))
 			fmt.Fprintf(dst, "\nif err := json.Unmarshal(data, &proxy); err != nil {")
 			fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to unmarshal`)")
 			fmt.Fprintf(dst, "\n}")
@@ -1118,7 +1103,7 @@ func generateContainers(c interface{}) error {
 			case "ParameterMap", "SecuritySchemeMap":
 			default:
 				// assume they all have setName(string)
-				if isEntity(unexportedFieldName(rv.Type().Elem().Name())) {
+				if isEntity(unexportedName(rv.Type().Elem().Name())) {
 					fmt.Fprintf(dst, "\nvalue.setName(name)")
 				}
 			}
