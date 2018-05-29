@@ -124,7 +124,7 @@ func TestOpenAPI(t *testing.T) {
 	})
 }
 
-func TestExtensions(t *testing.T) {
+func TestParseExtensions(t *testing.T) {
 	srcFile := filepath.Join("..", "spec", "examples", "v2.0", "petstore-expanded.yaml")
 	data, err := ioutil.ReadFile(srcFile)
 	if !assert.NoError(t, err, `reading from %s should succeed`, srcFile) {

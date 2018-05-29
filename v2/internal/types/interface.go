@@ -1,7 +1,5 @@
 package types
 
-import "encoding/json"
-
 const defaultSwaggerVersion = "2.0"
 const refOnlyTmpl = `{"$ref":%s}`
 
@@ -48,7 +46,7 @@ const (
 	Null    PrimitiveType = "null"
 )
 
-type Extensions map[string]json.RawMessage
+type Extensions map[string]interface{}
 
 type OpenAPI = Swagger
 type Swagger interface {
@@ -106,7 +104,7 @@ type Paths interface {
 }
 
 type paths struct {
-	paths PathItemMap `json:"-"`
+	paths PathItemMap `json:"-" mutator:"-"`
 }
 
 type PathItem interface {
@@ -115,8 +113,8 @@ type PathItem interface {
 }
 
 type pathItem struct {
-	name string `json:"-"`
-	path string `json:"-"`
+	name string `json:"-" builder:"-" mutator:"-" resolve:"-"`
+	path string `json:"-" builder:"-" mutator:"-" resolve:"-"`
 	// reference string `json:"$ref"`
 	get        Operation     `json:"get,omitempty"`
 	put        Operation     `json:"put,omitempty"`
@@ -129,9 +127,13 @@ type pathItem struct {
 }
 
 type Operation interface {
+	//gen:lazy setPathItem(PathItem)
+	//gen:lazy setVerb(string)
 }
 
 type operation struct {
+	verb         string                  `json:"-" builder:"-" mutator:"-" resolve:"-"`
+	pathItem     PathItem                `json:"-" builder:"-" mutator:"-" resolve:"-"`
 	tags         TagList                 `json:"tags,omitempty"`
 	summary      string                  `json:"summary,omitempty"`
 	description  string                  `json:"description,omitempty"`
@@ -335,7 +337,7 @@ type ExampleMap map[ExampleMapKey]interface{}
 type HeaderMapKey = string
 type HeaderMap map[HeaderMapKey]Header
 type InterfaceList []interface{}
-type MIMETypeList []string
+type MIMETypeList []MIMEType
 type ParameterList []Parameter
 type ParameterMapKey = string
 type ParameterMap map[ParameterMapKey]Parameter
