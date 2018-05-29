@@ -59,8 +59,7 @@ var entities = []interface{}{
 	securityRequirement{},
 	tag{},
 }
-var postUnmarshalJSONHooks = map[string]struct{}{
-}
+var postUnmarshalJSONHooks = map[string]struct{}{}
 var entityTypes = make(map[string]interface{})
 var containerTypes = make(map[string]interface{})
 var validators = make(map[string]struct{})
@@ -261,7 +260,7 @@ func completeInterface(dst io.Writer, ifacename string) {
 	fmt.Fprintf(dst, "\nClone() %s", ifacename)
 	fmt.Fprintf(dst, "\nIsUnresolved() bool")
 	fmt.Fprintf(dst, "\nMarshalJSON() ([]byte, error)")
-	fmt.Fprintf(dst, "\nResolve(*Resolver) error")
+	fmt.Fprintf(dst, "\nReference() string")
 	fmt.Fprintf(dst, "\nValidate() error")
 }
 
@@ -293,6 +292,7 @@ var importDummies = map[string]string{
 	"github.com/pkg/errors": "errors.Cause",
 	"encoding/json":         "json.Unmarshal",
 	"log":                   "log.Printf",
+	"sort":                  "sort.Strings",
 }
 
 func writeImports(dst io.Writer, pkgs []string) {
@@ -347,7 +347,11 @@ func copyInterface() error {
 		fmt.Fprintf(dst, "\n%s", txt)
 		if strings.HasPrefix(txt, "type ") && strings.HasSuffix(txt, " interface {") {
 			i := strings.Index(txt[5:], " ")
-			completeInterface(dst, txt[5:5+i])
+			switch txt[5 : 5+i] {
+			case "ResolveError", "Resolver":
+			default:
+				completeInterface(dst, txt[5:5+i])
+			}
 		} else if strings.HasPrefix(txt, "type ") && strings.HasSuffix(txt, " struct {") {
 			i := strings.Index(txt[5:], " ")
 			if isEntity(txt[5 : 5+i]) {
@@ -632,6 +636,7 @@ func generateAccessorsFromEntity(e interface{}) error {
 	var dst io.Writer = &buf
 
 	writePreamble(dst)
+	writeImports(dst, []string{"sort"})
 
 	structname := rv.Type().Name()
 
@@ -648,8 +653,14 @@ func generateAccessorsFromEntity(e interface{}) error {
 		case isMap(fieldType):
 			iteratorName := iteratorName(fv.Type)
 			fmt.Fprintf(dst, "\n\nfunc (v *%s) %s() *%s {", structname, exportedName, iteratorName)
+			fmt.Fprintf(dst, "\nvar keys []string")
+			fmt.Fprintf(dst, "\nfor key := range v.%s {", unexportedName)
+			fmt.Fprintf(dst, "\nkeys = append(keys, key)")
+			fmt.Fprintf(dst, "\n}")
+			fmt.Fprintf(dst, "\nsort.Strings(keys)")
 			fmt.Fprintf(dst, "\nvar items []interface{}")
-			fmt.Fprintf(dst, "\nfor key, item := range v.%s {", unexportedName)
+			fmt.Fprintf(dst, "\nfor _, key := range keys {")
+			fmt.Fprintf(dst, "\nitem := v.%s[key]", unexportedName)
 			fmt.Fprintf(dst, "\nitems = append(items, &mapIteratorItem{key: key, item: item})")
 			fmt.Fprintf(dst, "\n}")
 			fmt.Fprintf(dst, "\nvar iter %s", iteratorName)
@@ -865,77 +876,85 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 		fmt.Fprintf(dst, "\n}")
 	}
 
-	fmt.Fprintf(dst, "\n\nfunc (v *%s) Resolve(resolver *Resolver) error {", rv.Type().Name())
-	fmt.Fprintf(dst, "\nif v.IsUnresolved() {")
-	fmt.Fprintf(dst, "\n\nresolved, err := resolver.Resolve(v.Reference())")
-	fmt.Fprintf(dst, "\nif err != nil {")
-	fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to resolve reference %%s`, v.Reference())")
-	fmt.Fprintf(dst, "\n}")
-	fmt.Fprintf(dst, "\nasserted, ok := resolved.(*%s)", rv.Type().Name())
-	fmt.Fprintf(dst, "\nif !ok {")
-	fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `expected resolved reference to be of type %s, but got %%T`, resolved)", exportedName(rv.Type().Name()))
-	fmt.Fprintf(dst, "\n}")
-	fmt.Fprintf(dst, "\nmutator := Mutate%s(v)", exportedName(rv.Type().Name()))
-	for i := 0; i < rv.NumField(); i++ {
-		fv := rv.Type().Field(i)
-		if fv.Tag.Get("resolve") == "-" {
-			continue
-		}
+	/*
+		fmt.Fprintf(dst, "\n\nfunc (v *%s) Resolve(resolver Resolver) error {", rv.Type().Name())
+		fmt.Fprintf(dst, "\nif v.IsUnresolved() {")
+		fmt.Fprintf(dst, "\n\nresolved, err := resolver.Resolve(v.Reference())")
+		fmt.Fprintf(dst, "\nif err != nil {")
+		fmt.Fprintf(dst, "\nif re, ok := err.(ResolveError); !ok || ok && re.Fatal() {")
+		fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to resolve reference %%s`, v.Reference())")
+		fmt.Fprintf(dst, "\n}")
+		fmt.Fprintf(dst, "\n}")
+		fmt.Fprintf(dst, "\nif resolved != nil { // can happen if !re.Fatal()")
+		fmt.Fprintf(dst, "\nasserted, ok := resolved.(*%s)", rv.Type().Name())
+		fmt.Fprintf(dst, "\nif !ok {")
+		fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `expected resolved reference to be of type %s, but got %%T`, resolved)", exportedName(rv.Type().Name()))
+		fmt.Fprintf(dst, "\n}")
+		fmt.Fprintf(dst, "\nmutator := Mutate%s(v)", exportedName(rv.Type().Name()))
+		for i := 0; i < rv.NumField(); i++ {
+			fv := rv.Type().Field(i)
+			if fv.Tag.Get("resolve") == "-" {
+				continue
+			}
 
-		// If this is a container type, it has a corresponding iterator.
-		// Use the iterator to assign new values
-		exported := exportedName(fv.Name)
-		fieldType := fv.Type.Name()
-		switch {
-		default:
-			fmt.Fprintf(dst, "\nmutator.%s(asserted.%s())", exported, exported)
-		case isContainer(fieldType):
+			// If this is a container type, it has a corresponding iterator.
+			// Use the iterator to assign new values
+			exported := exportedName(fv.Name)
+			fieldType := fv.Type.Name()
 			switch {
-			case isMap(fieldType):
-				fmt.Fprintf(dst, "\nfor iter := asserted.%s(); iter.Next(); {", exported)
-				fmt.Fprintf(dst, "\nkey, item := iter.Item()")
-				fmt.Fprintf(dst, "\nmutator.%s(key, item)", inflection.Singular(exported))
-				fmt.Fprintf(dst, "\n}")
-			case isList(fieldType):
-				fmt.Fprintf(dst, "\nfor iter := asserted.%s(); iter.Next(); {", exported)
-				fmt.Fprintf(dst, "\nitem := iter.Item()")
-				fmt.Fprintf(dst, "\nmutator.%s(item)", inflection.Singular(exported))
-				fmt.Fprintf(dst, "\n}")
 			default:
-				return errors.Errorf(`unknown cotainer %s`, exported)
+				fmt.Fprintf(dst, "\nmutator.%s(asserted.%s())", exported, exported)
+			case isContainer(fieldType):
+				switch {
+				case isMap(fieldType):
+					fmt.Fprintf(dst, "\nfor iter := asserted.%s(); iter.Next(); {", exported)
+					fmt.Fprintf(dst, "\nkey, item := iter.Item()")
+					fmt.Fprintf(dst, "\nmutator.%s(key, item)", inflection.Singular(exported))
+					fmt.Fprintf(dst, "\n}")
+				case isList(fieldType):
+					fmt.Fprintf(dst, "\nfor iter := asserted.%s(); iter.Next(); {", exported)
+					fmt.Fprintf(dst, "\nitem := iter.Item()")
+					fmt.Fprintf(dst, "\nmutator.%s(item)", inflection.Singular(exported))
+					fmt.Fprintf(dst, "\n}")
+				default:
+					return errors.Errorf(`unknown cotainer %s`, exported)
+				}
 			}
 		}
-	}
-	fmt.Fprintf(dst, "\nif err := mutator.Do(); err != nil {")
-	fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to mutate`)")
-	fmt.Fprintf(dst, "\n}")
-	fmt.Fprintf(dst, "\nv.resolved = true")
-	fmt.Fprintf(dst, "\n}")
+		fmt.Fprintf(dst, "\nif err := mutator.Do(); err != nil {")
+		fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to mutate`)")
+		fmt.Fprintf(dst, "\n}")
+		fmt.Fprintf(dst, "\nv.resolved = true")
+		fmt.Fprintf(dst, "\n}")
+		fmt.Fprintf(dst, "\n}")
 
-	for i := 0; i < rv.NumField(); i++ {
-		fv := rv.Type().Field(i)
-		if fv.Name == "reference" || fv.Tag.Get("resolve") == "-" {
-			continue
-		}
+		for i := 0; i < rv.NumField(); i++ {
+			fv := rv.Type().Field(i)
+			if fv.Name == "reference" || fv.Tag.Get("resolve") == "-" {
+				continue
+			}
 
-		// if it's an entity, or a container for entity, resolve
-		var resolve bool
-		if _, ok := entityTypes[unexportedName(fv.Type.Name())]; ok {
-			resolve = true
-		} else if _, ok := containerTypes[fv.Type.Name()]; ok {
-			resolve = true
-		}
+			// if it's an entity, or a container for entity, resolve
+			var resolve bool
+			if _, ok := entityTypes[unexportedName(fv.Type.Name())]; ok {
+				resolve = true
+			} else if _, ok := containerTypes[fv.Type.Name()]; ok {
+				resolve = true
+			}
 
-		if resolve {
-			fmt.Fprintf(dst, "\nif v.%s != nil {", unexportedName(fv.Name))
-			fmt.Fprintf(dst, "\nif err := v.%s.Resolve(resolver); err != nil {", unexportedName(fv.Name))
-			fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to resolve %s`)", exportedName(fv.Name))
-			fmt.Fprintf(dst, "\n}")
-			fmt.Fprintf(dst, "\n}")
+			if resolve {
+				fmt.Fprintf(dst, "\nif v.%s != nil {", unexportedName(fv.Name))
+				fmt.Fprintf(dst, "\nif err := v.%s.Resolve(resolver); err != nil {", unexportedName(fv.Name))
+				fmt.Fprintf(dst, "\nif re, ok := err.(ResolveError); !ok || ok && re.Fatal() {")
+				fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to resolve %s`)", exportedName(fv.Name))
+				fmt.Fprintf(dst, "\n}")
+				fmt.Fprintf(dst, "\n}")
+				fmt.Fprintf(dst, "\n}")
+			}
 		}
-	}
-	fmt.Fprintf(dst, "\nreturn nil")
-	fmt.Fprintf(dst, "\n}")
+		fmt.Fprintf(dst, "\nreturn nil")
+		fmt.Fprintf(dst, "\n}")
+	*/
 
 	fmt.Fprintf(dst, "\n\nfunc (v *%s) QueryJSON(path string) (ret interface{}, ok bool)  {", rv.Type().Name())
 	fmt.Fprintf(dst, "\npath = strings.TrimLeftFunc(path, func(r rune) bool { return r == '#' || r == '/' })")
@@ -1039,6 +1058,7 @@ func generateMutatorFromEntity(e interface{}) error {
 		fieldType := fv.Type.Name()
 		switch {
 		case isMap(fieldType):
+			log.Printf(" * Generating map element mutator for %s", fieldType)
 			fmt.Fprintf(dst, "\n\nfunc (b *%sMutator) Clear%s() *%sMutator {", ifacename, exportedName, ifacename)
 			fmt.Fprintf(dst, "\nb.proxy.%s.Clear()", unexportedName)
 			fmt.Fprintf(dst, "\nreturn b")
@@ -1054,6 +1074,7 @@ func generateMutatorFromEntity(e interface{}) error {
 			fmt.Fprintf(dst, "\nreturn b")
 			fmt.Fprintf(dst, "\n}")
 		case isList(fieldType):
+			log.Printf(" * Generating list element mutator for %s", fieldType)
 			fmt.Fprintf(dst, "\n\nfunc (b *%sMutator) Clear%s() *%sMutator {", ifacename, exportedName, ifacename)
 			fmt.Fprintf(dst, "\nb.proxy.%s.Clear()", unexportedName)
 			fmt.Fprintf(dst, "\nreturn b")
@@ -1104,18 +1125,22 @@ func generateContainer(c interface{}) error {
 		fmt.Fprintf(dst, "\nreturn nil")
 		fmt.Fprintf(dst, "\n}")
 
-		fmt.Fprintf(dst, "\n\nfunc (v %s) Resolve(resolver *Resolver) error {", typeName)
-		if _, ok := entityTypes[unexportedName(rv.Type().Elem().Name())]; ok {
-			fmt.Fprintf(dst, "\nif len(v) > 0 {")
-			fmt.Fprintf(dst, "\nfor i, elem := range v {")
-			fmt.Fprintf(dst, "\nif err := elem.Resolve(resolver); err != nil {")
-			fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to resolve %s (index = %%d)`, i)", rv.Type().Name())
+		/*
+			fmt.Fprintf(dst, "\n\nfunc (v %s) Resolve(resolver Resolver) error {", typeName)
+			if _, ok := entityTypes[unexportedName(rv.Type().Elem().Name())]; ok {
+				fmt.Fprintf(dst, "\nif len(v) > 0 {")
+				fmt.Fprintf(dst, "\nfor i, elem := range v {")
+				fmt.Fprintf(dst, "\nif err := elem.Resolve(resolver); err != nil {")
+				fmt.Fprintf(dst, "\nif re, ok := err.(ResolveError); !ok || ok && re.Fatal() {")
+				fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to resolve %s (index = %%d)`, i)", rv.Type().Name())
+				fmt.Fprintf(dst, "\n}")
+				fmt.Fprintf(dst, "\n}")
+				fmt.Fprintf(dst, "\n}")
+				fmt.Fprintf(dst, "\n}")
+			}
+			fmt.Fprintf(dst, "\nreturn nil")
 			fmt.Fprintf(dst, "\n}")
-			fmt.Fprintf(dst, "\n}")
-			fmt.Fprintf(dst, "\n}")
-		}
-		fmt.Fprintf(dst, "\nreturn nil")
-		fmt.Fprintf(dst, "\n}")
+		*/
 
 		if rv.Type().Elem().Name() != "" && rv.Type().Elem().Kind() == reflect.Interface {
 			fmt.Fprintf(dst, "\n\nfunc (v *%s) UnmarshalJSON(data []byte) error {", typeName)
@@ -1140,18 +1165,22 @@ func generateContainer(c interface{}) error {
 		fmt.Fprintf(dst, "\n*v = make(%s)", rv.Type().Name())
 		fmt.Fprintf(dst, "\nreturn nil")
 		fmt.Fprintf(dst, "\n}")
-		fmt.Fprintf(dst, "\n\nfunc (v %s) Resolve(resolver *Resolver) error {", rv.Type().Name())
-		if _, ok := entityTypes[unexportedName(rv.Type().Elem().Name())]; ok {
-			fmt.Fprintf(dst, "\nif len(v) > 0 {")
-			fmt.Fprintf(dst, "\nfor name, elem := range v {")
-			fmt.Fprintf(dst, "\nif err := elem.Resolve(resolver); err != nil {")
-			fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to resolve %s (key = %%s)`, name)", rv.Type().Name())
+		/*
+			fmt.Fprintf(dst, "\n\nfunc (v %s) Resolve(resolver Resolver) error {", rv.Type().Name())
+			if _, ok := entityTypes[unexportedName(rv.Type().Elem().Name())]; ok {
+				fmt.Fprintf(dst, "\nif len(v) > 0 {")
+				fmt.Fprintf(dst, "\nfor name, elem := range v {")
+				fmt.Fprintf(dst, "\nif err := elem.Resolve(resolver); err != nil {")
+				fmt.Fprintf(dst, "\nif re, ok := err.(ResolveError); !ok || ok && re.Fatal() {")
+				fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to resolve %s (key = %%s)`, name)", rv.Type().Name())
+				fmt.Fprintf(dst, "\n}")
+				fmt.Fprintf(dst, "\n}")
+				fmt.Fprintf(dst, "\n}")
+				fmt.Fprintf(dst, "\n}")
+			}
+			fmt.Fprintf(dst, "\nreturn nil")
 			fmt.Fprintf(dst, "\n}")
-			fmt.Fprintf(dst, "\n}")
-			fmt.Fprintf(dst, "\n}")
-		}
-		fmt.Fprintf(dst, "\nreturn nil")
-		fmt.Fprintf(dst, "\n}")
+		*/
 
 		fmt.Fprintf(dst, "\n\nfunc (v %s) QueryJSON(path string) (ret interface{}, ok bool) {", rv.Type().Name())
 		fmt.Fprintf(dst, "\nif path == `` {")

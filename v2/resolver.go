@@ -5,20 +5,20 @@ import (
 	"sync"
 )
 
-type Resolver struct {
+type resolver struct {
 	mu    sync.RWMutex
 	cache map[string]interface{}
 	ctx   Swagger
 }
 
-func NewResolver(ctx Swagger) *Resolver {
-	return &Resolver{
+func NewResolver(ctx Swagger) Resolver {
+	return &resolver{
 		cache: make(map[string]interface{}),
 		ctx:   ctx,
 	}
 }
 
-func (r *Resolver) Resolve(path string) (interface{}, error) {
+func (r *resolver) Resolve(path string) (interface{}, error) {
 	r.mu.RLock()
 	if v, ok := r.cache[path]; ok {
 		defer r.mu.RUnlock()

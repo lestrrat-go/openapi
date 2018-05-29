@@ -1,5 +1,18 @@
 package types
 
+type ResolveError interface {
+	Fatal() bool
+}
+
+type Resolver interface {
+	// Resolves a JSON reference. In very rare occasions where
+	// you do not want to actually resolve the value but allow
+	// processing to continue, you may return an error value
+	// that implements ResolveError and return false for the
+	// `Fatal` method.
+	Resolve(string) (interface{}, error)
+}
+
 const defaultSwaggerVersion = "2.0"
 const refOnlyTmpl = `{"$ref":%s}`
 
@@ -108,6 +121,7 @@ type paths struct {
 }
 
 type PathItem interface {
+	//gen:lazy Operations() *OperationListIterator
 	//gen:lazy setName(string)
 	//gen:lazy setPath(string)
 }
@@ -116,13 +130,13 @@ type pathItem struct {
 	name string `json:"-" builder:"-" mutator:"-" resolve:"-"`
 	path string `json:"-" builder:"-" mutator:"-" resolve:"-"`
 	// reference string `json:"$ref"`
-	get        Operation     `json:"get,omitempty"`
-	put        Operation     `json:"put,omitempty"`
-	post       Operation     `json:"post,omitempty"`
-	delete     Operation     `json:"delete,omitempty"`
-	options    Operation     `json:"options,omitempty"`
-	head       Operation     `json:"head,omitempty"`
-	patch      Operation     `json:"patch,omitempty"`
+	get        Operation     `json:"get,omitempty" builder:"-" mutator:"-"`
+	put        Operation     `json:"put,omitempty" builder:"-" mutator:"-"`
+	post       Operation     `json:"post,omitempty" builder:"-" mutator:"-"`
+	delete     Operation     `json:"delete,omitempty" builder:"-" mutator:"-"`
+	options    Operation     `json:"options,omitempty" builder:"-" mutator:"-"`
+	head       Operation     `json:"head,omitempty" builder:"-" mutator:"-"`
+	patch      Operation     `json:"patch,omitempty" builder:"-" mutator:"-"`
 	parameters ParameterList `json:"parameters,omitempty"`
 }
 
@@ -134,7 +148,7 @@ type Operation interface {
 type operation struct {
 	verb         string                  `json:"-" builder:"-" mutator:"-" resolve:"-"`
 	pathItem     PathItem                `json:"-" builder:"-" mutator:"-" resolve:"-"`
-	tags         TagList                 `json:"tags,omitempty"`
+	tags         StringList              `json:"tags,omitempty"`
 	summary      string                  `json:"summary,omitempty"`
 	description  string                  `json:"description,omitempty"`
 	externalDocs ExternalDocumentation   `json:"externalDocs,omitempty"`
