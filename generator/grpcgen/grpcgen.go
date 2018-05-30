@@ -1,5 +1,21 @@
 package grpcgen
 
+// In schema-like objects such as Schema, Parameter, and Items, we
+// respect an extension called `x-proto-type`. This value should
+// be a hash:
+//
+// "x-proto-type": {
+//   "name": "MyMessage"
+// }
+//
+// If the type requires importing from another library, you should
+// specify the "import" field:
+//
+// "x-proto-type": {
+//   "name": "google.protobuf.Timestamp",
+//   "import": "google/protobuf/timestamp.proto"
+// }
+
 import (
 	"bufio"
 	"bytes"
@@ -8,7 +24,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -35,6 +50,7 @@ type SchemaLike interface {
 	UniqueItems() bool
 	Enum() *openapi.InterfaceListIterator
 	MultipleOf() float64
+	Extension(string) (interface{}, bool)
 	Extensions() *openapi.ExtensionsIterator
 	Reference() string
 }
@@ -241,18 +257,6 @@ func compileMessage(ctx *genCtx, name string, s openapi.Schema) (message *Messag
 	return &m, nil
 }
 
-var rxEmbeddedProtobufType = regexp.MustCompile(`^([\w/]+\.proto)#/([\w\.]+)$`)
-
-func parseEmbeddedProtobufType(s string) (string, string, error) {
-	// something/that/looks/like.proto#/protobuf.type.name
-	matches := rxEmbeddedProtobufType.FindAllStringSubmatch(s, -1)
-	if len(matches) != 1 || len(matches[0]) != 3 {
-		return "", "", errors.Errorf(`failed to parse %s as embedded protocol buffers type`, s)
-	}
-
-	return matches[0][1], matches[0][2], nil
-}
-
 func compileArrayElement(ctx *genCtx, s SchemaLike) (*Message, error) {
 	if ref := s.Reference(); ref != "" {
 		// if ref looks like it's from #/definitions, cheat
@@ -265,34 +269,41 @@ func compileArrayElement(ctx *genCtx, s SchemaLike) (*Message, error) {
 }
 
 func grpcType(ctx *genCtx, s SchemaLike) (string, bool, error) {
-
 	var typ string
 	var repeated bool
 	// If this is a reference, resolve it
 	if ref := s.Reference(); ref != "" {
 		v, err := ctx.resolver.Resolve(ref)
 		if err != nil {
-			if re, ok := err.(openapi.ResolveError); !ok || ok && re.Fatal() {
-				return "", false, errors.Wrap(err, `failed to resolve referece`)
-			}
+			return "", false, errors.Wrap(err, `failed to resolve referece`)
 		}
 
-		if v == nil {
-			// this may be a special case where the gRPC type is encoded in $ref
-			lib, name, err := parseEmbeddedProtobufType(ref)
-			if err != nil {
-				return "", false, errors.Wrap(err, `failed to parse $ref as embedded protobuf type`)
-			}
-
-			ctx.proto.AddImport(lib)
-			typ = name
-		} else {
-			tmp, ok := v.(openapi.Schema)
-			if !ok {
-				return "", false, errors.Errorf(`expected reference %s to resolve to a Schema, got %T`, ref, v)
-			}
-			s = tmp
+		tmp, ok := v.(openapi.Schema)
+		if !ok {
+			return "", false, errors.Errorf(`expected reference %s to resolve to a Schema, got %T`, ref, v)
 		}
+		s = tmp
+	}
+
+	if raw, ok := s.Extension("x-proto-type"); ok {
+		// better be a map of strings (disguised as interface{} and map[string]interface{})
+		proto, ok := raw.(map[string]interface{})
+		if !ok {
+			return "", false, errors.Errorf(`expected x-proto-type to be a map`)
+		}
+		rawName := proto["name"]
+		name, ok := rawName.(string)
+		if !ok {
+			return "", false, errors.Errorf(`expected x-proto-type.name to be a string`)
+		}
+		rawImport, ok := proto["import"]
+		lib, ok := rawImport.(string)
+		if !ok {
+			return "", false, errors.Errorf(`expected x-proto-type.import to be a string`)
+		}
+
+		typ = name
+		ctx.proto.AddImport(lib)
 	}
 
 	if typ == "" {
