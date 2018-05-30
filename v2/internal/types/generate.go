@@ -784,9 +784,6 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 		fmt.Fprintf(dst, "\nreturn buf, nil")
 		fmt.Fprintf(dst, "\n}")
 
-		// Unmarshaling interfaces is tricky. We need to construct a concrete
-		// type that fulfills the interface, and unmarshal using that.
-
 		fmt.Fprintf(dst, "\n\nfunc (v *%s) UnmarshalJSON(data []byte) error {", rv.Type().Name())
 		fmt.Fprintf(dst, "\nvar proxy map[string]json.RawMessage")
 		fmt.Fprintf(dst, "\nif err := json.Unmarshal(data, &proxy); err != nil {")
@@ -861,12 +858,14 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 		}
 
 		// iterate through the proxy to look for any element that starts
-		// with a ^x-. Since we don't know what they are supposed to be,
-		// we're just going to store them as json.RawMessage in hopes that
-		// that the user knows better.
+		// with a ^x-. 
 		fmt.Fprintf(dst, "\n\nfor name, raw := range proxy {")
 		fmt.Fprintf(dst, "\nif strings.HasPrefix(name, `x-`) {")
-		fmt.Fprintf(dst, "\nmutator.Extension(name, raw)")
+		fmt.Fprintf(dst, "\nvar ext interface{}")
+		fmt.Fprintf(dst, "\nif err := json.Unmarshal(raw, &ext); err != nil {")
+		fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to unmarshal field %%s`, name)")
+		fmt.Fprintf(dst, "\n}")
+		fmt.Fprintf(dst, "\nmutator.Extension(name, ext)")
 		fmt.Fprintf(dst, "\n}")
 		fmt.Fprintf(dst, "\n}")
 

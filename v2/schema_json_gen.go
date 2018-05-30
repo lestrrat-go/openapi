@@ -387,7 +387,11 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 
 	for name, raw := range proxy {
 		if strings.HasPrefix(name, `x-`) {
-			mutator.Extension(name, raw)
+			var ext interface{}
+			if err := json.Unmarshal(raw, &ext); err != nil {
+				return errors.Wrapf(err, `failed to unmarshal field %s`, name)
+			}
+			mutator.Extension(name, ext)
 		}
 	}
 
