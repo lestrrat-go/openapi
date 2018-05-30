@@ -81,6 +81,7 @@ type Swagger interface {
 	Security() *SecurityRequirementListIterator
 	Tags() *TagListIterator
 	ExternalDocs() ExternalDocumentation
+	Extension(string) (interface{}, bool)
 	Extensions() *ExtensionsIterator
 	Clone() Swagger
 	IsUnresolved() bool
@@ -118,6 +119,7 @@ type Info interface {
 	TermsOfService() string
 	Contact() Contact
 	License() License
+	Extension(string) (interface{}, bool)
 	Extensions() *ExtensionsIterator
 	Clone() Info
 	IsUnresolved() bool
@@ -142,6 +144,7 @@ type Contact interface {
 	Name() string
 	URL() string
 	Email() string
+	Extension(string) (interface{}, bool)
 	Extensions() *ExtensionsIterator
 	Clone() Contact
 	IsUnresolved() bool
@@ -162,6 +165,7 @@ type contact struct {
 type License interface {
 	Name() string
 	URL() string
+	Extension(string) (interface{}, bool)
 	Extensions() *ExtensionsIterator
 	Clone() License
 	IsUnresolved() bool
@@ -180,6 +184,7 @@ type license struct {
 
 type Paths interface {
 	Paths() *PathItemMapIterator
+	Extension(string) (interface{}, bool)
 	Extensions() *ExtensionsIterator
 	Clone() Paths
 	IsUnresolved() bool
@@ -206,6 +211,7 @@ type PathItem interface {
 	Head() Operation
 	Patch() Operation
 	Parameters() *ParameterListIterator
+	Extension(string) (interface{}, bool)
 	Extensions() *ExtensionsIterator
 	Clone() PathItem
 	IsUnresolved() bool
@@ -249,6 +255,7 @@ type Operation interface {
 	Schemes() *SchemeListIterator
 	Deprecated() bool
 	Security() *SecurityRequirementListIterator
+	Extension(string) (interface{}, bool)
 	Extensions() *ExtensionsIterator
 	Clone() Operation
 	IsUnresolved() bool
@@ -282,6 +289,7 @@ type operation struct {
 type ExternalDocumentation interface {
 	URL() string
 	Description() string
+	Extension(string) (interface{}, bool)
 	Extensions() *ExtensionsIterator
 	Clone() ExternalDocumentation
 	IsUnresolved() bool
@@ -323,6 +331,7 @@ type Parameter interface {
 	UniqueItems() bool
 	Enum() *InterfaceListIterator
 	MultipleOf() float64
+	Extension(string) (interface{}, bool)
 	Extensions() *ExtensionsIterator
 	Clone() Parameter
 	IsUnresolved() bool
@@ -381,6 +390,7 @@ type Items interface {
 	UniqueItems() bool
 	Enum() *InterfaceListIterator
 	MultipleOf() float64
+	Extension(string) (interface{}, bool)
 	Extensions() *ExtensionsIterator
 	Clone() Items
 	IsUnresolved() bool
@@ -415,6 +425,7 @@ type items struct {
 type Responses interface {
 	DefaultValue() Response
 	Responses() *ResponseMapIterator
+	Extension(string) (interface{}, bool)
 	Extensions() *ExtensionsIterator
 	Clone() Responses
 	IsUnresolved() bool
@@ -437,6 +448,7 @@ type Response interface {
 	Schema() Schema
 	Headers() *HeaderMapIterator
 	Examples() *ExampleMapIterator
+	Extension(string) (interface{}, bool)
 	Extensions() *ExtensionsIterator
 	Clone() Response
 	IsUnresolved() bool
@@ -476,6 +488,7 @@ type Header interface {
 	UniqueItems() bool
 	Enum() *InterfaceListIterator
 	MultipleOf() float64
+	Extension(string) (interface{}, bool)
 	Extensions() *ExtensionsIterator
 	Clone() Header
 	IsUnresolved() bool
@@ -540,6 +553,7 @@ type Schema interface {
 	Example() interface{}
 	Deprecated() bool
 	XML() XML
+	Extension(string) (interface{}, bool)
 	Extensions() *ExtensionsIterator
 	Clone() Schema
 	IsUnresolved() bool
@@ -590,6 +604,7 @@ type XML interface {
 	Prefix() string
 	Attribute() bool
 	Wrapped() bool
+	Extension(string) (interface{}, bool)
 	Extensions() *ExtensionsIterator
 	Clone() XML
 	IsUnresolved() bool
@@ -618,6 +633,7 @@ type SecurityScheme interface {
 	AuthorizationURL() string
 	TokenURL() string
 	Scopes() *StringMapIterator
+	Extension(string) (interface{}, bool)
 	Extensions() *ExtensionsIterator
 	Clone() SecurityScheme
 	IsUnresolved() bool
@@ -642,6 +658,7 @@ type securityScheme struct {
 
 type SecurityRequirement interface {
 	Data() map[string][]string
+	Extension(string) (interface{}, bool)
 	Extensions() *ExtensionsIterator
 	Clone() SecurityRequirement
 	IsUnresolved() bool
@@ -661,6 +678,7 @@ type Tag interface {
 	Name() string
 	Description() string
 	ExternalDocs() ExternalDocumentation
+	Extension(string) (interface{}, bool)
 	Extensions() *ExtensionsIterator
 	Clone() Tag
 	IsUnresolved() bool

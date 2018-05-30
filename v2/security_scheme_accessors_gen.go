@@ -61,6 +61,11 @@ func (v *securityScheme) IsUnresolved() bool {
 	return v.reference != "" && !v.resolved
 }
 
+func (v *securityScheme) Extension(key string) (interface{}, bool) {
+	e, ok := v.extensions[key]
+	return e, ok
+}
+
 func (v *securityScheme) Extensions() *ExtensionsIterator {
 	var items []interface{}
 	for key, item := range v.extensions {

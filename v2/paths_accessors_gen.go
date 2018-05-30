@@ -33,6 +33,11 @@ func (v *paths) IsUnresolved() bool {
 	return v.reference != "" && !v.resolved
 }
 
+func (v *paths) Extension(key string) (interface{}, bool) {
+	e, ok := v.extensions[key]
+	return e, ok
+}
+
 func (v *paths) Extensions() *ExtensionsIterator {
 	var items []interface{}
 	for key, item := range v.extensions {

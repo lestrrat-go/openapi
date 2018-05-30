@@ -255,6 +255,7 @@ func completeInterface(dst io.Writer, ifacename string) {
 		}
 	}
 
+	fmt.Fprintf(dst, "\nExtension(string) (interface{}, bool)")
 	fmt.Fprintf(dst, "\nExtensions() *ExtensionsIterator")
 	fmt.Fprintf(dst, "\nClone() %s", ifacename)
 	fmt.Fprintf(dst, "\nIsUnresolved() bool")
@@ -689,6 +690,11 @@ func generateAccessorsFromEntity(e interface{}) error {
 	fmt.Fprintf(dst, "\n}")
 	fmt.Fprintf(dst, "\n\nfunc (v *%s) IsUnresolved() bool {", structname)
 	fmt.Fprintf(dst, "\nreturn v.reference != \"\" && !v.resolved")
+	fmt.Fprintf(dst, "\n}")
+
+	fmt.Fprintf(dst, "\n\nfunc (v *%s) Extension(key string) (interface{}, bool) {", structname)
+	fmt.Fprintf(dst, "\ne, ok := v.extensions[key]")
+	fmt.Fprintf(dst, "\nreturn e, ok")
 	fmt.Fprintf(dst, "\n}")
 
 	fmt.Fprintf(dst, "\n\nfunc (v *%s) Extensions() *ExtensionsIterator {", structname)

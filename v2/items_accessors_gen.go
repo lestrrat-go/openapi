@@ -91,6 +91,11 @@ func (v *items) IsUnresolved() bool {
 	return v.reference != "" && !v.resolved
 }
 
+func (v *items) Extension(key string) (interface{}, bool) {
+	e, ok := v.extensions[key]
+	return e, ok
+}
+
 func (v *items) Extensions() *ExtensionsIterator {
 	var items []interface{}
 	for key, item := range v.extensions {
