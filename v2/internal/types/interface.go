@@ -206,7 +206,7 @@ type Items interface {
 }
 
 type items struct {
-	typ              string           `json:"type,omitempty"`
+	typ              PrimitiveType    `json:"type,omitempty"`
 	format           string           `json:"format,omitempty"`
 	items            Items            `json:"items,omitempty"`
 	collectionFormat CollectionFormat `json:"collectionFormat,omitempty"`
