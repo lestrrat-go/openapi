@@ -160,6 +160,20 @@ func (iter *HeaderMapIterator) Item() (string, Header) {
 	return item.key.(string), item.item.(Header)
 }
 
+type InterfaceMapIterator struct {
+	mapIterator
+}
+
+// Item returns the next item in this iterator. Make sure to call Next()
+// before hand to check if the iterator has more items
+func (iter *InterfaceMapIterator) Item() (string, interface{}) {
+	item := iter.mapIterator.Item()
+	if item == nil {
+		return "", interface{}(nil)
+	}
+	return item.key.(string), item.item.(interface{})
+}
+
 type MIMETypeListIterator struct {
 	listIterator
 }

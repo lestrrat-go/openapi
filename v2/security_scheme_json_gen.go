@@ -13,7 +13,9 @@ import (
 )
 
 var _ = json.Unmarshal
+var _ = fmt.Fprintf
 var _ = log.Printf
+var _ = strconv.ParseInt
 var _ = errors.Cause
 
 type securitySchemeMarshalProxy struct {
@@ -204,4 +206,13 @@ func (v *securityScheme) QueryJSON(path string) (ret interface{}, ok bool) {
 		return target, true
 	}
 	return nil, false
+}
+
+func SecuritySchemeFromJSON(buf []byte, v *SecurityScheme) error {
+	var tmp securityScheme
+	if err := json.Unmarshal(buf, &tmp); err != nil {
+		return errors.Wrap(err, `failed to unmarshal`)
+	}
+	*v = &tmp
+	return nil
 }

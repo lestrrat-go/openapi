@@ -13,7 +13,9 @@ import (
 )
 
 var _ = json.Unmarshal
+var _ = fmt.Fprintf
 var _ = log.Printf
+var _ = strconv.ParseInt
 var _ = errors.Cause
 
 type schemaMarshalProxy struct {
@@ -488,4 +490,13 @@ func (v *schema) QueryJSON(path string) (ret interface{}, ok bool) {
 		return target, true
 	}
 	return nil, false
+}
+
+func SchemaFromJSON(buf []byte, v *Schema) error {
+	var tmp schema
+	if err := json.Unmarshal(buf, &tmp); err != nil {
+		return errors.Wrap(err, `failed to unmarshal`)
+	}
+	*v = &tmp
+	return nil
 }

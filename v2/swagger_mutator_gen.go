@@ -96,9 +96,9 @@ func (b *SwaggerMutator) ClearDefinitions() *SwaggerMutator {
 	return b
 }
 
-func (b *SwaggerMutator) Definition(key SchemaMapKey, value Schema) *SwaggerMutator {
+func (b *SwaggerMutator) Definition(key InterfaceMapKey, value interface{}) *SwaggerMutator {
 	if b.proxy.definitions == nil {
-		b.proxy.definitions = SchemaMap{}
+		b.proxy.definitions = InterfaceMap{}
 	}
 
 	b.proxy.definitions[key] = value

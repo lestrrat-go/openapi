@@ -13,7 +13,9 @@ import (
 )
 
 var _ = json.Unmarshal
+var _ = fmt.Fprintf
 var _ = log.Printf
+var _ = strconv.ParseInt
 var _ = errors.Cause
 
 type itemsMarshalProxy struct {
@@ -322,4 +324,13 @@ func (v *items) QueryJSON(path string) (ret interface{}, ok bool) {
 		return target, true
 	}
 	return nil, false
+}
+
+func ItemsFromJSON(buf []byte, v *Items) error {
+	var tmp items
+	if err := json.Unmarshal(buf, &tmp); err != nil {
+		return errors.Wrap(err, `failed to unmarshal`)
+	}
+	*v = &tmp
+	return nil
 }

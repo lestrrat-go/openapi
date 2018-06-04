@@ -4,12 +4,18 @@ package openapi
 // DO NOT EDIT MANUALLY. All changes will be lost
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/pkg/errors"
 	"log"
+	"strconv"
 	"strings"
 )
 
+var _ = json.Unmarshal
+var _ = fmt.Fprintf
 var _ = log.Printf
+var _ = strconv.ParseInt
 var _ = errors.Cause
 
 func (v *paths) QueryJSON(path string) (ret interface{}, ok bool) {
@@ -41,4 +47,13 @@ func (v *paths) QueryJSON(path string) (ret interface{}, ok bool) {
 		return target, true
 	}
 	return nil, false
+}
+
+func PathsFromJSON(buf []byte, v *Paths) error {
+	var tmp paths
+	if err := json.Unmarshal(buf, &tmp); err != nil {
+		return errors.Wrap(err, `failed to unmarshal`)
+	}
+	*v = &tmp
+	return nil
 }

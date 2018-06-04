@@ -59,7 +59,7 @@ func (v *swagger) Paths() Paths {
 	return v.paths
 }
 
-func (v *swagger) Definitions() *SchemaMapIterator {
+func (v *swagger) Definitions() *InterfaceMapIterator {
 	var keys []string
 	for key := range v.definitions {
 		keys = append(keys, key)
@@ -70,7 +70,7 @@ func (v *swagger) Definitions() *SchemaMapIterator {
 		item := v.definitions[key]
 		items = append(items, &mapIteratorItem{key: key, item: item})
 	}
-	var iter SchemaMapIterator
+	var iter InterfaceMapIterator
 	iter.list.items = items
 	return &iter
 }

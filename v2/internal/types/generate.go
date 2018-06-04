@@ -24,6 +24,7 @@ var containers = []interface{}{
 	ExampleMap{},
 	HeaderMap{},
 	InterfaceList{},
+	InterfaceMap{},
 	MIMETypeList{},
 	ParameterList{},
 	ParameterMap{},
@@ -177,10 +178,14 @@ func iteratorName(t reflect.Type) string {
 	// have declared wrapper containers for. Use the
 	// naming schemes
 	var name string = t.Name()
-	if !isContainer(name) && !isEntity(t.Elem().Name()) {
+log.Printf("name -> %s", name)
+	if !isContainer(name) { // && !isEntity(t.Elem().Name()) {
 		name = typname(t.Elem())
 		if strings.HasPrefix(name, "[]") {
 			name = strings.TrimPrefix(name, "[]") + "List"
+		}
+		if strings.HasPrefix(name, "map[") {
+			name = strings.TrimPrefix(name, "[]") + "Map"
 		}
 		name = strcase.ToCamel(name)
 	}
@@ -289,10 +294,12 @@ func writePreamble(dst io.Writer) {
 }
 
 var importDummies = map[string]string{
+	"encoding/json": "json.Unmarshal",
+	"fmt":           "fmt.Fprintf",
 	"github.com/pkg/errors": "errors.Cause",
-	"encoding/json":         "json.Unmarshal",
-	"log":                   "log.Printf",
-	"sort":                  "sort.Strings",
+	"log":  "log.Printf",
+	"sort": "sort.Strings",
+	"strconv": "strconv.ParseInt",
 }
 
 func writeImports(dst io.Writer, pkgs []string) {
@@ -652,6 +659,10 @@ func generateAccessorsFromEntity(e interface{}) error {
 		switch {
 		case isMap(fieldType):
 			iteratorName := iteratorName(fv.Type)
+log.Printf("%s -> %s", fv.Type, iteratorName)
+if iteratorName == "InterfaceIterator" {
+panic("fuck")
+}
 			fmt.Fprintf(dst, "\n\nfunc (v *%s) %s() *%s {", structname, exportedName, iteratorName)
 			fmt.Fprintf(dst, "\nvar keys []string")
 			fmt.Fprintf(dst, "\nfor key := range v.%s {", unexportedName)
@@ -731,12 +742,10 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 
 	ifacename := exportedName(rv.Type().Name())
 
+	writeImports(dst, []string{"encoding/json", "fmt", "log", "strings", "strconv", "github.com/pkg/errors"})
 	switch rv.Type().Name() {
 	case "paths", "responses":
-		writeImports(dst, []string{"log", "strings", "github.com/pkg/errors"})
 	default:
-		writeImports(dst, []string{"encoding/json", "fmt", "log", "strings", "strconv", "github.com/pkg/errors"})
-
 		mpname := rv.Type().Name() + "MarshalProxy"
 
 		fmt.Fprintf(dst, "\n\ntype %s struct {", mpname)
@@ -858,7 +867,7 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 		}
 
 		// iterate through the proxy to look for any element that starts
-		// with a ^x-. 
+		// with a ^x-.
 		fmt.Fprintf(dst, "\n\nfor name, raw := range proxy {")
 		fmt.Fprintf(dst, "\nif strings.HasPrefix(name, `x-`) {")
 		fmt.Fprintf(dst, "\nvar ext interface{}")
@@ -1007,6 +1016,15 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 	fmt.Fprintf(dst, "\nreturn target, true")
 	fmt.Fprintf(dst, "\n}")
 	fmt.Fprintf(dst, "\nreturn nil, false")
+	fmt.Fprintf(dst, "\n}")
+
+	fmt.Fprintf(dst, "\n\nfunc %[1]sFromJSON(buf []byte, v *%[1]s) error {", ifacename)
+	fmt.Fprintf(dst, "\nvar tmp %s", unexportedName(rv.Type().Name()))
+	fmt.Fprintf(dst, "\nif err := json.Unmarshal(buf, &tmp); err != nil {")
+	fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to unmarshal`)")
+	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\n*v = &tmp")
+	fmt.Fprintf(dst, "\nreturn nil")
 	fmt.Fprintf(dst, "\n}")
 
 	if err := writeFormattedSource(&buf, filename); err != nil {

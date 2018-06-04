@@ -13,7 +13,9 @@ import (
 )
 
 var _ = json.Unmarshal
+var _ = fmt.Fprintf
 var _ = log.Printf
+var _ = strconv.ParseInt
 var _ = errors.Cause
 
 type swaggerMarshalProxy struct {
@@ -26,7 +28,7 @@ type swaggerMarshalProxy struct {
 	Consumes            MIMETypeList            `json:"consumes,omitempty"`
 	Produces            MIMETypeList            `json:"produces,omitempty"`
 	Paths               Paths                   `json:"paths"`
-	Definitions         SchemaMap               `json:"definitions,omitempty"`
+	Definitions         InterfaceMap            `json:"definitions,omitempty"`
 	Parameters          ParameterMap            `json:"parameters,omitempty"`
 	Responses           ResponseMap             `json:"responses,omitempty"`
 	SecurityDefinitions SecuritySchemeMap       `json:"securityDefinitions,omitempty"`
@@ -164,7 +166,7 @@ func (v *swagger) UnmarshalJSON(data []byte) error {
 	}
 
 	if raw := proxy["definitions"]; len(raw) > 0 {
-		var decoded SchemaMap
+		var decoded InterfaceMap
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Definitions`)
 		}
@@ -314,4 +316,13 @@ func (v *swagger) QueryJSON(path string) (ret interface{}, ok bool) {
 		return target, true
 	}
 	return nil, false
+}
+
+func SwaggerFromJSON(buf []byte, v *Swagger) error {
+	var tmp swagger
+	if err := json.Unmarshal(buf, &tmp); err != nil {
+		return errors.Wrap(err, `failed to unmarshal`)
+	}
+	*v = &tmp
+	return nil
 }

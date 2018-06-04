@@ -75,7 +75,7 @@ type swagger struct {
 	consumes            MIMETypeList            `json:"consumes,omitempty"`
 	produces            MIMETypeList            `json:"produces,omitempty"`
 	paths               Paths                   `json:"paths" builder:"required"`
-	definitions         SchemaMap               `json:"definitions,omitempty"`
+	definitions         InterfaceMap            `json:"definitions,omitempty"`
 	parameters          ParameterMap            `json:"parameters,omitempty"`
 	responses           ResponseMap             `json:"responses,omitempty"`
 	securityDefinitions SecuritySchemeMap       `json:"securityDefinitions,omitempty"`
@@ -351,6 +351,8 @@ type ExampleMap map[ExampleMapKey]interface{}
 type HeaderMapKey = string
 type HeaderMap map[HeaderMapKey]Header
 type InterfaceList []interface{}
+type InterfaceMapKey = string
+type InterfaceMap map[InterfaceMapKey]interface{}
 type MIMETypeList []MIMEType
 type ParameterList []Parameter
 type ParameterMapKey = string

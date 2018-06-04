@@ -66,7 +66,7 @@ func (b *SwaggerBuilder) Produces(v ...MIMEType) *SwaggerBuilder {
 }
 
 // Definitions sets the Definitions field for object Swagger.
-func (b *SwaggerBuilder) Definitions(v SchemaMap) *SwaggerBuilder {
+func (b *SwaggerBuilder) Definitions(v InterfaceMap) *SwaggerBuilder {
 	b.target.definitions = v
 	return b
 }
