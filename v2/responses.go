@@ -9,6 +9,15 @@ import (
 	"github.com/pkg/errors"
 )
 
+func (r *responses) setResponse(key string, value Response) {
+	if r.responses == nil {
+		r.responses = ResponseMap{}
+	}
+
+	r.responses[key] = value.Clone()
+	r.responses[key].setStatusCode(key)
+}
+
 func (r *responses) MarshalJSON() ([]byte, error) {
 	if r == nil {
 		return []byte("null"), nil
@@ -85,7 +94,7 @@ func (r *responses) UnmarshalJSON(data []byte) error {
 				return errors.Wrapf(err, `failed to unmarshal responses.%s`, code)
 			}
 
-			r.responses[code] = &res
+			r.setResponse(code, &res)
 			delete(m, code)
 		}
 	}

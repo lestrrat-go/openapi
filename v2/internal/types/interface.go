@@ -230,14 +230,16 @@ type Responses interface {
 
 type responses struct {
 	defaultValue Response    `json:"default,omitempty"`
-	responses    ResponseMap `json:"-"`
+	responses    ResponseMap `json:"-" mutator:"-"`
 }
 
 type Response interface {
+	//gen:lazy setStatusCode(string)
 }
 
 type response struct {
 	name        string     `json:"-"`
+	statusCode  string     `json:"-"`
 	description string     `json:"description" builder:"required"`
 	schema      Schema     `json:"schema,omitempty"`
 	headers     HeaderMap  `json:"headers,omitempty"`

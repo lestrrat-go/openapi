@@ -36,20 +36,6 @@ func (b *ResponsesMutator) DefaultValue(v Response) *ResponsesMutator {
 	b.proxy.defaultValue = v
 	return b
 }
-
-func (b *ResponsesMutator) ClearResponses() *ResponsesMutator {
-	b.proxy.responses.Clear()
-	return b
-}
-
-func (b *ResponsesMutator) Response(key ResponseMapKey, value Response) *ResponsesMutator {
-	if b.proxy.responses == nil {
-		b.proxy.responses = ResponseMap{}
-	}
-
-	b.proxy.responses[key] = value
-	return b
-}
 func (b *ResponsesMutator) Extension(name string, value interface{}) *ResponsesMutator {
 	if b.proxy.extensions == nil {
 		b.proxy.extensions = Extensions{}

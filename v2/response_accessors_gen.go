@@ -13,6 +13,10 @@ func (v *response) Name() string {
 	return v.name
 }
 
+func (v *response) StatusCode() string {
+	return v.statusCode
+}
+
 func (v *response) Description() string {
 	return v.description
 }

@@ -39,6 +39,12 @@ func (b *ResponseBuilder) Name(v string) *ResponseBuilder {
 	return b
 }
 
+// StatusCode sets the StatusCode field for object Response.
+func (b *ResponseBuilder) StatusCode(v string) *ResponseBuilder {
+	b.target.statusCode = v
+	return b
+}
+
 // Schema sets the Schema field for object Response.
 func (b *ResponseBuilder) Schema(v Schema) *ResponseBuilder {
 	b.target.schema = v

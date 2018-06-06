@@ -37,6 +37,12 @@ func (b *ResponseMutator) Name(v string) *ResponseMutator {
 	return b
 }
 
+// StatusCode sets the StatusCode field for object Response.
+func (b *ResponseMutator) StatusCode(v string) *ResponseMutator {
+	b.proxy.statusCode = v
+	return b
+}
+
 // Description sets the Description field for object Response.
 func (b *ResponseMutator) Description(v string) *ResponseMutator {
 	b.proxy.description = v

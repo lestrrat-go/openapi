@@ -439,11 +439,12 @@ type responses struct {
 	resolved     bool        `json:"-"`
 	extensions   Extensions  `json:"-"`
 	defaultValue Response    `json:"default,omitempty"`
-	responses    ResponseMap `json:"-"`
+	responses    ResponseMap `json:"-" mutator:"-"`
 }
 
 type Response interface {
 	Name() string
+	StatusCode() string
 	Description() string
 	Schema() Schema
 	Headers() *HeaderMapIterator
@@ -455,6 +456,7 @@ type Response interface {
 	MarshalJSON() ([]byte, error)
 	Reference() string
 	Validate() error
+	setStatusCode(string)
 }
 
 type response struct {
@@ -462,6 +464,7 @@ type response struct {
 	resolved    bool       `json:"-"`
 	extensions  Extensions `json:"-"`
 	name        string     `json:"-"`
+	statusCode  string     `json:"-"`
 	description string     `json:"description" builder:"required"`
 	schema      Schema     `json:"schema,omitempty"`
 	headers     HeaderMap  `json:"headers,omitempty"`
