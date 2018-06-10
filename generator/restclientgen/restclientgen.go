@@ -124,11 +124,42 @@ type Field struct {
 	tag  string
 }
 
-func (g *Generator) Generate(dst io.Writer, spec openapi.Swagger) error {
+func (g *Generator) Generate(dst io.Writer, spec openapi.Swagger, options ...Option) error {
+	var dir string
+	var packageName string
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyDirectory:
+			dir = option.Value().(string)
+		case optkeyPackageName:
+			packageName = option.Value().(string)
+		}
+	}
+
+	if dir == "" {
+		dir = "restclient"
+	}
+
+	if packageName == "" {
+		// Use the last component in the path
+		i := strings.LastIndexByte(dir, os.PathSeparator)
+		if i < 0 {
+			packageName = dir
+		} else {
+			packageName = dir[i+1:]
+		}
+	}
+
+	if _, err := os.Stat(dir); err != nil {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return errors.Wrapf(err, `failed to create directory %s`, dir)
+		}
+	}
+
 	ctx := genCtx{
 		compiling:   make(map[string]struct{}),
-		dir:         "gen",
-		packageName: "MyApp",
+		dir:         dir,
+		packageName: packageName,
 		resolver:    openapi.NewResolver(spec),
 		root:        spec,
 		client:      &Client{services: make(map[string]*Service), types: make(map[string]Type)},
@@ -159,7 +190,7 @@ func writeSupportFiles(ctx *genCtx) error {
 
 	var buf bytes.Buffer
 	var dst io.Writer = &buf
-	codegen.WritePreamble(dst, "restclient")
+	codegen.WritePreamble(dst, ctx.packageName)
 
 	fmt.Fprintf(dst, "\n\ntype Option interface {")
 	fmt.Fprintf(dst, "\nName() string")
@@ -217,7 +248,7 @@ func writeClientFile(ctx *genCtx) error {
 	log.Printf("Generating %s", fn)
 
 	var buf bytes.Buffer
-	if err := formatClient(&buf, ctx.client); err != nil {
+	if err := formatClient(ctx, &buf, ctx.client); err != nil {
 		return errors.Wrap(err, `failed to format client code`)
 	}
 
@@ -242,7 +273,7 @@ func writeServiceFiles(ctx *genCtx) error {
 		log.Printf("Generating %s", fn)
 
 		var buf bytes.Buffer
-		if err := formatService(&buf, ctx.client.services[name]); err != nil {
+		if err := formatService(ctx, &buf, ctx.client.services[name]); err != nil {
 			return errors.Wrap(err, `failed to format service code`)
 		}
 
@@ -599,8 +630,8 @@ func compileCall(ctx *genCtx, oper openapi.Operation) error {
 	return nil
 }
 
-func formatClient(dst io.Writer, cl *Client) error {
-	codegen.WritePreamble(dst, "restclient")
+func formatClient(ctx *genCtx, dst io.Writer, cl *Client) error {
+	codegen.WritePreamble(dst, ctx.packageName)
 	codegen.WriteImports(dst, "net/http")
 	fmt.Fprintf(dst, "\n\n")
 	var typNames []string
@@ -694,8 +725,8 @@ func formatClient(dst io.Writer, cl *Client) error {
 	return nil
 }
 
-func formatService(dst io.Writer, svc *Service) error {
-	codegen.WritePreamble(dst, "restclient")
+func formatService(ctx *genCtx, dst io.Writer, svc *Service) error {
+	codegen.WritePreamble(dst, ctx.packageName)
 
 	codegen.WriteImports(dst, "bytes", "context", "encoding/json", "mime", "net/http", "net/url", "strings", "strconv", "github.com/pkg/errors", "github.com/lestrrat-go/urlenc")
 
