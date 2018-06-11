@@ -17,6 +17,7 @@ import (
 
 	"github.com/iancoleman/strcase"
 	"github.com/jinzhu/inflection"
+	"github.com/lestrrat-go/openapi/internal/codegen"
 	"github.com/pkg/errors"
 )
 
@@ -178,7 +179,7 @@ func iteratorName(t reflect.Type) string {
 	// have declared wrapper containers for. Use the
 	// naming schemes
 	var name string = t.Name()
-log.Printf("name -> %s", name)
+	log.Printf("name -> %s", name)
 	if !isContainer(name) { // && !isEntity(t.Elem().Name()) {
 		name = typname(t.Elem())
 		if strings.HasPrefix(name, "[]") {
@@ -266,7 +267,7 @@ func completeInterface(dst io.Writer, ifacename string) {
 	fmt.Fprintf(dst, "\nIsUnresolved() bool")
 	fmt.Fprintf(dst, "\nMarshalJSON() ([]byte, error)")
 	fmt.Fprintf(dst, "\nReference() string")
-	fmt.Fprintf(dst, "\nValidate() error")
+	fmt.Fprintf(dst, "\nValidator")
 }
 
 func writeFormattedSource(buf *bytes.Buffer, filename string) error {
@@ -297,8 +298,8 @@ var importDummies = map[string]string{
 	"encoding/json": "json.Unmarshal",
 	"fmt":           "fmt.Fprintf",
 	"github.com/pkg/errors": "errors.Cause",
-	"log":  "log.Printf",
-	"sort": "sort.Strings",
+	"log":     "log.Printf",
+	"sort":    "sort.Strings",
 	"strconv": "strconv.ParseInt",
 }
 
@@ -355,7 +356,7 @@ func copyInterface() error {
 		if strings.HasPrefix(txt, "type ") && strings.HasSuffix(txt, " interface {") {
 			i := strings.Index(txt[5:], " ")
 			switch txt[5 : 5+i] {
-			case "ResolveError", "Resolver":
+			case "ResolveError", "Resolver", "Validator":
 			default:
 				completeInterface(dst, txt[5:5+i])
 			}
@@ -518,9 +519,18 @@ func generateBuilderFromEntity(e interface{}) error {
 	fmt.Fprintf(dst, "\n}")
 
 	fmt.Fprintf(dst, "\n\n// Do finalizes the building process for %s and returns the result", ifacename)
-	fmt.Fprintf(dst, "\nfunc (b *%sBuilder) Do() (%s, error) {", ifacename, ifacename)
-	fmt.Fprintf(dst, "\nif err := b.target.Validate(); err != nil {")
+	fmt.Fprintf(dst, "\nfunc (b *%sBuilder) Do(options ...Option) (%s, error) {", ifacename, ifacename)
+	fmt.Fprintf(dst, "\nvalidate := true")
+	fmt.Fprintf(dst, "\nfor _, option := range options {")
+	fmt.Fprintf(dst, "\nswitch option.Name() {")
+	fmt.Fprintf(dst, "\ncase optkeyValidate:")
+	fmt.Fprintf(dst, "\nvalidate = option.Value().(bool)")
+	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\nif validate {")
+	fmt.Fprintf(dst, "\nif err := b.target.Validate(false); err != nil {")
 	fmt.Fprintf(dst, "\nreturn nil, errors.Wrap(err, `validation failed`)")
+	fmt.Fprintf(dst, "\n}")
 	fmt.Fprintf(dst, "\n}")
 	fmt.Fprintf(dst, "\nreturn b.target, nil")
 	fmt.Fprintf(dst, "\n}")
@@ -643,9 +653,11 @@ func generateAccessorsFromEntity(e interface{}) error {
 	var dst io.Writer = &buf
 
 	writePreamble(dst)
-	writeImports(dst, []string{"sort"})
+	writeImports(dst, []string{"sort", "github.com/pkg/errors"})
 
 	structname := rv.Type().Name()
+
+	var entityFields []reflect.StructField
 
 	for i := 0; i < rv.NumField(); i++ {
 		fv := rv.Type().Field(i)
@@ -656,13 +668,18 @@ func generateAccessorsFromEntity(e interface{}) error {
 		exportedName := exportedName(fv.Name)
 		unexportedName := unexportedName(fv.Name)
 		fieldType := fv.Type.Name()
+
+		// keep track of all fields whose type is one of our entity types
+		if isEntity(unexportedName) || isContainer(fieldType) {
+			entityFields = append(entityFields, fv)
+		}
+
 		switch {
 		case isMap(fieldType):
 			iteratorName := iteratorName(fv.Type)
-log.Printf("%s -> %s", fv.Type, iteratorName)
-if iteratorName == "InterfaceIterator" {
-panic("fuck")
-}
+			if iteratorName == "InterfaceIterator" {
+				panic("fuck")
+			}
 			fmt.Fprintf(dst, "\n\nfunc (v *%s) %s() *%s {", structname, exportedName, iteratorName)
 			fmt.Fprintf(dst, "\nvar keys []string")
 			fmt.Fprintf(dst, "\nfor key := range v.%s {", unexportedName)
@@ -719,10 +736,28 @@ panic("fuck")
 	fmt.Fprintf(dst, "\n}")
 
 	if isStockValidator(structname) {
-		fmt.Fprintf(dst, "\n\nfunc (v *%s) Validate() error {", structname)
+		fmt.Fprintf(dst, "\n\nfunc (v *%s) Validate(recurse bool) error {", structname)
+		fmt.Fprintf(dst, "\nif recurse {")
+		fmt.Fprintf(dst, "\nreturn v.recurseValidate()")
+		fmt.Fprintf(dst, "\n}")
 		fmt.Fprintf(dst, "\nreturn nil")
 		fmt.Fprintf(dst, "\n}")
 	}
+
+	fmt.Fprintf(dst, "\n\nfunc (v *%s) recurseValidate() error {", structname)
+	if len(entityFields) == 0 {
+		fmt.Fprintf(dst, "\nreturn nil")
+	} else {
+		for _, field := range entityFields {
+			fmt.Fprintf(dst, "\nif elem := v.%s; elem != nil {", field.Name)
+			fmt.Fprintf(dst, "\nif err := elem.Validate(true); err != nil {")
+			fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to validate %s`)", field.Name)
+			fmt.Fprintf(dst, "\n}")
+			fmt.Fprintf(dst, "\n}")
+		}
+	}
+	fmt.Fprintf(dst, "\nreturn nil")
+	fmt.Fprintf(dst, "\n}")
 
 	if err := writeFormattedSource(&buf, filename); err != nil {
 		return errors.Wrap(err, `failed to write result to file`)
@@ -1147,6 +1182,26 @@ func generateContainer(c interface{}) error {
 		fmt.Fprintf(dst, "\nreturn nil")
 		fmt.Fprintf(dst, "\n}")
 
+		fmt.Fprintf(dst, "\n\nfunc (v *%s) Validate(recurse bool) error {", typeName)
+		elemType := rv.Type().Elem()
+		if elemType.Kind() == reflect.Interface {
+			fmt.Fprintf(dst, "\nfor i, elem := range *v {")
+			fmt.Fprintf(dst, "\nif validator, ok := elem.(Validator); ok {")
+			fmt.Fprintf(dst, "\nif err := validator.Validate(recurse); err != nil {")
+			fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to validate element %%d`, i)")
+			fmt.Fprintf(dst, "\n}")
+			fmt.Fprintf(dst, "\n}")
+			fmt.Fprintf(dst, "\n}")
+		} else if isEntity(codegen.UnexportedName(elemType.Name())) || isContainer(elemType.Name()) {
+			fmt.Fprintf(dst, "\nfor i, elem := range *v {")
+			fmt.Fprintf(dst, "\nif err := elem.Validate(recurse); err != nil {")
+			fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to validate element %%d`, i)")
+			fmt.Fprintf(dst, "\n}")
+			fmt.Fprintf(dst, "\n}")
+		}
+		fmt.Fprintf(dst, "\nreturn nil")
+		fmt.Fprintf(dst, "\n}")
+
 		/*
 			fmt.Fprintf(dst, "\n\nfunc (v %s) Resolve(resolver Resolver) error {", typeName)
 			if _, ok := entityTypes[unexportedName(rv.Type().Elem().Name())]; ok {
@@ -1182,9 +1237,29 @@ func generateContainer(c interface{}) error {
 			fmt.Fprintf(dst, "\nreturn nil")
 			fmt.Fprintf(dst, "\n}")
 		}
-	case isMap(rv.Type().Name()):
-		fmt.Fprintf(dst, "\n\nfunc (v *%s) Clear() error {", rv.Type().Name())
-		fmt.Fprintf(dst, "\n*v = make(%s)", rv.Type().Name())
+	case isMap(typeName):
+		fmt.Fprintf(dst, "\n\nfunc (v *%s) Clear() error {", typeName)
+		fmt.Fprintf(dst, "\n*v = make(%s)", typeName)
+		fmt.Fprintf(dst, "\nreturn nil")
+		fmt.Fprintf(dst, "\n}")
+
+		fmt.Fprintf(dst, "\n\nfunc (v *%s) Validate(recurse bool) error {", typeName)
+		elemType := rv.Type().Elem()
+		if elemType.Kind() == reflect.Interface {
+			fmt.Fprintf(dst, "\nfor name, elem := range *v {")
+			fmt.Fprintf(dst, "\nif validator, ok := elem.(Validator); ok {")
+			fmt.Fprintf(dst, "\nif err := validator.Validate(recurse); err != nil {")
+			fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to validate element %%v`, name)")
+			fmt.Fprintf(dst, "\n}")
+			fmt.Fprintf(dst, "\n}")
+			fmt.Fprintf(dst, "\n}")
+		} else if isEntity(codegen.UnexportedName(elemType.Name())) || isContainer(elemType.Name()) {
+			fmt.Fprintf(dst, "\nfor name, elem := range *v {")
+			fmt.Fprintf(dst, "\nif err := elem.Validate(recurse); err != nil {")
+			fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to validate element %%v`, name)")
+			fmt.Fprintf(dst, "\n}")
+			fmt.Fprintf(dst, "\n}")
+		}
 		fmt.Fprintf(dst, "\nreturn nil")
 		fmt.Fprintf(dst, "\n}")
 		/*

@@ -17,9 +17,18 @@ type SwaggerBuilder struct {
 }
 
 // Do finalizes the building process for Swagger and returns the result
-func (b *SwaggerBuilder) Do() (Swagger, error) {
-	if err := b.target.Validate(); err != nil {
-		return nil, errors.Wrap(err, `validation failed`)
+func (b *SwaggerBuilder) Do(options ...Option) (Swagger, error) {
+	validate := true
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyValidate:
+			validate = option.Value().(bool)
+		}
+	}
+	if validate {
+		if err := b.target.Validate(false); err != nil {
+			return nil, errors.Wrap(err, `validation failed`)
+		}
 	}
 	return b.target, nil
 }

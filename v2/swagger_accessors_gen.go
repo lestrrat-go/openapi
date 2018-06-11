@@ -4,10 +4,12 @@ package openapi
 // DO NOT EDIT MANUALLY. All changes will be lost
 
 import (
+	"github.com/pkg/errors"
 	"sort"
 )
 
 var _ = sort.Strings
+var _ = errors.Cause
 
 func (v *swagger) Version() string {
 	return v.version
@@ -168,4 +170,63 @@ func (v *swagger) Extensions() *ExtensionsIterator {
 	var iter ExtensionsIterator
 	iter.list.items = items
 	return &iter
+}
+
+func (v *swagger) recurseValidate() error {
+	if elem := v.info; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate info`)
+		}
+	}
+	if elem := v.schemes; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate schemes`)
+		}
+	}
+	if elem := v.consumes; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate consumes`)
+		}
+	}
+	if elem := v.produces; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate produces`)
+		}
+	}
+	if elem := v.paths; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate paths`)
+		}
+	}
+	if elem := v.definitions; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate definitions`)
+		}
+	}
+	if elem := v.parameters; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate parameters`)
+		}
+	}
+	if elem := v.responses; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate responses`)
+		}
+	}
+	if elem := v.securityDefinitions; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate securityDefinitions`)
+		}
+	}
+	if elem := v.security; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate security`)
+		}
+	}
+	if elem := v.tags; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate tags`)
+		}
+	}
+	return nil
 }

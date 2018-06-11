@@ -4,10 +4,12 @@ package openapi
 // DO NOT EDIT MANUALLY. All changes will be lost
 
 import (
+	"github.com/pkg/errors"
 	"sort"
 )
 
 var _ = sort.Strings
+var _ = errors.Cause
 
 func (v *pathItem) Name() string {
 	return v.name
@@ -78,6 +80,18 @@ func (v *pathItem) Extensions() *ExtensionsIterator {
 	return &iter
 }
 
-func (v *pathItem) Validate() error {
+func (v *pathItem) Validate(recurse bool) error {
+	if recurse {
+		return v.recurseValidate()
+	}
+	return nil
+}
+
+func (v *pathItem) recurseValidate() error {
+	if elem := v.parameters; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate parameters`)
+		}
+	}
 	return nil
 }

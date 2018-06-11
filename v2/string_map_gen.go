@@ -16,6 +16,10 @@ func (v *StringMap) Clear() error {
 	return nil
 }
 
+func (v *StringMap) Validate(recurse bool) error {
+	return nil
+}
+
 func (v StringMap) QueryJSON(path string) (ret interface{}, ok bool) {
 	if path == `` {
 		return v, true

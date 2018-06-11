@@ -17,9 +17,18 @@ type SchemaBuilder struct {
 }
 
 // Do finalizes the building process for Schema and returns the result
-func (b *SchemaBuilder) Do() (Schema, error) {
-	if err := b.target.Validate(); err != nil {
-		return nil, errors.Wrap(err, `validation failed`)
+func (b *SchemaBuilder) Do(options ...Option) (Schema, error) {
+	validate := true
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyValidate:
+			validate = option.Value().(bool)
+		}
+	}
+	if validate {
+		if err := b.target.Validate(false); err != nil {
+			return nil, errors.Wrap(err, `validation failed`)
+		}
 	}
 	return b.target, nil
 }

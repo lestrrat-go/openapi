@@ -17,9 +17,18 @@ type InfoBuilder struct {
 }
 
 // Do finalizes the building process for Info and returns the result
-func (b *InfoBuilder) Do() (Info, error) {
-	if err := b.target.Validate(); err != nil {
-		return nil, errors.Wrap(err, `validation failed`)
+func (b *InfoBuilder) Do(options ...Option) (Info, error) {
+	validate := true
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyValidate:
+			validate = option.Value().(bool)
+		}
+	}
+	if validate {
+		if err := b.target.Validate(false); err != nil {
+			return nil, errors.Wrap(err, `validation failed`)
+		}
 	}
 	return b.target, nil
 }

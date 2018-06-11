@@ -2,7 +2,7 @@ package openapi
 
 import "github.com/pkg/errors"
 
-func (v *parameter) Validate() error {
+func (v *parameter) Validate(recurse bool) error {
 	// https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#parameterObject
 	if v.name == "" {
 		return errors.New(`invalid parameter: "name" field is required`)

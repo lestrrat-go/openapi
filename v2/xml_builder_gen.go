@@ -17,9 +17,18 @@ type XMLBuilder struct {
 }
 
 // Do finalizes the building process for XML and returns the result
-func (b *XMLBuilder) Do() (XML, error) {
-	if err := b.target.Validate(); err != nil {
-		return nil, errors.Wrap(err, `validation failed`)
+func (b *XMLBuilder) Do(options ...Option) (XML, error) {
+	validate := true
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyValidate:
+			validate = option.Value().(bool)
+		}
+	}
+	if validate {
+		if err := b.target.Validate(false); err != nil {
+			return nil, errors.Wrap(err, `validation failed`)
+		}
 	}
 	return b.target, nil
 }

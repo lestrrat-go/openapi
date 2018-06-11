@@ -17,9 +17,18 @@ type TagBuilder struct {
 }
 
 // Do finalizes the building process for Tag and returns the result
-func (b *TagBuilder) Do() (Tag, error) {
-	if err := b.target.Validate(); err != nil {
-		return nil, errors.Wrap(err, `validation failed`)
+func (b *TagBuilder) Do(options ...Option) (Tag, error) {
+	validate := true
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyValidate:
+			validate = option.Value().(bool)
+		}
+	}
+	if validate {
+		if err := b.target.Validate(false); err != nil {
+			return nil, errors.Wrap(err, `validation failed`)
+		}
 	}
 	return b.target, nil
 }

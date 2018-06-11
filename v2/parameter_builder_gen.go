@@ -17,9 +17,18 @@ type ParameterBuilder struct {
 }
 
 // Do finalizes the building process for Parameter and returns the result
-func (b *ParameterBuilder) Do() (Parameter, error) {
-	if err := b.target.Validate(); err != nil {
-		return nil, errors.Wrap(err, `validation failed`)
+func (b *ParameterBuilder) Do(options ...Option) (Parameter, error) {
+	validate := true
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyValidate:
+			validate = option.Value().(bool)
+		}
+	}
+	if validate {
+		if err := b.target.Validate(false); err != nil {
+			return nil, errors.Wrap(err, `validation failed`)
+		}
 	}
 	return b.target, nil
 }

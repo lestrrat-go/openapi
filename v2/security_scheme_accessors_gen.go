@@ -4,10 +4,12 @@ package openapi
 // DO NOT EDIT MANUALLY. All changes will be lost
 
 import (
+	"github.com/pkg/errors"
 	"sort"
 )
 
 var _ = sort.Strings
+var _ = errors.Cause
 
 func (v *securityScheme) Type() string {
 	return v.typ
@@ -76,6 +78,18 @@ func (v *securityScheme) Extensions() *ExtensionsIterator {
 	return &iter
 }
 
-func (v *securityScheme) Validate() error {
+func (v *securityScheme) Validate(recurse bool) error {
+	if recurse {
+		return v.recurseValidate()
+	}
+	return nil
+}
+
+func (v *securityScheme) recurseValidate() error {
+	if elem := v.scopes; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate scopes`)
+		}
+	}
 	return nil
 }

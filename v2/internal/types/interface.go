@@ -1,5 +1,9 @@
 package types
 
+type Validator interface {
+	Validate(bool) error
+}
+
 type ResolveError interface {
 	Fatal() bool
 }

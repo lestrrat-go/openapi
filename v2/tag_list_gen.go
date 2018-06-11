@@ -16,6 +16,17 @@ func (v *TagList) Clear() error {
 	return nil
 }
 
+func (v *TagList) Validate(recurse bool) error {
+	for i, elem := range *v {
+		if validator, ok := elem.(Validator); ok {
+			if err := validator.Validate(recurse); err != nil {
+				return errors.Wrapf(err, `failed to validate element %d`, i)
+			}
+		}
+	}
+	return nil
+}
+
 func (v *TagList) UnmarshalJSON(data []byte) error {
 	var proxy []*tag
 	if err := json.Unmarshal(data, &proxy); err != nil {

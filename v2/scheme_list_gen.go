@@ -15,3 +15,7 @@ func (v *SchemeList) Clear() error {
 	*v = SchemeList(nil)
 	return nil
 }
+
+func (v *SchemeList) Validate(recurse bool) error {
+	return nil
+}

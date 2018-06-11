@@ -17,9 +17,18 @@ type SecuritySchemeBuilder struct {
 }
 
 // Do finalizes the building process for SecurityScheme and returns the result
-func (b *SecuritySchemeBuilder) Do() (SecurityScheme, error) {
-	if err := b.target.Validate(); err != nil {
-		return nil, errors.Wrap(err, `validation failed`)
+func (b *SecuritySchemeBuilder) Do(options ...Option) (SecurityScheme, error) {
+	validate := true
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyValidate:
+			validate = option.Value().(bool)
+		}
+	}
+	if validate {
+		if err := b.target.Validate(false); err != nil {
+			return nil, errors.Wrap(err, `validation failed`)
+		}
 	}
 	return b.target, nil
 }

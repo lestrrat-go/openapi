@@ -17,9 +17,18 @@ type ResponseBuilder struct {
 }
 
 // Do finalizes the building process for Response and returns the result
-func (b *ResponseBuilder) Do() (Response, error) {
-	if err := b.target.Validate(); err != nil {
-		return nil, errors.Wrap(err, `validation failed`)
+func (b *ResponseBuilder) Do(options ...Option) (Response, error) {
+	validate := true
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyValidate:
+			validate = option.Value().(bool)
+		}
+	}
+	if validate {
+		if err := b.target.Validate(false); err != nil {
+			return nil, errors.Wrap(err, `validation failed`)
+		}
 	}
 	return b.target, nil
 }

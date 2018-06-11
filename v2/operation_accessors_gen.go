@@ -4,10 +4,12 @@ package openapi
 // DO NOT EDIT MANUALLY. All changes will be lost
 
 import (
+	"github.com/pkg/errors"
 	"sort"
 )
 
 var _ = sort.Strings
+var _ = errors.Cause
 
 func (v *operation) Verb() string {
 	return v.verb
@@ -124,6 +126,53 @@ func (v *operation) Extensions() *ExtensionsIterator {
 	return &iter
 }
 
-func (v *operation) Validate() error {
+func (v *operation) Validate(recurse bool) error {
+	if recurse {
+		return v.recurseValidate()
+	}
+	return nil
+}
+
+func (v *operation) recurseValidate() error {
+	if elem := v.pathItem; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate pathItem`)
+		}
+	}
+	if elem := v.tags; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate tags`)
+		}
+	}
+	if elem := v.consumes; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate consumes`)
+		}
+	}
+	if elem := v.produces; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate produces`)
+		}
+	}
+	if elem := v.parameters; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate parameters`)
+		}
+	}
+	if elem := v.responses; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate responses`)
+		}
+	}
+	if elem := v.schemes; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate schemes`)
+		}
+	}
+	if elem := v.security; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate security`)
+		}
+	}
 	return nil
 }

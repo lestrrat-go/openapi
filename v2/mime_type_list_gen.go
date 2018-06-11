@@ -15,3 +15,7 @@ func (v *MIMETypeList) Clear() error {
 	*v = MIMETypeList(nil)
 	return nil
 }
+
+func (v *MIMETypeList) Validate(recurse bool) error {
+	return nil
+}

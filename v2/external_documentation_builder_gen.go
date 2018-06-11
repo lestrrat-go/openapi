@@ -17,9 +17,18 @@ type ExternalDocumentationBuilder struct {
 }
 
 // Do finalizes the building process for ExternalDocumentation and returns the result
-func (b *ExternalDocumentationBuilder) Do() (ExternalDocumentation, error) {
-	if err := b.target.Validate(); err != nil {
-		return nil, errors.Wrap(err, `validation failed`)
+func (b *ExternalDocumentationBuilder) Do(options ...Option) (ExternalDocumentation, error) {
+	validate := true
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyValidate:
+			validate = option.Value().(bool)
+		}
+	}
+	if validate {
+		if err := b.target.Validate(false); err != nil {
+			return nil, errors.Wrap(err, `validation failed`)
+		}
 	}
 	return b.target, nil
 }

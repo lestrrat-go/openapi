@@ -17,9 +17,18 @@ type ItemsBuilder struct {
 }
 
 // Do finalizes the building process for Items and returns the result
-func (b *ItemsBuilder) Do() (Items, error) {
-	if err := b.target.Validate(); err != nil {
-		return nil, errors.Wrap(err, `validation failed`)
+func (b *ItemsBuilder) Do(options ...Option) (Items, error) {
+	validate := true
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyValidate:
+			validate = option.Value().(bool)
+		}
+	}
+	if validate {
+		if err := b.target.Validate(false); err != nil {
+			return nil, errors.Wrap(err, `validation failed`)
+		}
 	}
 	return b.target, nil
 }

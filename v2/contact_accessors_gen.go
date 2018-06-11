@@ -4,10 +4,12 @@ package openapi
 // DO NOT EDIT MANUALLY. All changes will be lost
 
 import (
+	"github.com/pkg/errors"
 	"sort"
 )
 
 var _ = sort.Strings
+var _ = errors.Cause
 
 func (v *contact) Name() string {
 	return v.name
@@ -44,6 +46,14 @@ func (v *contact) Extensions() *ExtensionsIterator {
 	return &iter
 }
 
-func (v *contact) Validate() error {
+func (v *contact) Validate(recurse bool) error {
+	if recurse {
+		return v.recurseValidate()
+	}
+	return nil
+}
+
+func (v *contact) recurseValidate() error {
+	return nil
 	return nil
 }

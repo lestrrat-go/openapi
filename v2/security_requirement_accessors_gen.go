@@ -4,10 +4,12 @@ package openapi
 // DO NOT EDIT MANUALLY. All changes will be lost
 
 import (
+	"github.com/pkg/errors"
 	"sort"
 )
 
 var _ = sort.Strings
+var _ = errors.Cause
 
 func (v *securityRequirement) Data() map[string][]string {
 	return v.data
@@ -36,6 +38,14 @@ func (v *securityRequirement) Extensions() *ExtensionsIterator {
 	return &iter
 }
 
-func (v *securityRequirement) Validate() error {
+func (v *securityRequirement) Validate(recurse bool) error {
+	if recurse {
+		return v.recurseValidate()
+	}
+	return nil
+}
+
+func (v *securityRequirement) recurseValidate() error {
+	return nil
 	return nil
 }

@@ -10,7 +10,7 @@ import (
 
 var rxHostPortOnly = regexp.MustCompile(`^[^:/]+(:\d+)?$`)
 
-func (v *swagger) Validate() error {
+func (v *swagger) Validate(recurse bool) error {
 	if v.version != defaultSwaggerVersion {
 		return errors.Errorf(`swagger field must be %s (got %s)`, strconv.Quote(defaultSwaggerVersion), strconv.Quote(v.version))
 	}
@@ -38,6 +38,10 @@ func (v *swagger) Validate() error {
 		if !strings.HasPrefix(s, "/") {
 			return errors.New(`basePath must start with a slash (/)`)
 		}
+	}
+
+	if recurse {
+		return v.recurseValidate()
 	}
 
 	return nil

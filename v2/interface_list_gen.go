@@ -15,3 +15,14 @@ func (v *InterfaceList) Clear() error {
 	*v = InterfaceList(nil)
 	return nil
 }
+
+func (v *InterfaceList) Validate(recurse bool) error {
+	for i, elem := range *v {
+		if validator, ok := elem.(Validator); ok {
+			if err := validator.Validate(recurse); err != nil {
+				return errors.Wrapf(err, `failed to validate element %d`, i)
+			}
+		}
+	}
+	return nil
+}

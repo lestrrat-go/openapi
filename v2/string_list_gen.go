@@ -15,3 +15,7 @@ func (v *StringList) Clear() error {
 	*v = StringList(nil)
 	return nil
 }
+
+func (v *StringList) Validate(recurse bool) error {
+	return nil
+}

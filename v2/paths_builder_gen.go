@@ -17,9 +17,18 @@ type PathsBuilder struct {
 }
 
 // Do finalizes the building process for Paths and returns the result
-func (b *PathsBuilder) Do() (Paths, error) {
-	if err := b.target.Validate(); err != nil {
-		return nil, errors.Wrap(err, `validation failed`)
+func (b *PathsBuilder) Do(options ...Option) (Paths, error) {
+	validate := true
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyValidate:
+			validate = option.Value().(bool)
+		}
+	}
+	if validate {
+		if err := b.target.Validate(false); err != nil {
+			return nil, errors.Wrap(err, `validation failed`)
+		}
 	}
 	return b.target, nil
 }

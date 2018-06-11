@@ -17,9 +17,18 @@ type OperationBuilder struct {
 }
 
 // Do finalizes the building process for Operation and returns the result
-func (b *OperationBuilder) Do() (Operation, error) {
-	if err := b.target.Validate(); err != nil {
-		return nil, errors.Wrap(err, `validation failed`)
+func (b *OperationBuilder) Do(options ...Option) (Operation, error) {
+	validate := true
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyValidate:
+			validate = option.Value().(bool)
+		}
+	}
+	if validate {
+		if err := b.target.Validate(false); err != nil {
+			return nil, errors.Wrap(err, `validation failed`)
+		}
 	}
 	return b.target, nil
 }

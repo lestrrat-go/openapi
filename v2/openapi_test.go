@@ -148,5 +148,12 @@ func TestParseExtensions(t *testing.T) {
 	if !assert.True(t, bytes.Contains(encoded, []byte("x-hello-world: Hello, World")), "exntesion should exist") {
 		return
 	}
+}
 
+func TestValidate(t *testing.T) {
+	_, err := openapi.NewSwagger(nil,nil).Do()
+	if !assert.Error(t, err, "expected to see an error") {
+		return
+	}
+	t.Logf("%s", err)
 }

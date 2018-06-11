@@ -17,9 +17,18 @@ type SecurityRequirementBuilder struct {
 }
 
 // Do finalizes the building process for SecurityRequirement and returns the result
-func (b *SecurityRequirementBuilder) Do() (SecurityRequirement, error) {
-	if err := b.target.Validate(); err != nil {
-		return nil, errors.Wrap(err, `validation failed`)
+func (b *SecurityRequirementBuilder) Do(options ...Option) (SecurityRequirement, error) {
+	validate := true
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyValidate:
+			validate = option.Value().(bool)
+		}
+	}
+	if validate {
+		if err := b.target.Validate(false); err != nil {
+			return nil, errors.Wrap(err, `validation failed`)
+		}
 	}
 	return b.target, nil
 }

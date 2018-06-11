@@ -16,6 +16,17 @@ func (v *SecurityRequirementList) Clear() error {
 	return nil
 }
 
+func (v *SecurityRequirementList) Validate(recurse bool) error {
+	for i, elem := range *v {
+		if validator, ok := elem.(Validator); ok {
+			if err := validator.Validate(recurse); err != nil {
+				return errors.Wrapf(err, `failed to validate element %d`, i)
+			}
+		}
+	}
+	return nil
+}
+
 func (v *SecurityRequirementList) UnmarshalJSON(data []byte) error {
 	var proxy []*securityRequirement
 	if err := json.Unmarshal(data, &proxy); err != nil {

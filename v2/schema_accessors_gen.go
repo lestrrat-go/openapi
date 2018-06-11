@@ -4,10 +4,12 @@ package openapi
 // DO NOT EDIT MANUALLY. All changes will be lost
 
 import (
+	"github.com/pkg/errors"
 	"sort"
 )
 
 var _ = sort.Strings
+var _ = errors.Cause
 
 func (v *schema) Name() string {
 	return v.name
@@ -194,6 +196,48 @@ func (v *schema) Extensions() *ExtensionsIterator {
 	return &iter
 }
 
-func (v *schema) Validate() error {
+func (v *schema) Validate(recurse bool) error {
+	if recurse {
+		return v.recurseValidate()
+	}
+	return nil
+}
+
+func (v *schema) recurseValidate() error {
+	if elem := v.required; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate required`)
+		}
+	}
+	if elem := v.enum; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate enum`)
+		}
+	}
+	if elem := v.allOf; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate allOf`)
+		}
+	}
+	if elem := v.items; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate items`)
+		}
+	}
+	if elem := v.properties; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate properties`)
+		}
+	}
+	if elem := v.additionaProperties; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate additionaProperties`)
+		}
+	}
+	if elem := v.xml; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate xml`)
+		}
+	}
 	return nil
 }

@@ -4,10 +4,12 @@ package openapi
 // DO NOT EDIT MANUALLY. All changes will be lost
 
 import (
+	"github.com/pkg/errors"
 	"sort"
 )
 
 var _ = sort.Strings
+var _ = errors.Cause
 
 func (v *response) Name() string {
 	return v.name
@@ -80,6 +82,28 @@ func (v *response) Extensions() *ExtensionsIterator {
 	return &iter
 }
 
-func (v *response) Validate() error {
+func (v *response) Validate(recurse bool) error {
+	if recurse {
+		return v.recurseValidate()
+	}
+	return nil
+}
+
+func (v *response) recurseValidate() error {
+	if elem := v.schema; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate schema`)
+		}
+	}
+	if elem := v.headers; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate headers`)
+		}
+	}
+	if elem := v.examples; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate examples`)
+		}
+	}
 	return nil
 }

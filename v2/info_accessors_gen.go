@@ -4,10 +4,12 @@ package openapi
 // DO NOT EDIT MANUALLY. All changes will be lost
 
 import (
+	"github.com/pkg/errors"
 	"sort"
 )
 
 var _ = sort.Strings
+var _ = errors.Cause
 
 func (v *info) Title() string {
 	return v.title
@@ -56,6 +58,23 @@ func (v *info) Extensions() *ExtensionsIterator {
 	return &iter
 }
 
-func (v *info) Validate() error {
+func (v *info) Validate(recurse bool) error {
+	if recurse {
+		return v.recurseValidate()
+	}
+	return nil
+}
+
+func (v *info) recurseValidate() error {
+	if elem := v.contact; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate contact`)
+		}
+	}
+	if elem := v.license; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate license`)
+		}
+	}
 	return nil
 }
