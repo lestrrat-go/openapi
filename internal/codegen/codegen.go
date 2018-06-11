@@ -26,6 +26,8 @@ func DumpCode(dst io.Writer, src io.Reader) {
 
 func ExportedName(s string) string {
 	switch s {
+	case "defaultValue":
+		return "Default"
 	case "url":
 		return "URL"
 	case "xml":
@@ -34,11 +36,16 @@ func ExportedName(s string) string {
 		return "Type"
 	}
 
-	return stringutil.Camel(stringutil.Snake(s))
+	s = stringutil.Camel(stringutil.Snake(s))
+	s = strings.Replace(s, "Id", "ID", -1)
+	s = strings.Replace(s, "Url", "URL", -1)
+	return s
 }
 
 func UnexportedName(s string) string {
 	switch s {
+	case "Default":
+		return "defaultValue"
 	case "URL":
 		return "url"
 	case "XML":

@@ -23,6 +23,7 @@ import (
 type genCtx struct {
 	client      *Client
 	compiling   map[string]struct{}
+	currentCall *Call
 	dir         string
 	packageName string
 	resolver    openapi.Resolver
@@ -58,6 +59,15 @@ type Array struct {
 type Struct struct {
 	name   string
 	fields []*Field
+}
+
+func (v *Struct) WriteCode(dst io.Writer) error {
+	fmt.Fprintf(dst, "\n\ntype %s struct {", v.name)
+	for _, field := range v.fields {
+		fmt.Fprintf(dst, "\n%s %s `%s`", field.goName, field.typ, field.tag)
+	}
+	fmt.Fprintf(dst, "\n}")
+	return nil
 }
 
 func (a *Array) SetName(s string) {
@@ -108,8 +118,8 @@ type Call struct {
 	optionals           []*Field
 	pathparams          []*Field
 	queryparams         []*Field
-	formparams          []*Field
-	bodyParam           *Field
+	formType            Type
+	bodyType            Type
 	responses           []*Response
 }
 
@@ -119,10 +129,12 @@ type Response struct {
 }
 
 type Field struct {
-	name   string // raw name
-	goName string // camelCase name
-	typ    string
-	tag    string
+	name     string // raw name
+	goName   string // camelCase name
+	typ      string
+	tag      string
+	required bool
+	inBody   bool
 }
 
 func Generate(spec openapi.Swagger, options ...Option) error {
@@ -357,14 +369,14 @@ func compileDefinitions(ctx *genCtx) error {
 }
 */
 
-func compileNumeric(s string) string {
+func compileNumeric(s string) Type {
 	switch s {
 	case "double":
-		return "double"
+		return Builtin("double")
 	case "int64":
-		return "int64"
+		return Builtin("int64")
 	default:
-		return "float32"
+		return Builtin("float32")
 	}
 }
 
@@ -380,10 +392,11 @@ func compileStruct(ctx *genCtx, schema openapi.Schema) (Type, error) {
 		}
 
 		obj.fields = append(obj.fields, &Field{
-			name:   name,
-			goName: codegen.ExportedName(name),
-			tag:    fmt.Sprintf(`json:"%s"`, name),
-			typ:    fieldMsg.Name(),
+			name:     name,
+			goName:   codegen.ExportedName(name),
+			tag:      fmt.Sprintf(`json:"%s"`, name),
+			typ:      fieldMsg.Name(),
+			required: schema.IsRequiredProperty(name),
 		})
 	}
 	return &obj, nil
@@ -520,12 +533,12 @@ func compileResponseType(ctx *genCtx, response openapi.Response) (string, error)
 	}
 }
 
-func compileParameterType(ctx *genCtx, param openapi.Parameter) (string, error) {
+func compileParameterType(ctx *genCtx, param openapi.Parameter) (Type, error) {
 	if ref := param.Reference(); ref != "" {
 		// this better be resolvable via Definitions
 		thing, err := ctx.resolver.Resolve(ref)
 		if err != nil {
-			return "", errors.Wrapf(err, `failed to resolve %s`, ref)
+			return nil, errors.Wrapf(err, `failed to resolve %s`, ref)
 		}
 
 		// The only way to truly make sure that this resolved thingy
@@ -533,12 +546,12 @@ func compileParameterType(ctx *genCtx, param openapi.Parameter) (string, error) 
 		// it back
 		var encoded bytes.Buffer
 		if err := json.NewEncoder(&encoded).Encode(thing); err != nil {
-			return "", errors.Wrap(err, `failed to encode temporary structure to JSON`)
+			return nil, errors.Wrap(err, `failed to encode temporary structure to JSON`)
 		}
 
 		var newp openapi.Parameter
 		if err := openapi.ParameterFromJSON(encoded.Bytes(), &newp); err != nil {
-			return "", errors.Wrap(err, `failed to decode temporary structure from JSON`)
+			return nil, errors.Wrap(err, `failed to decode temporary structure from JSON`)
 		}
 		param = newp
 	}
@@ -550,12 +563,25 @@ func compileParameterType(ctx *genCtx, param openapi.Parameter) (string, error) 
 		case openapi.Array:
 			typ, err := compileSchema(ctx, schema.Items())
 			if err != nil {
-				return "", errors.Wrap(err, `failed to compile array parameter`)
+				return nil, errors.Wrap(err, `failed to compile array parameter`)
 			}
 
-			return "[]*" + typ.Name(), nil
+			return &Array{elem: typ.Name()}, nil
+		case openapi.Object:
+			typ, err := compileSchema(ctx, schema)
+			if err != nil {
+				return nil, errors.Wrap(err, `failed to compile object parameter`)
+			}
+
+			if typ.Name() == "" {
+				typ.SetName(codegen.ExportedName(ctx.currentCall.name + "_" + param.Name()))
+			}
+
+			registerType(ctx, fmt.Sprintf("#/generated/%s", typ.Name()), typ)
+
+			return typ, nil
 		default:
-			return "", errors.Errorf(`unimplemented %s`, schema.Type())
+			return nil, errors.Errorf(`unimplemented parameter type %s`, strconv.Quote(string(schema.Type())))
 		}
 	}
 
@@ -564,7 +590,7 @@ func compileParameterType(ctx *genCtx, param openapi.Parameter) (string, error) 
 		return compileNumeric(param.Format()), nil
 	}
 
-	return string(param.Type()), nil
+	return Builtin(param.Type()), nil
 }
 
 func compileCall(ctx *genCtx, oper openapi.Operation) error {
@@ -577,6 +603,7 @@ func compileCall(ctx *genCtx, oper openapi.Operation) error {
 		path: oper.PathItem().Path(),
 		verb: oper.Verb(),
 	}
+	ctx.currentCall = call
 
 	// The OpenAPI spec allows you to specify multiple "consumes"
 	// clause, but we only support JSON or appliation/x-www-form-urlencoded
@@ -598,33 +625,138 @@ func compileCall(ctx *genCtx, oper openapi.Operation) error {
 		})
 	}
 
+	var formBuilder *openapi.SchemaBuilder
 	for piter := oper.Parameters(); piter.Next(); {
 		param := piter.Item()
-		var field Field
-		field.name = param.Name()
-		field.goName = stringutil.LowerCamel(param.Name())
-		typ, err := compileParameterType(ctx, param)
-		if err != nil {
-			// XXX use param.Name, not field.name because we might have
-			// transformed it
-			return errors.Wrapf(err, `failed to compile parameter %s`, param.Name())
-		}
-		field.typ = typ
-		if param.Required() {
-			call.requireds = append(call.requireds, &field)
-		} else {
-			call.optionals = append(call.optionals, &field)
-		}
 
 		switch param.In() {
-		case openapi.InPath:
-			call.pathparams = append(call.pathparams, &field)
-		case openapi.InQuery:
-			call.queryparams = append(call.queryparams, &field)
-		case openapi.InBody:
-			call.bodyParam = &field
 		case openapi.InForm:
-			call.formparams = append(call.formparams, &field)
+			// Use the values from the parameter to construct a schema
+			if formBuilder == nil {
+				formBuilder = openapi.NewSchema()
+			}
+
+			collectionFormat := param.CollectionFormat()
+			if collectionFormat == "" {
+				collectionFormat = openapi.CSV
+			}
+			b := openapi.NewSchema().
+				Type(param.Type()).
+				Format(param.Format()).
+				Pattern(param.Pattern()).
+				UniqueItems(param.UniqueItems()).
+				Enum(param.Enum()).
+				Default(param.Default())
+			if param.HasMaximum() {
+				b.Maximum(param.Maximum())
+			}
+			if param.HasMinimum() {
+				b.Minimum(param.Minimum())
+			}
+			if param.HasExclusiveMaximum() {
+				b.ExclusiveMaximum(param.ExclusiveMaximum())
+			}
+			if param.HasExclusiveMinimum() {
+				b.ExclusiveMinimum(param.ExclusiveMinimum())
+			}
+			if param.HasMaxLength() {
+				b.MaxLength(param.MaxLength())
+			}
+			if param.HasMinLength() {
+				b.MinLength(param.MinLength())
+			}
+			if param.HasMaxItems() {
+				b.MaxItems(param.MaxItems())
+			}
+			if param.HasMinItems() {
+				b.MinItems(param.MinItems())
+			}
+			if param.HasMultipleOf() {
+				b.MultipleOf(param.MultipleOf())
+			}
+
+			prop, err := b.Do()
+			if err != nil {
+				return errors.Wrapf(err, `failed to create schema for form parameter %s`, param.Name())
+			}
+
+			formBuilder.Property(param.Name(), prop)
+		case openapi.InBody:
+			// sanity check (although this should have already been taken care
+			// of in Validate())
+			if call.bodyType != nil {
+				return errors.New(`multiple body elements found in parameters`)
+			}
+
+			// compile this field into type, and enqueue its fields as
+			// if they are part of the Call object
+			// (the body parameter is no longer visible to the user,
+			// but we want the user to populate its fields)
+			typ, err := compileParameterType(ctx, param)
+			if err != nil {
+				// XXX use param.Name, not field.name because we might have
+				// transformed it
+				return errors.Wrapf(err, `failed to compile parameter %s`, param.Name())
+			}
+
+			switch typ := typ.(type) {
+			case *Struct:
+				call.bodyType = typ
+				for _, field := range typ.fields {
+					field.inBody = true
+					if field.required {
+						call.requireds = append(call.requireds, field)
+					} else {
+						call.optionals = append(call.optionals, field)
+					}
+				}
+			default:
+				return errors.Errorf("body parameter handling for %T is not implemented", typ)
+			}
+		default:
+			typ, err := compileParameterType(ctx, param)
+			if err != nil {
+				// XXX use param.Name, not field.name because we might have
+				// transformed it
+				return errors.Wrapf(err, `failed to compile parameter %s`, param.Name())
+			}
+			var field Field
+			field.name = param.Name()
+			field.goName = stringutil.LowerCamel(param.Name())
+			field.typ = typ.Name()
+			if param.Required() {
+				call.requireds = append(call.requireds, &field)
+			} else {
+				call.optionals = append(call.optionals, &field)
+			}
+
+			switch param.In() {
+			case openapi.InPath:
+				call.pathparams = append(call.pathparams, &field)
+			case openapi.InQuery:
+				call.queryparams = append(call.queryparams, &field)
+			}
+		}
+	}
+
+	// if we have form fields, compile that into a struct
+	if formBuilder != nil {
+		formSchema, err := formBuilder.Do()
+		if err != nil {
+			return errors.Wrap(err, `failed to build schema for formData fields`)
+		}
+		formType, err := compileStruct(ctx, formSchema)
+		if err != nil {
+			return errors.Wrap(err, `failed to compile schema for formData fields`)
+		}
+		if formType.Name() == "" {
+			formType.SetName(codegen.ExportedName(call.name + "_Form"))
+			registerType(ctx, fmt.Sprintf("#/generated/%s", formType.Name()), formType)
+		}
+		call.formType = formType
+
+		if len(call.requestContentTypes) == 0 {
+			call.requestContentTypes = append(call.requestContentTypes, "application/www-form-urlencoded")
 		}
 	}
 
@@ -649,8 +781,10 @@ func formatClient(ctx *genCtx, dst io.Writer, cl *Client) error {
 	codegen.WriteImports(dst, "net/http")
 	fmt.Fprintf(dst, "\n\n")
 	var typNames []string
-	for _, typ := range cl.types {
-		typNames = append(typNames, typ.Name())
+	for path, typ := range cl.types {
+		if strings.HasPrefix(path, "#/defnitions/") {
+			typNames = append(typNames, typ.Name())
+		}
 	}
 	sort.Strings(typNames)
 
@@ -695,6 +829,16 @@ func formatClient(ctx *genCtx, dst io.Writer, cl *Client) error {
 		fmt.Fprintf(dst, "\n%s *%s", codegen.UnexportedName(name), name)
 	}
 	fmt.Fprintf(dst, "\n}")
+
+	for path, typ := range ctx.types {
+		if !strings.HasPrefix(path, "#/generated/") {
+			continue
+		}
+
+		if st, ok := typ.(*Struct); ok {
+			st.WriteCode(dst)
+		}
+	}
 
 	fmt.Fprintf(dst, "\n\n// New creates a new client. If your API require additional OAuth authentication,")
 	fmt.Fprintf(dst, "\n// JWT authorization, etc, pass an http.Client with a custom Transport to handle it")
@@ -773,7 +917,17 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 	fmt.Fprintf(dst, "\nhttpCl *http.Client")
 	fmt.Fprintf(dst, "\nserver string")
 	fmt.Fprintf(dst, "\nmarshalers map[string]Marshaler")
+	if call.bodyType != nil {
+		fmt.Fprintf(dst, "\nbody %s", call.bodyType.Name())
+	} else if call.formType != nil {
+		fmt.Fprintf(dst, "\nform %s", call.formType.Name())
+	}
+
 	for _, field := range allFields {
+		if field.inBody {
+			continue
+		}
+
 		fmt.Fprintf(dst, "\n%s %s", field.name, field.typ)
 	}
 	fmt.Fprintf(dst, "\n}")
@@ -783,24 +937,28 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 	})
 	fmt.Fprintf(dst, "\n\nfunc (svc *%s) %s(", svcName, strings.TrimSuffix(call.name, "Call"))
 	for i, field := range call.requireds {
-		fmt.Fprintf(dst, "%s %s", field.name, field.typ)
+		fmt.Fprintf(dst, "%s %s", codegen.UnexportedName(field.goName), field.typ)
 		if i < len(call.requireds)-1 {
 			fmt.Fprintf(dst, ", ")
 		}
 	}
 	fmt.Fprintf(dst, ") *%s {", call.name)
 
-	fmt.Fprintf(dst, "\nreturn &%s{", call.name)
-	fmt.Fprintf(dst, "\nhttpCl: svc.httpCl,")
-	fmt.Fprintf(dst, "\nserver: svc.server,")
-	fmt.Fprintf(dst, "\nmarshalers: map[string]Marshaler{")
+	fmt.Fprintf(dst, "\nvar call %s", call.name)
+	fmt.Fprintf(dst, "\ncall.httpCl = svc.httpCl")
+	fmt.Fprintf(dst, "\ncall.server = svc.server")
+	fmt.Fprintf(dst, "\ncall.marshalers = map[string]Marshaler{")
 	fmt.Fprintf(dst, "\n`application/json`: MarshalFunc(json.Marshal),")
 	fmt.Fprintf(dst, "\n`application/www-form-urlencoded`: MarshalFunc(urlenc.Marshal),")
-	fmt.Fprintf(dst, "\n},")
-	for _, field := range call.requireds {
-		fmt.Fprintf(dst, "\n%s: %s,", field.name, field.name)
-	}
 	fmt.Fprintf(dst, "\n}")
+	for _, field := range call.requireds {
+		if field.inBody {
+			fmt.Fprintf(dst, "\ncall.body.%s = %s", field.goName, codegen.UnexportedName(field.goName))
+		} else {
+			fmt.Fprintf(dst, "\ncall.%s: %s", field.goName, codegen.UnexportedName(field.goName))
+		}
+	}
+	fmt.Fprintf(dst, "\nreturn &call")
 	fmt.Fprintf(dst, "\n}")
 
 	sort.Slice(call.optionals, func(i, j int) bool {
@@ -809,24 +967,34 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 	for _, optional := range call.optionals {
 		if strings.HasPrefix(optional.typ, "[]") {
 			fmt.Fprintf(dst, "\n\nfunc (call *%s) %s(v ...%s) *%s {", call.name, codegen.ExportedName(optional.name), strings.TrimPrefix(optional.typ, "[]"), call.name)
-			fmt.Fprintf(dst, "\ncall.%[1]s = append(call.%[1]s, v...)", optional.name)
+			if optional.inBody {
+				fmt.Fprintf(dst, "\ncall.body.%[1]s = append(call.body.%[1]s, v...)", optional.name)
+			} else {
+				fmt.Fprintf(dst, "\ncall.%[1]s = append(call.%[1]s, v...)", optional.name)
+			}
 			fmt.Fprintf(dst, "\nreturn call")
 			fmt.Fprintf(dst, "\n}")
 		} else {
 			fmt.Fprintf(dst, "\n\nfunc (call *%s) %s(v %s) *%s {", call.name, stringutil.Camel(optional.name), optional.typ, call.name)
-			fmt.Fprintf(dst, "\ncall.%s = v", optional.name)
+			if optional.inBody {
+				fmt.Fprintf(dst, "\ncall.body.%s = v", optional.name)
+			} else {
+				fmt.Fprintf(dst, "\ncall.%s = v", optional.name)
+			}
 			fmt.Fprintf(dst, "\nreturn call")
 			fmt.Fprintf(dst, "\n}")
 		}
 	}
 
-	fmt.Fprintf(dst, "\n\nfunc (call %s) AsMap() map[string]interface{} {", call.name)
-	fmt.Fprintf(dst, "\nm := make(map[string]interface{})")
-	for _, param := range append(call.optionals, call.requireds...) {
-		fmt.Fprintf(dst, "\nm[%#v] = call.%s", param.name, param.goName)
-	}
-	fmt.Fprintf(dst, "\nreturn m")
-	fmt.Fprintf(dst, "\n}")
+	/*
+		fmt.Fprintf(dst, "\n\nfunc (call %s) AsMap() map[string]interface{} {", call.name)
+		fmt.Fprintf(dst, "\nm := make(map[string]interface{})")
+		for _, param := range append(call.optionals, call.requireds...) {
+			fmt.Fprintf(dst, "\nm[%#v] = call.%s", param.name, param.goName)
+		}
+		fmt.Fprintf(dst, "\nreturn m")
+		fmt.Fprintf(dst, "\n}")
+	*/
 
 	fmt.Fprintf(dst, "\n\nfunc (call *%[1]s) Marshaler(mime string, m Marshaler) *%[1]s {", call.name)
 	fmt.Fprintf(dst, "\ncall.marshalers[mime] = m")
@@ -888,7 +1056,13 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 		fmt.Fprintf(dst, "\nreturn nil, errors.Errorf(`missing marshaler for request content type %%s`, mtype)")
 		fmt.Fprintf(dst, "\n}")
 
-		fmt.Fprintf(dst, "\n\nencoded, err := marshaler.Marshal(call)")
+		if call.bodyType != nil {
+			fmt.Fprintf(dst, "\n\nencoded, err := marshaler.Marshal(call.body)")
+		} else if call.formType != nil {
+			fmt.Fprintf(dst, "\n\nencoded, err := marshaler.Marshal(call.form)")
+		} else {
+			return errors.New(`can't proceed when call.bodyTyp == nil and call.formType == nil`)
+		}
 		fmt.Fprintf(dst, "\nif err != nil {")
 		fmt.Fprintf(dst, "\nreturn nil, errors.Wrap(err, `failed to marshal request parameters`)")
 		fmt.Fprintf(dst, "\n}")
