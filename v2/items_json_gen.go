@@ -80,7 +80,7 @@ func (v *items) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &proxy); err != nil {
 		return err
 	}
-	if raw := proxy["$ref"]; len(raw) > 0 {
+	if raw, ok := proxy["$ref"]; ok {
 		if err := json.Unmarshal(raw, &v.reference); err != nil {
 			return errors.Wrap(err, `failed to unmarshal $ref`)
 		}
@@ -89,7 +89,7 @@ func (v *items) UnmarshalJSON(data []byte) error {
 
 	mutator := MutateItems(v)
 
-	if raw := proxy["type"]; len(raw) > 0 {
+	if raw, ok := proxy["type"]; ok {
 		var decoded PrimitiveType
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field type`)
@@ -98,7 +98,7 @@ func (v *items) UnmarshalJSON(data []byte) error {
 		delete(proxy, "type")
 	}
 
-	if raw := proxy["format"]; len(raw) > 0 {
+	if raw, ok := proxy["format"]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field format`)
@@ -107,7 +107,7 @@ func (v *items) UnmarshalJSON(data []byte) error {
 		delete(proxy, "format")
 	}
 
-	if raw := proxy["items"]; len(raw) > 0 {
+	if raw, ok := proxy["items"]; ok {
 		var decoded items
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Items`)
@@ -117,7 +117,7 @@ func (v *items) UnmarshalJSON(data []byte) error {
 		delete(proxy, "items")
 	}
 
-	if raw := proxy["collectionFormat"]; len(raw) > 0 {
+	if raw, ok := proxy["collectionFormat"]; ok {
 		var decoded CollectionFormat
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field collectionFormat`)
@@ -126,7 +126,7 @@ func (v *items) UnmarshalJSON(data []byte) error {
 		delete(proxy, "collectionFormat")
 	}
 
-	if raw := proxy["default"]; len(raw) > 0 {
+	if raw, ok := proxy["default"]; ok {
 		var decoded interface{}
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field default`)
@@ -135,7 +135,7 @@ func (v *items) UnmarshalJSON(data []byte) error {
 		delete(proxy, "default")
 	}
 
-	if raw := proxy["maximum"]; len(raw) > 0 {
+	if raw, ok := proxy["maximum"]; ok {
 		var decoded float64
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field maximum`)
@@ -144,7 +144,7 @@ func (v *items) UnmarshalJSON(data []byte) error {
 		delete(proxy, "maximum")
 	}
 
-	if raw := proxy["exclusiveMaximum"]; len(raw) > 0 {
+	if raw, ok := proxy["exclusiveMaximum"]; ok {
 		var decoded float64
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field exclusiveMaximum`)
@@ -153,7 +153,7 @@ func (v *items) UnmarshalJSON(data []byte) error {
 		delete(proxy, "exclusiveMaximum")
 	}
 
-	if raw := proxy["minimum"]; len(raw) > 0 {
+	if raw, ok := proxy["minimum"]; ok {
 		var decoded float64
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field minimum`)
@@ -162,7 +162,7 @@ func (v *items) UnmarshalJSON(data []byte) error {
 		delete(proxy, "minimum")
 	}
 
-	if raw := proxy["exclusiveMinimum"]; len(raw) > 0 {
+	if raw, ok := proxy["exclusiveMinimum"]; ok {
 		var decoded float64
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field exclusiveMinimum`)
@@ -171,7 +171,7 @@ func (v *items) UnmarshalJSON(data []byte) error {
 		delete(proxy, "exclusiveMinimum")
 	}
 
-	if raw := proxy["maxLength"]; len(raw) > 0 {
+	if raw, ok := proxy["maxLength"]; ok {
 		var decoded int
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field maxLength`)
@@ -180,7 +180,7 @@ func (v *items) UnmarshalJSON(data []byte) error {
 		delete(proxy, "maxLength")
 	}
 
-	if raw := proxy["minLength"]; len(raw) > 0 {
+	if raw, ok := proxy["minLength"]; ok {
 		var decoded int
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field minLength`)
@@ -189,7 +189,7 @@ func (v *items) UnmarshalJSON(data []byte) error {
 		delete(proxy, "minLength")
 	}
 
-	if raw := proxy["pattern"]; len(raw) > 0 {
+	if raw, ok := proxy["pattern"]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field pattern`)
@@ -198,7 +198,7 @@ func (v *items) UnmarshalJSON(data []byte) error {
 		delete(proxy, "pattern")
 	}
 
-	if raw := proxy["maxItems"]; len(raw) > 0 {
+	if raw, ok := proxy["maxItems"]; ok {
 		var decoded int
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field maxItems`)
@@ -207,7 +207,7 @@ func (v *items) UnmarshalJSON(data []byte) error {
 		delete(proxy, "maxItems")
 	}
 
-	if raw := proxy["minItems"]; len(raw) > 0 {
+	if raw, ok := proxy["minItems"]; ok {
 		var decoded int
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field minItems`)
@@ -216,7 +216,7 @@ func (v *items) UnmarshalJSON(data []byte) error {
 		delete(proxy, "minItems")
 	}
 
-	if raw := proxy["uniqueItems"]; len(raw) > 0 {
+	if raw, ok := proxy["uniqueItems"]; ok {
 		var decoded bool
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field uniqueItems`)
@@ -225,7 +225,7 @@ func (v *items) UnmarshalJSON(data []byte) error {
 		delete(proxy, "uniqueItems")
 	}
 
-	if raw := proxy["enum"]; len(raw) > 0 {
+	if raw, ok := proxy["enum"]; ok {
 		var decoded InterfaceList
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Enum`)
@@ -236,7 +236,7 @@ func (v *items) UnmarshalJSON(data []byte) error {
 		delete(proxy, "enum")
 	}
 
-	if raw := proxy["multipleOf"]; len(raw) > 0 {
+	if raw, ok := proxy["multipleOf"]; ok {
 		var decoded float64
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field multipleOf`)

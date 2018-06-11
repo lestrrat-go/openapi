@@ -32,15 +32,15 @@ func MutateLicense(v License) *LicenseMutator {
 }
 
 // Name sets the Name field for object License.
-func (b *LicenseMutator) Name(v string) *LicenseMutator {
-	b.proxy.name = v
-	return b
+func (m *LicenseMutator) Name(v string) *LicenseMutator {
+	m.proxy.name = v
+	return m
 }
 
 // URL sets the URL field for object License.
-func (b *LicenseMutator) URL(v string) *LicenseMutator {
-	b.proxy.url = v
-	return b
+func (m *LicenseMutator) URL(v string) *LicenseMutator {
+	m.proxy.url = v
+	return m
 }
 func (b *LicenseMutator) Extension(name string, value interface{}) *LicenseMutator {
 	if b.proxy.extensions == nil {

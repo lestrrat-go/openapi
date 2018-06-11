@@ -32,211 +32,277 @@ func MutateSchema(v Schema) *SchemaMutator {
 }
 
 // Name sets the Name field for object Schema.
-func (b *SchemaMutator) Name(v string) *SchemaMutator {
-	b.proxy.name = v
-	return b
+func (m *SchemaMutator) Name(v string) *SchemaMutator {
+	m.proxy.name = v
+	return m
 }
 
 // Type sets the Type field for object Schema.
-func (b *SchemaMutator) Type(v PrimitiveType) *SchemaMutator {
-	b.proxy.typ = v
-	return b
+func (m *SchemaMutator) Type(v PrimitiveType) *SchemaMutator {
+	m.proxy.typ = v
+	return m
 }
 
 // Format sets the Format field for object Schema.
-func (b *SchemaMutator) Format(v string) *SchemaMutator {
-	b.proxy.format = v
-	return b
+func (m *SchemaMutator) Format(v string) *SchemaMutator {
+	m.proxy.format = v
+	return m
 }
 
 // Title sets the Title field for object Schema.
-func (b *SchemaMutator) Title(v string) *SchemaMutator {
-	b.proxy.title = v
-	return b
+func (m *SchemaMutator) Title(v string) *SchemaMutator {
+	m.proxy.title = v
+	return m
 }
 
-// MultipleOf sets the MultipleOf field for object Schema.
-func (b *SchemaMutator) MultipleOf(v float64) *SchemaMutator {
-	b.proxy.multipleOf = v
-	return b
+// ClearMultipleOf clears the multipleOf field
+func (m *SchemaMutator) ClearMultipleOf() *SchemaMutator {
+	m.proxy.multipleOf = nil
+	return m
 }
 
-// Maximum sets the Maximum field for object Schema.
-func (b *SchemaMutator) Maximum(v float64) *SchemaMutator {
-	b.proxy.maximum = v
-	return b
+// MultipleOf sets the multipleOf field.%!(EXTRA string=Schema)
+func (m *SchemaMutator) MultipleOf(v float64) *SchemaMutator {
+	m.proxy.multipleOf = &v
+	return m
 }
 
-// ExclusiveMaximum sets the ExclusiveMaximum field for object Schema.
-func (b *SchemaMutator) ExclusiveMaximum(v float64) *SchemaMutator {
-	b.proxy.exclusiveMaximum = v
-	return b
+// ClearMaximum clears the maximum field
+func (m *SchemaMutator) ClearMaximum() *SchemaMutator {
+	m.proxy.maximum = nil
+	return m
 }
 
-// Minimum sets the Minimum field for object Schema.
-func (b *SchemaMutator) Minimum(v float64) *SchemaMutator {
-	b.proxy.minimum = v
-	return b
+// Maximum sets the maximum field.%!(EXTRA string=Schema)
+func (m *SchemaMutator) Maximum(v float64) *SchemaMutator {
+	m.proxy.maximum = &v
+	return m
 }
 
-// ExclusiveMinimum sets the ExclusiveMinimum field for object Schema.
-func (b *SchemaMutator) ExclusiveMinimum(v float64) *SchemaMutator {
-	b.proxy.exclusiveMinimum = v
-	return b
+// ClearExclusiveMaximum clears the exclusiveMaximum field
+func (m *SchemaMutator) ClearExclusiveMaximum() *SchemaMutator {
+	m.proxy.exclusiveMaximum = nil
+	return m
 }
 
-// MaxLength sets the MaxLength field for object Schema.
-func (b *SchemaMutator) MaxLength(v int) *SchemaMutator {
-	b.proxy.maxLength = v
-	return b
+// ExclusiveMaximum sets the exclusiveMaximum field.%!(EXTRA string=Schema)
+func (m *SchemaMutator) ExclusiveMaximum(v float64) *SchemaMutator {
+	m.proxy.exclusiveMaximum = &v
+	return m
 }
 
-// MinLength sets the MinLength field for object Schema.
-func (b *SchemaMutator) MinLength(v int) *SchemaMutator {
-	b.proxy.minLength = v
-	return b
+// ClearMinimum clears the minimum field
+func (m *SchemaMutator) ClearMinimum() *SchemaMutator {
+	m.proxy.minimum = nil
+	return m
+}
+
+// Minimum sets the minimum field.%!(EXTRA string=Schema)
+func (m *SchemaMutator) Minimum(v float64) *SchemaMutator {
+	m.proxy.minimum = &v
+	return m
+}
+
+// ClearExclusiveMinimum clears the exclusiveMinimum field
+func (m *SchemaMutator) ClearExclusiveMinimum() *SchemaMutator {
+	m.proxy.exclusiveMinimum = nil
+	return m
+}
+
+// ExclusiveMinimum sets the exclusiveMinimum field.%!(EXTRA string=Schema)
+func (m *SchemaMutator) ExclusiveMinimum(v float64) *SchemaMutator {
+	m.proxy.exclusiveMinimum = &v
+	return m
+}
+
+// ClearMaxLength clears the maxLength field
+func (m *SchemaMutator) ClearMaxLength() *SchemaMutator {
+	m.proxy.maxLength = nil
+	return m
+}
+
+// MaxLength sets the maxLength field.%!(EXTRA string=Schema)
+func (m *SchemaMutator) MaxLength(v int) *SchemaMutator {
+	m.proxy.maxLength = &v
+	return m
+}
+
+// ClearMinLength clears the minLength field
+func (m *SchemaMutator) ClearMinLength() *SchemaMutator {
+	m.proxy.minLength = nil
+	return m
+}
+
+// MinLength sets the minLength field.%!(EXTRA string=Schema)
+func (m *SchemaMutator) MinLength(v int) *SchemaMutator {
+	m.proxy.minLength = &v
+	return m
 }
 
 // Pattern sets the Pattern field for object Schema.
-func (b *SchemaMutator) Pattern(v string) *SchemaMutator {
-	b.proxy.pattern = v
-	return b
+func (m *SchemaMutator) Pattern(v string) *SchemaMutator {
+	m.proxy.pattern = v
+	return m
 }
 
-// MaxItems sets the MaxItems field for object Schema.
-func (b *SchemaMutator) MaxItems(v int) *SchemaMutator {
-	b.proxy.maxItems = v
-	return b
+// ClearMaxItems clears the maxItems field
+func (m *SchemaMutator) ClearMaxItems() *SchemaMutator {
+	m.proxy.maxItems = nil
+	return m
 }
 
-// MinItems sets the MinItems field for object Schema.
-func (b *SchemaMutator) MinItems(v int) *SchemaMutator {
-	b.proxy.minItems = v
-	return b
+// MaxItems sets the maxItems field.%!(EXTRA string=Schema)
+func (m *SchemaMutator) MaxItems(v int) *SchemaMutator {
+	m.proxy.maxItems = &v
+	return m
+}
+
+// ClearMinItems clears the minItems field
+func (m *SchemaMutator) ClearMinItems() *SchemaMutator {
+	m.proxy.minItems = nil
+	return m
+}
+
+// MinItems sets the minItems field.%!(EXTRA string=Schema)
+func (m *SchemaMutator) MinItems(v int) *SchemaMutator {
+	m.proxy.minItems = &v
+	return m
 }
 
 // UniqueItems sets the UniqueItems field for object Schema.
-func (b *SchemaMutator) UniqueItems(v bool) *SchemaMutator {
-	b.proxy.uniqueItems = v
-	return b
+func (m *SchemaMutator) UniqueItems(v bool) *SchemaMutator {
+	m.proxy.uniqueItems = v
+	return m
 }
 
-// MaxProperties sets the MaxProperties field for object Schema.
-func (b *SchemaMutator) MaxProperties(v int) *SchemaMutator {
-	b.proxy.maxProperties = v
-	return b
+// ClearMaxProperties clears the maxProperties field
+func (m *SchemaMutator) ClearMaxProperties() *SchemaMutator {
+	m.proxy.maxProperties = nil
+	return m
 }
 
-// MinProperties sets the MinProperties field for object Schema.
-func (b *SchemaMutator) MinProperties(v int) *SchemaMutator {
-	b.proxy.minProperties = v
-	return b
+// MaxProperties sets the maxProperties field.%!(EXTRA string=Schema)
+func (m *SchemaMutator) MaxProperties(v int) *SchemaMutator {
+	m.proxy.maxProperties = &v
+	return m
 }
 
-func (b *SchemaMutator) ClearRequired() *SchemaMutator {
-	b.proxy.required.Clear()
-	return b
+// ClearMinProperties clears the minProperties field
+func (m *SchemaMutator) ClearMinProperties() *SchemaMutator {
+	m.proxy.minProperties = nil
+	return m
 }
 
-func (b *SchemaMutator) Required(value string) *SchemaMutator {
-	b.proxy.required = append(b.proxy.required, value)
-	return b
+// MinProperties sets the minProperties field.%!(EXTRA string=Schema)
+func (m *SchemaMutator) MinProperties(v int) *SchemaMutator {
+	m.proxy.minProperties = &v
+	return m
 }
 
-func (b *SchemaMutator) ClearEnum() *SchemaMutator {
-	b.proxy.enum.Clear()
-	return b
+func (m *SchemaMutator) ClearRequired() *SchemaMutator {
+	m.proxy.required.Clear()
+	return m
 }
 
-func (b *SchemaMutator) Enum(value interface{}) *SchemaMutator {
-	b.proxy.enum = append(b.proxy.enum, value)
-	return b
+func (m *SchemaMutator) Required(value string) *SchemaMutator {
+	m.proxy.required = append(m.proxy.required, value)
+	return m
 }
 
-func (b *SchemaMutator) ClearAllOf() *SchemaMutator {
-	b.proxy.allOf.Clear()
-	return b
+func (m *SchemaMutator) ClearEnum() *SchemaMutator {
+	m.proxy.enum.Clear()
+	return m
 }
 
-func (b *SchemaMutator) AllOf(value Schema) *SchemaMutator {
-	b.proxy.allOf = append(b.proxy.allOf, value)
-	return b
+func (m *SchemaMutator) Enum(value interface{}) *SchemaMutator {
+	m.proxy.enum = append(m.proxy.enum, value)
+	return m
+}
+
+func (m *SchemaMutator) ClearAllOf() *SchemaMutator {
+	m.proxy.allOf.Clear()
+	return m
+}
+
+func (m *SchemaMutator) AllOf(value Schema) *SchemaMutator {
+	m.proxy.allOf = append(m.proxy.allOf, value)
+	return m
 }
 
 // Items sets the Items field for object Schema.
-func (b *SchemaMutator) Items(v Schema) *SchemaMutator {
-	b.proxy.items = v
-	return b
+func (m *SchemaMutator) Items(v Schema) *SchemaMutator {
+	m.proxy.items = v
+	return m
 }
 
-func (b *SchemaMutator) ClearProperties() *SchemaMutator {
-	b.proxy.properties.Clear()
-	return b
+func (m *SchemaMutator) ClearProperties() *SchemaMutator {
+	m.proxy.properties.Clear()
+	return m
 }
 
-func (b *SchemaMutator) Property(key SchemaMapKey, value Schema) *SchemaMutator {
-	if b.proxy.properties == nil {
-		b.proxy.properties = SchemaMap{}
+func (m *SchemaMutator) Property(key SchemaMapKey, value Schema) *SchemaMutator {
+	if m.proxy.properties == nil {
+		m.proxy.properties = SchemaMap{}
 	}
 
-	b.proxy.properties[key] = value
-	return b
+	m.proxy.properties[key] = value
+	return m
 }
 
-func (b *SchemaMutator) ClearAdditionaProperties() *SchemaMutator {
-	b.proxy.additionaProperties.Clear()
-	return b
+func (m *SchemaMutator) ClearAdditionaProperties() *SchemaMutator {
+	m.proxy.additionaProperties.Clear()
+	return m
 }
 
-func (b *SchemaMutator) AdditionaProperty(key SchemaMapKey, value Schema) *SchemaMutator {
-	if b.proxy.additionaProperties == nil {
-		b.proxy.additionaProperties = SchemaMap{}
+func (m *SchemaMutator) AdditionaProperty(key SchemaMapKey, value Schema) *SchemaMutator {
+	if m.proxy.additionaProperties == nil {
+		m.proxy.additionaProperties = SchemaMap{}
 	}
 
-	b.proxy.additionaProperties[key] = value
-	return b
+	m.proxy.additionaProperties[key] = value
+	return m
 }
 
 // DefaultValue sets the DefaultValue field for object Schema.
-func (b *SchemaMutator) DefaultValue(v interface{}) *SchemaMutator {
-	b.proxy.defaultValue = v
-	return b
+func (m *SchemaMutator) DefaultValue(v interface{}) *SchemaMutator {
+	m.proxy.defaultValue = v
+	return m
 }
 
 // Discriminator sets the Discriminator field for object Schema.
-func (b *SchemaMutator) Discriminator(v string) *SchemaMutator {
-	b.proxy.discriminator = v
-	return b
+func (m *SchemaMutator) Discriminator(v string) *SchemaMutator {
+	m.proxy.discriminator = v
+	return m
 }
 
 // ReadOnly sets the ReadOnly field for object Schema.
-func (b *SchemaMutator) ReadOnly(v bool) *SchemaMutator {
-	b.proxy.readOnly = v
-	return b
+func (m *SchemaMutator) ReadOnly(v bool) *SchemaMutator {
+	m.proxy.readOnly = v
+	return m
 }
 
 // ExternalDocs sets the ExternalDocs field for object Schema.
-func (b *SchemaMutator) ExternalDocs(v ExternalDocumentation) *SchemaMutator {
-	b.proxy.externalDocs = v
-	return b
+func (m *SchemaMutator) ExternalDocs(v ExternalDocumentation) *SchemaMutator {
+	m.proxy.externalDocs = v
+	return m
 }
 
 // Example sets the Example field for object Schema.
-func (b *SchemaMutator) Example(v interface{}) *SchemaMutator {
-	b.proxy.example = v
-	return b
+func (m *SchemaMutator) Example(v interface{}) *SchemaMutator {
+	m.proxy.example = v
+	return m
 }
 
 // Deprecated sets the Deprecated field for object Schema.
-func (b *SchemaMutator) Deprecated(v bool) *SchemaMutator {
-	b.proxy.deprecated = v
-	return b
+func (m *SchemaMutator) Deprecated(v bool) *SchemaMutator {
+	m.proxy.deprecated = v
+	return m
 }
 
 // XML sets the XML field for object Schema.
-func (b *SchemaMutator) XML(v XML) *SchemaMutator {
-	b.proxy.xml = v
-	return b
+func (m *SchemaMutator) XML(v XML) *SchemaMutator {
+	m.proxy.xml = v
+	return m
 }
 func (b *SchemaMutator) Extension(name string, value interface{}) *SchemaMutator {
 	if b.proxy.extensions == nil {

@@ -40,19 +40,19 @@ func NewContact() *ContactBuilder {
 	}
 }
 
-// Name sets the Name field for object Contact.
+// Name sets the name field for object Contact.
 func (b *ContactBuilder) Name(v string) *ContactBuilder {
 	b.target.name = v
 	return b
 }
 
-// URL sets the URL field for object Contact.
+// URL sets the url field for object Contact.
 func (b *ContactBuilder) URL(v string) *ContactBuilder {
 	b.target.url = v
 	return b
 }
 
-// Email sets the Email field for object Contact.
+// Email sets the email field for object Contact.
 func (b *ContactBuilder) Email(v string) *ContactBuilder {
 	b.target.email = v
 	return b

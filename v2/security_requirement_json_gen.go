@@ -48,7 +48,7 @@ func (v *securityRequirement) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &proxy); err != nil {
 		return err
 	}
-	if raw := proxy["$ref"]; len(raw) > 0 {
+	if raw, ok := proxy["$ref"]; ok {
 		if err := json.Unmarshal(raw, &v.reference); err != nil {
 			return errors.Wrap(err, `failed to unmarshal $ref`)
 		}
@@ -57,7 +57,7 @@ func (v *securityRequirement) UnmarshalJSON(data []byte) error {
 
 	mutator := MutateSecurityRequirement(v)
 
-	if raw := proxy[""]; len(raw) > 0 {
+	if raw, ok := proxy[""]; ok {
 		var decoded map[string][]string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field `)

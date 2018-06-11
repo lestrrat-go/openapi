@@ -32,33 +32,33 @@ func MutateXML(v XML) *XMLMutator {
 }
 
 // Name sets the Name field for object XML.
-func (b *XMLMutator) Name(v string) *XMLMutator {
-	b.proxy.name = v
-	return b
+func (m *XMLMutator) Name(v string) *XMLMutator {
+	m.proxy.name = v
+	return m
 }
 
 // Namespace sets the Namespace field for object XML.
-func (b *XMLMutator) Namespace(v string) *XMLMutator {
-	b.proxy.namespace = v
-	return b
+func (m *XMLMutator) Namespace(v string) *XMLMutator {
+	m.proxy.namespace = v
+	return m
 }
 
 // Prefix sets the Prefix field for object XML.
-func (b *XMLMutator) Prefix(v string) *XMLMutator {
-	b.proxy.prefix = v
-	return b
+func (m *XMLMutator) Prefix(v string) *XMLMutator {
+	m.proxy.prefix = v
+	return m
 }
 
 // Attribute sets the Attribute field for object XML.
-func (b *XMLMutator) Attribute(v bool) *XMLMutator {
-	b.proxy.attribute = v
-	return b
+func (m *XMLMutator) Attribute(v bool) *XMLMutator {
+	m.proxy.attribute = v
+	return m
 }
 
 // Wrapped sets the Wrapped field for object XML.
-func (b *XMLMutator) Wrapped(v bool) *XMLMutator {
-	b.proxy.wrapped = v
-	return b
+func (m *XMLMutator) Wrapped(v bool) *XMLMutator {
+	m.proxy.wrapped = v
+	return m
 }
 func (b *XMLMutator) Extension(name string, value interface{}) *XMLMutator {
 	if b.proxy.extensions == nil {

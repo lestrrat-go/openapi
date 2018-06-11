@@ -11,7 +11,7 @@ import (
 var _ = sort.Strings
 var _ = errors.Cause
 
-func (v *responses) DefaultValue() Response {
+func (v *responses) Default() Response {
 	return v.defaultValue
 }
 

@@ -76,7 +76,7 @@ func (v *swagger) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &proxy); err != nil {
 		return err
 	}
-	if raw := proxy["$ref"]; len(raw) > 0 {
+	if raw, ok := proxy["$ref"]; ok {
 		if err := json.Unmarshal(raw, &v.reference); err != nil {
 			return errors.Wrap(err, `failed to unmarshal $ref`)
 		}
@@ -85,7 +85,7 @@ func (v *swagger) UnmarshalJSON(data []byte) error {
 
 	mutator := MutateSwagger(v)
 
-	if raw := proxy["swagger"]; len(raw) > 0 {
+	if raw, ok := proxy["swagger"]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field swagger`)
@@ -94,7 +94,7 @@ func (v *swagger) UnmarshalJSON(data []byte) error {
 		delete(proxy, "swagger")
 	}
 
-	if raw := proxy["info"]; len(raw) > 0 {
+	if raw, ok := proxy["info"]; ok {
 		var decoded info
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Info`)
@@ -104,7 +104,7 @@ func (v *swagger) UnmarshalJSON(data []byte) error {
 		delete(proxy, "info")
 	}
 
-	if raw := proxy["host"]; len(raw) > 0 {
+	if raw, ok := proxy["host"]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field host`)
@@ -113,7 +113,7 @@ func (v *swagger) UnmarshalJSON(data []byte) error {
 		delete(proxy, "host")
 	}
 
-	if raw := proxy["basePath"]; len(raw) > 0 {
+	if raw, ok := proxy["basePath"]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field basePath`)
@@ -122,7 +122,7 @@ func (v *swagger) UnmarshalJSON(data []byte) error {
 		delete(proxy, "basePath")
 	}
 
-	if raw := proxy["schemes"]; len(raw) > 0 {
+	if raw, ok := proxy["schemes"]; ok {
 		var decoded SchemeList
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Schemes`)
@@ -133,7 +133,7 @@ func (v *swagger) UnmarshalJSON(data []byte) error {
 		delete(proxy, "schemes")
 	}
 
-	if raw := proxy["consumes"]; len(raw) > 0 {
+	if raw, ok := proxy["consumes"]; ok {
 		var decoded MIMETypeList
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Consumes`)
@@ -144,7 +144,7 @@ func (v *swagger) UnmarshalJSON(data []byte) error {
 		delete(proxy, "consumes")
 	}
 
-	if raw := proxy["produces"]; len(raw) > 0 {
+	if raw, ok := proxy["produces"]; ok {
 		var decoded MIMETypeList
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Produces`)
@@ -155,7 +155,7 @@ func (v *swagger) UnmarshalJSON(data []byte) error {
 		delete(proxy, "produces")
 	}
 
-	if raw := proxy["paths"]; len(raw) > 0 {
+	if raw, ok := proxy["paths"]; ok {
 		var decoded paths
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Paths`)
@@ -165,7 +165,7 @@ func (v *swagger) UnmarshalJSON(data []byte) error {
 		delete(proxy, "paths")
 	}
 
-	if raw := proxy["definitions"]; len(raw) > 0 {
+	if raw, ok := proxy["definitions"]; ok {
 		var decoded InterfaceMap
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Definitions`)
@@ -176,7 +176,7 @@ func (v *swagger) UnmarshalJSON(data []byte) error {
 		delete(proxy, "definitions")
 	}
 
-	if raw := proxy["parameters"]; len(raw) > 0 {
+	if raw, ok := proxy["parameters"]; ok {
 		var decoded ParameterMap
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Parameters`)
@@ -187,7 +187,7 @@ func (v *swagger) UnmarshalJSON(data []byte) error {
 		delete(proxy, "parameters")
 	}
 
-	if raw := proxy["responses"]; len(raw) > 0 {
+	if raw, ok := proxy["responses"]; ok {
 		var decoded ResponseMap
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Responses`)
@@ -198,7 +198,7 @@ func (v *swagger) UnmarshalJSON(data []byte) error {
 		delete(proxy, "responses")
 	}
 
-	if raw := proxy["securityDefinitions"]; len(raw) > 0 {
+	if raw, ok := proxy["securityDefinitions"]; ok {
 		var decoded SecuritySchemeMap
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field SecurityDefinitions`)
@@ -209,7 +209,7 @@ func (v *swagger) UnmarshalJSON(data []byte) error {
 		delete(proxy, "securityDefinitions")
 	}
 
-	if raw := proxy["security"]; len(raw) > 0 {
+	if raw, ok := proxy["security"]; ok {
 		var decoded SecurityRequirementList
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Security`)
@@ -220,7 +220,7 @@ func (v *swagger) UnmarshalJSON(data []byte) error {
 		delete(proxy, "security")
 	}
 
-	if raw := proxy["tags"]; len(raw) > 0 {
+	if raw, ok := proxy["tags"]; ok {
 		var decoded TagList
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Tags`)
@@ -231,7 +231,7 @@ func (v *swagger) UnmarshalJSON(data []byte) error {
 		delete(proxy, "tags")
 	}
 
-	if raw := proxy["externalDocs"]; len(raw) > 0 {
+	if raw, ok := proxy["externalDocs"]; ok {
 		var decoded externalDocumentation
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field ExternalDocs`)

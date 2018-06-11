@@ -43,25 +43,25 @@ func NewInfo(title string, version string) *InfoBuilder {
 	}
 }
 
-// Description sets the Description field for object Info.
+// Description sets the description field for object Info.
 func (b *InfoBuilder) Description(v string) *InfoBuilder {
 	b.target.description = v
 	return b
 }
 
-// TermsOfService sets the TermsOfService field for object Info.
+// TermsOfService sets the termsOfService field for object Info.
 func (b *InfoBuilder) TermsOfService(v string) *InfoBuilder {
 	b.target.termsOfService = v
 	return b
 }
 
-// Contact sets the Contact field for object Info.
+// Contact sets the contact field for object Info.
 func (b *InfoBuilder) Contact(v Contact) *InfoBuilder {
 	b.target.contact = v
 	return b
 }
 
-// License sets the License field for object Info.
+// License sets the license field for object Info.
 func (b *InfoBuilder) License(v License) *InfoBuilder {
 	b.target.license = v
 	return b

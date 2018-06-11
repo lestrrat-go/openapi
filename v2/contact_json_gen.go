@@ -52,7 +52,7 @@ func (v *contact) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &proxy); err != nil {
 		return err
 	}
-	if raw := proxy["$ref"]; len(raw) > 0 {
+	if raw, ok := proxy["$ref"]; ok {
 		if err := json.Unmarshal(raw, &v.reference); err != nil {
 			return errors.Wrap(err, `failed to unmarshal $ref`)
 		}
@@ -61,7 +61,7 @@ func (v *contact) UnmarshalJSON(data []byte) error {
 
 	mutator := MutateContact(v)
 
-	if raw := proxy["name"]; len(raw) > 0 {
+	if raw, ok := proxy["name"]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field name`)
@@ -70,7 +70,7 @@ func (v *contact) UnmarshalJSON(data []byte) error {
 		delete(proxy, "name")
 	}
 
-	if raw := proxy["url"]; len(raw) > 0 {
+	if raw, ok := proxy["url"]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field url`)
@@ -79,7 +79,7 @@ func (v *contact) UnmarshalJSON(data []byte) error {
 		delete(proxy, "url")
 	}
 
-	if raw := proxy["email"]; len(raw) > 0 {
+	if raw, ok := proxy["email"]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field email`)

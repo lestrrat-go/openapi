@@ -42,7 +42,7 @@ func NewExternalDocumentation(url string) *ExternalDocumentationBuilder {
 	}
 }
 
-// Description sets the Description field for object ExternalDocumentation.
+// Description sets the description field for object ExternalDocumentation.
 func (b *ExternalDocumentationBuilder) Description(v string) *ExternalDocumentationBuilder {
 	b.target.description = v
 	return b

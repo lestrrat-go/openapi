@@ -32,39 +32,39 @@ func MutateInfo(v Info) *InfoMutator {
 }
 
 // Title sets the Title field for object Info.
-func (b *InfoMutator) Title(v string) *InfoMutator {
-	b.proxy.title = v
-	return b
+func (m *InfoMutator) Title(v string) *InfoMutator {
+	m.proxy.title = v
+	return m
 }
 
 // Version sets the Version field for object Info.
-func (b *InfoMutator) Version(v string) *InfoMutator {
-	b.proxy.version = v
-	return b
+func (m *InfoMutator) Version(v string) *InfoMutator {
+	m.proxy.version = v
+	return m
 }
 
 // Description sets the Description field for object Info.
-func (b *InfoMutator) Description(v string) *InfoMutator {
-	b.proxy.description = v
-	return b
+func (m *InfoMutator) Description(v string) *InfoMutator {
+	m.proxy.description = v
+	return m
 }
 
 // TermsOfService sets the TermsOfService field for object Info.
-func (b *InfoMutator) TermsOfService(v string) *InfoMutator {
-	b.proxy.termsOfService = v
-	return b
+func (m *InfoMutator) TermsOfService(v string) *InfoMutator {
+	m.proxy.termsOfService = v
+	return m
 }
 
 // Contact sets the Contact field for object Info.
-func (b *InfoMutator) Contact(v Contact) *InfoMutator {
-	b.proxy.contact = v
-	return b
+func (m *InfoMutator) Contact(v Contact) *InfoMutator {
+	m.proxy.contact = v
+	return m
 }
 
 // License sets the License field for object Info.
-func (b *InfoMutator) License(v License) *InfoMutator {
-	b.proxy.license = v
-	return b
+func (m *InfoMutator) License(v License) *InfoMutator {
+	m.proxy.license = v
+	return m
 }
 func (b *InfoMutator) Extension(name string, value interface{}) *InfoMutator {
 	if b.proxy.extensions == nil {

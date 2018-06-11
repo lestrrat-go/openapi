@@ -43,135 +43,135 @@ func NewParameter(name string, in Location) *ParameterBuilder {
 	}
 }
 
-// Description sets the Description field for object Parameter.
+// Description sets the description field for object Parameter.
 func (b *ParameterBuilder) Description(v string) *ParameterBuilder {
 	b.target.description = v
 	return b
 }
 
-// Required sets the Required field for object Parameter.
+// Required sets the required field for object Parameter.
 func (b *ParameterBuilder) Required(v bool) *ParameterBuilder {
 	b.target.required = v
 	return b
 }
 
-// Schema sets the Schema field for object Parameter.
+// Schema sets the schema field for object Parameter.
 func (b *ParameterBuilder) Schema(v Schema) *ParameterBuilder {
 	b.target.schema = v
 	return b
 }
 
-// Type sets the Type field for object Parameter.
+// Type sets the typ field for object Parameter.
 func (b *ParameterBuilder) Type(v PrimitiveType) *ParameterBuilder {
 	b.target.typ = v
 	return b
 }
 
-// Format sets the Format field for object Parameter.
+// Format sets the format field for object Parameter.
 func (b *ParameterBuilder) Format(v string) *ParameterBuilder {
 	b.target.format = v
 	return b
 }
 
-// Title sets the Title field for object Parameter.
+// Title sets the title field for object Parameter.
 func (b *ParameterBuilder) Title(v string) *ParameterBuilder {
 	b.target.title = v
 	return b
 }
 
-// AllowEmptyValue sets the AllowEmptyValue field for object Parameter.
+// AllowEmptyValue sets the allowEmptyValue field for object Parameter.
 func (b *ParameterBuilder) AllowEmptyValue(v bool) *ParameterBuilder {
 	b.target.allowEmptyValue = v
 	return b
 }
 
-// Items sets the Items field for object Parameter.
+// Items sets the items field for object Parameter.
 func (b *ParameterBuilder) Items(v Items) *ParameterBuilder {
 	b.target.items = v
 	return b
 }
 
-// CollectionFormat sets the CollectionFormat field for object Parameter.
+// CollectionFormat sets the collectionFormat field for object Parameter.
 func (b *ParameterBuilder) CollectionFormat(v CollectionFormat) *ParameterBuilder {
 	b.target.collectionFormat = v
 	return b
 }
 
-// DefaultValue sets the DefaultValue field for object Parameter.
-func (b *ParameterBuilder) DefaultValue(v interface{}) *ParameterBuilder {
+// Default sets the defaultValue field for object Parameter.
+func (b *ParameterBuilder) Default(v interface{}) *ParameterBuilder {
 	b.target.defaultValue = v
 	return b
 }
 
-// Maximum sets the Maximum field for object Parameter.
+// Maximum sets the maximum field for object Parameter.
 func (b *ParameterBuilder) Maximum(v float64) *ParameterBuilder {
-	b.target.maximum = v
+	b.target.maximum = &v
 	return b
 }
 
-// ExclusiveMaximum sets the ExclusiveMaximum field for object Parameter.
+// ExclusiveMaximum sets the exclusiveMaximum field for object Parameter.
 func (b *ParameterBuilder) ExclusiveMaximum(v float64) *ParameterBuilder {
-	b.target.exclusiveMaximum = v
+	b.target.exclusiveMaximum = &v
 	return b
 }
 
-// Minimum sets the Minimum field for object Parameter.
+// Minimum sets the minimum field for object Parameter.
 func (b *ParameterBuilder) Minimum(v float64) *ParameterBuilder {
-	b.target.minimum = v
+	b.target.minimum = &v
 	return b
 }
 
-// ExclusiveMinimum sets the ExclusiveMinimum field for object Parameter.
+// ExclusiveMinimum sets the exclusiveMinimum field for object Parameter.
 func (b *ParameterBuilder) ExclusiveMinimum(v float64) *ParameterBuilder {
-	b.target.exclusiveMinimum = v
+	b.target.exclusiveMinimum = &v
 	return b
 }
 
-// MaxLength sets the MaxLength field for object Parameter.
+// MaxLength sets the maxLength field for object Parameter.
 func (b *ParameterBuilder) MaxLength(v int) *ParameterBuilder {
-	b.target.maxLength = v
+	b.target.maxLength = &v
 	return b
 }
 
-// MinLength sets the MinLength field for object Parameter.
+// MinLength sets the minLength field for object Parameter.
 func (b *ParameterBuilder) MinLength(v int) *ParameterBuilder {
-	b.target.minLength = v
+	b.target.minLength = &v
 	return b
 }
 
-// Pattern sets the Pattern field for object Parameter.
+// Pattern sets the pattern field for object Parameter.
 func (b *ParameterBuilder) Pattern(v string) *ParameterBuilder {
 	b.target.pattern = v
 	return b
 }
 
-// MaxItems sets the MaxItems field for object Parameter.
+// MaxItems sets the maxItems field for object Parameter.
 func (b *ParameterBuilder) MaxItems(v int) *ParameterBuilder {
-	b.target.maxItems = v
+	b.target.maxItems = &v
 	return b
 }
 
-// MinItems sets the MinItems field for object Parameter.
+// MinItems sets the minItems field for object Parameter.
 func (b *ParameterBuilder) MinItems(v int) *ParameterBuilder {
-	b.target.minItems = v
+	b.target.minItems = &v
 	return b
 }
 
-// UniqueItems sets the UniqueItems field for object Parameter.
+// UniqueItems sets the uniqueItems field for object Parameter.
 func (b *ParameterBuilder) UniqueItems(v bool) *ParameterBuilder {
 	b.target.uniqueItems = v
 	return b
 }
 
-// Enum sets the Enum field for object Parameter.
+// Enum sets the enum field for object Parameter.
 func (b *ParameterBuilder) Enum(v ...interface{}) *ParameterBuilder {
 	b.target.enum = v
 	return b
 }
 
-// MultipleOf sets the MultipleOf field for object Parameter.
+// MultipleOf sets the multipleOf field for object Parameter.
 func (b *ParameterBuilder) MultipleOf(v float64) *ParameterBuilder {
-	b.target.multipleOf = v
+	b.target.multipleOf = &v
 	return b
 }
 

@@ -40,7 +40,7 @@ func NewSecurityRequirement() *SecurityRequirementBuilder {
 	}
 }
 
-// Data sets the Data field for object SecurityRequirement.
+// Data sets the data field for object SecurityRequirement.
 func (b *SecurityRequirementBuilder) Data(v map[string][]string) *SecurityRequirementBuilder {
 	b.target.data = v
 	return b

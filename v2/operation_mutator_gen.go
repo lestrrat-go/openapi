@@ -31,100 +31,100 @@ func MutateOperation(v Operation) *OperationMutator {
 	}
 }
 
-func (b *OperationMutator) ClearTags() *OperationMutator {
-	b.proxy.tags.Clear()
-	return b
+func (m *OperationMutator) ClearTags() *OperationMutator {
+	m.proxy.tags.Clear()
+	return m
 }
 
-func (b *OperationMutator) Tag(value string) *OperationMutator {
-	b.proxy.tags = append(b.proxy.tags, value)
-	return b
+func (m *OperationMutator) Tag(value string) *OperationMutator {
+	m.proxy.tags = append(m.proxy.tags, value)
+	return m
 }
 
 // Summary sets the Summary field for object Operation.
-func (b *OperationMutator) Summary(v string) *OperationMutator {
-	b.proxy.summary = v
-	return b
+func (m *OperationMutator) Summary(v string) *OperationMutator {
+	m.proxy.summary = v
+	return m
 }
 
 // Description sets the Description field for object Operation.
-func (b *OperationMutator) Description(v string) *OperationMutator {
-	b.proxy.description = v
-	return b
+func (m *OperationMutator) Description(v string) *OperationMutator {
+	m.proxy.description = v
+	return m
 }
 
 // ExternalDocs sets the ExternalDocs field for object Operation.
-func (b *OperationMutator) ExternalDocs(v ExternalDocumentation) *OperationMutator {
-	b.proxy.externalDocs = v
-	return b
+func (m *OperationMutator) ExternalDocs(v ExternalDocumentation) *OperationMutator {
+	m.proxy.externalDocs = v
+	return m
 }
 
 // OperationID sets the OperationID field for object Operation.
-func (b *OperationMutator) OperationID(v string) *OperationMutator {
-	b.proxy.operationID = v
-	return b
+func (m *OperationMutator) OperationID(v string) *OperationMutator {
+	m.proxy.operationID = v
+	return m
 }
 
-func (b *OperationMutator) ClearConsumes() *OperationMutator {
-	b.proxy.consumes.Clear()
-	return b
+func (m *OperationMutator) ClearConsumes() *OperationMutator {
+	m.proxy.consumes.Clear()
+	return m
 }
 
-func (b *OperationMutator) Consume(value string) *OperationMutator {
-	b.proxy.consumes = append(b.proxy.consumes, value)
-	return b
+func (m *OperationMutator) Consume(value string) *OperationMutator {
+	m.proxy.consumes = append(m.proxy.consumes, value)
+	return m
 }
 
-func (b *OperationMutator) ClearProduces() *OperationMutator {
-	b.proxy.produces.Clear()
-	return b
+func (m *OperationMutator) ClearProduces() *OperationMutator {
+	m.proxy.produces.Clear()
+	return m
 }
 
-func (b *OperationMutator) Produce(value string) *OperationMutator {
-	b.proxy.produces = append(b.proxy.produces, value)
-	return b
+func (m *OperationMutator) Produce(value string) *OperationMutator {
+	m.proxy.produces = append(m.proxy.produces, value)
+	return m
 }
 
-func (b *OperationMutator) ClearParameters() *OperationMutator {
-	b.proxy.parameters.Clear()
-	return b
+func (m *OperationMutator) ClearParameters() *OperationMutator {
+	m.proxy.parameters.Clear()
+	return m
 }
 
-func (b *OperationMutator) Parameter(value Parameter) *OperationMutator {
-	b.proxy.parameters = append(b.proxy.parameters, value)
-	return b
+func (m *OperationMutator) Parameter(value Parameter) *OperationMutator {
+	m.proxy.parameters = append(m.proxy.parameters, value)
+	return m
 }
 
 // Responses sets the Responses field for object Operation.
-func (b *OperationMutator) Responses(v Responses) *OperationMutator {
-	b.proxy.responses = v
-	return b
+func (m *OperationMutator) Responses(v Responses) *OperationMutator {
+	m.proxy.responses = v
+	return m
 }
 
-func (b *OperationMutator) ClearSchemes() *OperationMutator {
-	b.proxy.schemes.Clear()
-	return b
+func (m *OperationMutator) ClearSchemes() *OperationMutator {
+	m.proxy.schemes.Clear()
+	return m
 }
 
-func (b *OperationMutator) Scheme(value string) *OperationMutator {
-	b.proxy.schemes = append(b.proxy.schemes, value)
-	return b
+func (m *OperationMutator) Scheme(value string) *OperationMutator {
+	m.proxy.schemes = append(m.proxy.schemes, value)
+	return m
 }
 
 // Deprecated sets the Deprecated field for object Operation.
-func (b *OperationMutator) Deprecated(v bool) *OperationMutator {
-	b.proxy.deprecated = v
-	return b
+func (m *OperationMutator) Deprecated(v bool) *OperationMutator {
+	m.proxy.deprecated = v
+	return m
 }
 
-func (b *OperationMutator) ClearSecurity() *OperationMutator {
-	b.proxy.security.Clear()
-	return b
+func (m *OperationMutator) ClearSecurity() *OperationMutator {
+	m.proxy.security.Clear()
+	return m
 }
 
-func (b *OperationMutator) Security(value SecurityRequirement) *OperationMutator {
-	b.proxy.security = append(b.proxy.security, value)
-	return b
+func (m *OperationMutator) Security(value SecurityRequirement) *OperationMutator {
+	m.proxy.security = append(m.proxy.security, value)
+	return m
 }
 func (b *OperationMutator) Extension(name string, value interface{}) *OperationMutator {
 	if b.proxy.extensions == nil {

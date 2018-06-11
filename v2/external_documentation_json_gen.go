@@ -50,7 +50,7 @@ func (v *externalDocumentation) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &proxy); err != nil {
 		return err
 	}
-	if raw := proxy["$ref"]; len(raw) > 0 {
+	if raw, ok := proxy["$ref"]; ok {
 		if err := json.Unmarshal(raw, &v.reference); err != nil {
 			return errors.Wrap(err, `failed to unmarshal $ref`)
 		}
@@ -59,7 +59,7 @@ func (v *externalDocumentation) UnmarshalJSON(data []byte) error {
 
 	mutator := MutateExternalDocumentation(v)
 
-	if raw := proxy["url"]; len(raw) > 0 {
+	if raw, ok := proxy["url"]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field url`)
@@ -68,7 +68,7 @@ func (v *externalDocumentation) UnmarshalJSON(data []byte) error {
 		delete(proxy, "url")
 	}
 
-	if raw := proxy["description"]; len(raw) > 0 {
+	if raw, ok := proxy["description"]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field description`)

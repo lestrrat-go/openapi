@@ -32,151 +32,205 @@ func MutateParameter(v Parameter) *ParameterMutator {
 }
 
 // Name sets the Name field for object Parameter.
-func (b *ParameterMutator) Name(v string) *ParameterMutator {
-	b.proxy.name = v
-	return b
+func (m *ParameterMutator) Name(v string) *ParameterMutator {
+	m.proxy.name = v
+	return m
 }
 
 // Description sets the Description field for object Parameter.
-func (b *ParameterMutator) Description(v string) *ParameterMutator {
-	b.proxy.description = v
-	return b
+func (m *ParameterMutator) Description(v string) *ParameterMutator {
+	m.proxy.description = v
+	return m
 }
 
 // Required sets the Required field for object Parameter.
-func (b *ParameterMutator) Required(v bool) *ParameterMutator {
-	b.proxy.required = v
-	return b
+func (m *ParameterMutator) Required(v bool) *ParameterMutator {
+	m.proxy.required = v
+	return m
 }
 
 // In sets the In field for object Parameter.
-func (b *ParameterMutator) In(v Location) *ParameterMutator {
-	b.proxy.in = v
-	return b
+func (m *ParameterMutator) In(v Location) *ParameterMutator {
+	m.proxy.in = v
+	return m
 }
 
 // Schema sets the Schema field for object Parameter.
-func (b *ParameterMutator) Schema(v Schema) *ParameterMutator {
-	b.proxy.schema = v
-	return b
+func (m *ParameterMutator) Schema(v Schema) *ParameterMutator {
+	m.proxy.schema = v
+	return m
 }
 
 // Type sets the Type field for object Parameter.
-func (b *ParameterMutator) Type(v PrimitiveType) *ParameterMutator {
-	b.proxy.typ = v
-	return b
+func (m *ParameterMutator) Type(v PrimitiveType) *ParameterMutator {
+	m.proxy.typ = v
+	return m
 }
 
 // Format sets the Format field for object Parameter.
-func (b *ParameterMutator) Format(v string) *ParameterMutator {
-	b.proxy.format = v
-	return b
+func (m *ParameterMutator) Format(v string) *ParameterMutator {
+	m.proxy.format = v
+	return m
 }
 
 // Title sets the Title field for object Parameter.
-func (b *ParameterMutator) Title(v string) *ParameterMutator {
-	b.proxy.title = v
-	return b
+func (m *ParameterMutator) Title(v string) *ParameterMutator {
+	m.proxy.title = v
+	return m
 }
 
 // AllowEmptyValue sets the AllowEmptyValue field for object Parameter.
-func (b *ParameterMutator) AllowEmptyValue(v bool) *ParameterMutator {
-	b.proxy.allowEmptyValue = v
-	return b
+func (m *ParameterMutator) AllowEmptyValue(v bool) *ParameterMutator {
+	m.proxy.allowEmptyValue = v
+	return m
 }
 
 // Items sets the Items field for object Parameter.
-func (b *ParameterMutator) Items(v Items) *ParameterMutator {
-	b.proxy.items = v
-	return b
+func (m *ParameterMutator) Items(v Items) *ParameterMutator {
+	m.proxy.items = v
+	return m
 }
 
 // CollectionFormat sets the CollectionFormat field for object Parameter.
-func (b *ParameterMutator) CollectionFormat(v CollectionFormat) *ParameterMutator {
-	b.proxy.collectionFormat = v
-	return b
+func (m *ParameterMutator) CollectionFormat(v CollectionFormat) *ParameterMutator {
+	m.proxy.collectionFormat = v
+	return m
 }
 
 // DefaultValue sets the DefaultValue field for object Parameter.
-func (b *ParameterMutator) DefaultValue(v interface{}) *ParameterMutator {
-	b.proxy.defaultValue = v
-	return b
+func (m *ParameterMutator) DefaultValue(v interface{}) *ParameterMutator {
+	m.proxy.defaultValue = v
+	return m
 }
 
-// Maximum sets the Maximum field for object Parameter.
-func (b *ParameterMutator) Maximum(v float64) *ParameterMutator {
-	b.proxy.maximum = v
-	return b
+// ClearMaximum clears the maximum field
+func (m *ParameterMutator) ClearMaximum() *ParameterMutator {
+	m.proxy.maximum = nil
+	return m
 }
 
-// ExclusiveMaximum sets the ExclusiveMaximum field for object Parameter.
-func (b *ParameterMutator) ExclusiveMaximum(v float64) *ParameterMutator {
-	b.proxy.exclusiveMaximum = v
-	return b
+// Maximum sets the maximum field.%!(EXTRA string=Parameter)
+func (m *ParameterMutator) Maximum(v float64) *ParameterMutator {
+	m.proxy.maximum = &v
+	return m
 }
 
-// Minimum sets the Minimum field for object Parameter.
-func (b *ParameterMutator) Minimum(v float64) *ParameterMutator {
-	b.proxy.minimum = v
-	return b
+// ClearExclusiveMaximum clears the exclusiveMaximum field
+func (m *ParameterMutator) ClearExclusiveMaximum() *ParameterMutator {
+	m.proxy.exclusiveMaximum = nil
+	return m
 }
 
-// ExclusiveMinimum sets the ExclusiveMinimum field for object Parameter.
-func (b *ParameterMutator) ExclusiveMinimum(v float64) *ParameterMutator {
-	b.proxy.exclusiveMinimum = v
-	return b
+// ExclusiveMaximum sets the exclusiveMaximum field.%!(EXTRA string=Parameter)
+func (m *ParameterMutator) ExclusiveMaximum(v float64) *ParameterMutator {
+	m.proxy.exclusiveMaximum = &v
+	return m
 }
 
-// MaxLength sets the MaxLength field for object Parameter.
-func (b *ParameterMutator) MaxLength(v int) *ParameterMutator {
-	b.proxy.maxLength = v
-	return b
+// ClearMinimum clears the minimum field
+func (m *ParameterMutator) ClearMinimum() *ParameterMutator {
+	m.proxy.minimum = nil
+	return m
 }
 
-// MinLength sets the MinLength field for object Parameter.
-func (b *ParameterMutator) MinLength(v int) *ParameterMutator {
-	b.proxy.minLength = v
-	return b
+// Minimum sets the minimum field.%!(EXTRA string=Parameter)
+func (m *ParameterMutator) Minimum(v float64) *ParameterMutator {
+	m.proxy.minimum = &v
+	return m
+}
+
+// ClearExclusiveMinimum clears the exclusiveMinimum field
+func (m *ParameterMutator) ClearExclusiveMinimum() *ParameterMutator {
+	m.proxy.exclusiveMinimum = nil
+	return m
+}
+
+// ExclusiveMinimum sets the exclusiveMinimum field.%!(EXTRA string=Parameter)
+func (m *ParameterMutator) ExclusiveMinimum(v float64) *ParameterMutator {
+	m.proxy.exclusiveMinimum = &v
+	return m
+}
+
+// ClearMaxLength clears the maxLength field
+func (m *ParameterMutator) ClearMaxLength() *ParameterMutator {
+	m.proxy.maxLength = nil
+	return m
+}
+
+// MaxLength sets the maxLength field.%!(EXTRA string=Parameter)
+func (m *ParameterMutator) MaxLength(v int) *ParameterMutator {
+	m.proxy.maxLength = &v
+	return m
+}
+
+// ClearMinLength clears the minLength field
+func (m *ParameterMutator) ClearMinLength() *ParameterMutator {
+	m.proxy.minLength = nil
+	return m
+}
+
+// MinLength sets the minLength field.%!(EXTRA string=Parameter)
+func (m *ParameterMutator) MinLength(v int) *ParameterMutator {
+	m.proxy.minLength = &v
+	return m
 }
 
 // Pattern sets the Pattern field for object Parameter.
-func (b *ParameterMutator) Pattern(v string) *ParameterMutator {
-	b.proxy.pattern = v
-	return b
+func (m *ParameterMutator) Pattern(v string) *ParameterMutator {
+	m.proxy.pattern = v
+	return m
 }
 
-// MaxItems sets the MaxItems field for object Parameter.
-func (b *ParameterMutator) MaxItems(v int) *ParameterMutator {
-	b.proxy.maxItems = v
-	return b
+// ClearMaxItems clears the maxItems field
+func (m *ParameterMutator) ClearMaxItems() *ParameterMutator {
+	m.proxy.maxItems = nil
+	return m
 }
 
-// MinItems sets the MinItems field for object Parameter.
-func (b *ParameterMutator) MinItems(v int) *ParameterMutator {
-	b.proxy.minItems = v
-	return b
+// MaxItems sets the maxItems field.%!(EXTRA string=Parameter)
+func (m *ParameterMutator) MaxItems(v int) *ParameterMutator {
+	m.proxy.maxItems = &v
+	return m
+}
+
+// ClearMinItems clears the minItems field
+func (m *ParameterMutator) ClearMinItems() *ParameterMutator {
+	m.proxy.minItems = nil
+	return m
+}
+
+// MinItems sets the minItems field.%!(EXTRA string=Parameter)
+func (m *ParameterMutator) MinItems(v int) *ParameterMutator {
+	m.proxy.minItems = &v
+	return m
 }
 
 // UniqueItems sets the UniqueItems field for object Parameter.
-func (b *ParameterMutator) UniqueItems(v bool) *ParameterMutator {
-	b.proxy.uniqueItems = v
-	return b
+func (m *ParameterMutator) UniqueItems(v bool) *ParameterMutator {
+	m.proxy.uniqueItems = v
+	return m
 }
 
-func (b *ParameterMutator) ClearEnum() *ParameterMutator {
-	b.proxy.enum.Clear()
-	return b
+func (m *ParameterMutator) ClearEnum() *ParameterMutator {
+	m.proxy.enum.Clear()
+	return m
 }
 
-func (b *ParameterMutator) Enum(value interface{}) *ParameterMutator {
-	b.proxy.enum = append(b.proxy.enum, value)
-	return b
+func (m *ParameterMutator) Enum(value interface{}) *ParameterMutator {
+	m.proxy.enum = append(m.proxy.enum, value)
+	return m
 }
 
-// MultipleOf sets the MultipleOf field for object Parameter.
-func (b *ParameterMutator) MultipleOf(v float64) *ParameterMutator {
-	b.proxy.multipleOf = v
-	return b
+// ClearMultipleOf clears the multipleOf field
+func (m *ParameterMutator) ClearMultipleOf() *ParameterMutator {
+	m.proxy.multipleOf = nil
+	return m
+}
+
+// MultipleOf sets the multipleOf field.%!(EXTRA string=Parameter)
+func (m *ParameterMutator) MultipleOf(v float64) *ParameterMutator {
+	m.proxy.multipleOf = &v
+	return m
 }
 func (b *ParameterMutator) Extension(name string, value interface{}) *ParameterMutator {
 	if b.proxy.extensions == nil {

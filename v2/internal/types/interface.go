@@ -192,18 +192,18 @@ type parameter struct {
 	items            Items            `json:"items,omitempty"`
 	collectionFormat CollectionFormat `json:"collectionFormat,omitempty"`
 	defaultValue     interface{}      `json:"default,omitempty"`
-	maximum          float64          `json:"maximum,omitempty"`
-	exclusiveMaximum float64          `json:"exclusiveMaximum,omitempty"`
-	minimum          float64          `json:"minimum,omitempty"`
-	exclusiveMinimum float64          `json:"exclusiveMinimum,omitempty"`
-	maxLength        int              `json:"maxLength,omitempty"`
-	minLength        int              `json:"minLength,omitempty"`
+	maximum          *float64         `json:"maximum,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
+	exclusiveMaximum *float64         `json:"exclusiveMaximum,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
+	minimum          *float64         `json:"minimum,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
+	exclusiveMinimum *float64         `json:"exclusiveMinimum,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
+	maxLength        *int             `json:"maxLength,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
+	minLength        *int             `json:"minLength,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
 	pattern          string           `json:"pattern,omitempty"`
-	maxItems         int              `json:"maxItems,omitempty"`
-	minItems         int              `json:"minItems,omitempty"`
+	maxItems         *int             `json:"maxItems,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
+	minItems         *int             `json:"minItems,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
 	uniqueItems      bool             `json:"uniqueItems,omitempty"`
 	enum             InterfaceList    `json:"enum,omitempty"`
-	multipleOf       float64          `json:"multipleOf,omitempty"`
+	multipleOf       *float64         `json:"multipleOf,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
 }
 
 type Items interface {
@@ -276,6 +276,7 @@ type header struct {
 }
 
 type Schema interface {
+	IsRequiredProperty(string) bool
 }
 
 type schema struct {
@@ -283,24 +284,24 @@ type schema struct {
 	typ                 PrimitiveType         `json:"type,omitempty"`
 	format              string                `json:"format,omitempty"`
 	title               string                `json:"title,omitempty"`
-	multipleOf          float64               `json:"multipleOf,omitempty"`
-	maximum             float64               `json:"maximum,omitempty"`
-	exclusiveMaximum    float64               `json:"exclusiveMaximum,omitempty"`
-	minimum             float64               `json:"minimum,omitempty"`
-	exclusiveMinimum    float64               `json:"exclusiveMinimum,omitempty"`
-	maxLength           int                   `json:"maxLength,omitempty"`
-	minLength           int                   `json:"minLength,omitempty"`
+	multipleOf          *float64              `json:"multipleOf,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
+	maximum             *float64              `json:"maximum,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
+	exclusiveMaximum    *float64              `json:"exclusiveMaximum,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
+	minimum             *float64              `json:"minimum,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
+	exclusiveMinimum    *float64              `json:"exclusiveMinimum,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
+	maxLength           *int                  `json:"maxLength,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
+	minLength           *int                  `json:"minLength,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
 	pattern             string                `json:"pattern,omitempty"`
-	maxItems            int                   `json:"maxItems,omitempty"`
-	minItems            int                   `json:"minItems,omitempty"`
+	maxItems            *int                  `json:"maxItems,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
+	minItems            *int                  `json:"minItems,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
 	uniqueItems         bool                  `json:"uniqueItems,omitempty"`
-	maxProperties       int                   `json:"maxProperties,omitempty"`
-	minProperties       int                   `json:"minProperties,omitempty"`
+	maxProperties       *int                  `json:"maxProperties,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
+	minProperties       *int                  `json:"minProperties,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
 	required            StringList            `json:"required,omitempty"`
 	enum                InterfaceList         `json:"enum,omitempty"`
 	allOf               SchemaList            `json:"allOf,omitempty"`
 	items               Schema                `json:"items,omitempty"`
-	properties          SchemaMap             `json:"properties,omitempty"`
+	properties          SchemaMap             `json:"properties,omitempty" builder:"-"`
 	additionaProperties SchemaMap             `json:"additionalProperties,omitempty"`
 	defaultValue        interface{}           `json:"default,omitempty"`
 	discriminator       string                `json:"discriminator,omitempty"`

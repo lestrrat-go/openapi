@@ -252,12 +252,17 @@ func completeInterface(dst io.Writer, ifacename string) {
 
 		// If it's a container type, we need to return iterators
 		fieldType := fv.Type.Name()
-		exportedField := exportedName(fv.Name)
+		exportedField := codegen.ExportedName(fv.Name)
 		log.Printf("   - %s", exportedField)
 		if _, ok := containerTypes[fieldType]; ok {
 			fmt.Fprintf(dst, "\n%s() *%s", exportedField, iteratorName(fv.Type))
 		} else {
-			fmt.Fprintf(dst, "\n%s() %s", exportedField, typname(fv.Type))
+			if fv.Tag.Get("accessor") == "indirect" {
+				fmt.Fprintf(dst, "\nHas%s() bool", exportedField)
+				fmt.Fprintf(dst, "\n%s() %s", exportedField, typname(fv.Type.Elem()))
+			} else {
+				fmt.Fprintf(dst, "\n%s() %s", exportedField, typname(fv.Type))
+			}
 		}
 	}
 
@@ -585,14 +590,22 @@ func generateBuilderFromEntity(e interface{}) error {
 	fmt.Fprintf(dst, "\n}")
 
 	for _, fv := range optionals {
-		fmt.Fprintf(dst, "\n\n// %s sets the %s field for object %s.", exportedName(fv.Name), exportedName(fv.Name), ifacename)
+		exportedFieldName := codegen.ExportedName(fv.Name)
+		fmt.Fprintf(dst, "\n\n// %s sets the %s field for object %s.", exportedFieldName, fv.Name, ifacename)
 		if _, ok := hasDefault[fv.Name]; ok {
 			fmt.Fprintf(dst, " If this is not called,\n// a default value (%s) is assigned to this field", fv.Tag.Get("default"))
 		}
 
 		// if the inferred argument type is a list, we should allow a
 		// variadic expression in the argument
-		argType := typname(fv.Type)
+		var argType string
+		indirect := fv.Tag.Get("builder") == "indirect"
+		if indirect {
+			argType = typname(fv.Type.Elem())
+		} else {
+			argType = typname(fv.Type)
+		}
+
 		if strings.HasPrefix(argType, "[]") {
 			argType = "..." + strings.TrimPrefix(argType, "[]")
 		} else if isList(argType) {
@@ -605,8 +618,12 @@ func generateBuilderFromEntity(e interface{}) error {
 			}
 			argType = "..." + argType
 		}
-		fmt.Fprintf(dst, "\nfunc (b *%sBuilder) %s(v %s) *%sBuilder {", ifacename, exportedName(fv.Name), argType, ifacename)
-		fmt.Fprintf(dst, "\nb.target.%s = v", fv.Name)
+		fmt.Fprintf(dst, "\nfunc (b *%sBuilder) %s(v %s) *%sBuilder {", ifacename, exportedFieldName, argType, ifacename)
+		if indirect {
+			fmt.Fprintf(dst, "\nb.target.%s = &v", fv.Name)
+		} else {
+			fmt.Fprintf(dst, "\nb.target.%s = v", fv.Name)
+		}
 		fmt.Fprintf(dst, "\nreturn b")
 		fmt.Fprintf(dst, "\n}")
 	}
@@ -667,7 +684,7 @@ func generateAccessorsFromEntity(e interface{}) error {
 		}
 		log.Printf(" * Checking field %s", fv.Name)
 
-		exportedName := exportedName(fv.Name)
+		exportedName := codegen.ExportedName(fv.Name)
 		unexportedName := codegen.UnexportedName(fv.Name)
 		fieldType := fv.Type.Name()
 
@@ -711,9 +728,26 @@ func generateAccessorsFromEntity(e interface{}) error {
 			fmt.Fprintf(dst, "\nreturn &iter")
 			fmt.Fprintf(dst, "\n}")
 		default:
-			fmt.Fprintf(dst, "\n\nfunc (v *%s) %s() %s {", structname, exportedName, typname(fv.Type))
-			fmt.Fprintf(dst, "\nreturn v.%s", unexportedName)
-			fmt.Fprintf(dst, "\n}")
+			if fv.Tag.Get("accessor") == "indirect" {
+				fmt.Fprintf(dst, "\n\n// Has%s returns true if the value for %s has been", exportedName, unexportedName)
+				fmt.Fprintf(dst, "\n// explicitly specified")
+				fmt.Fprintf(dst, "\nfunc (v *%s) Has%s() bool {", structname, exportedName)
+				fmt.Fprintf(dst, "\nreturn v.%s != nil", unexportedName)
+				fmt.Fprintf(dst, "\n}")
+
+				fmt.Fprintf(dst, "\n\n// %s returns the value of %s. If the value has not", exportedName, unexportedName)
+				fmt.Fprintf(dst, "\n// been explicitly, set, the zero value will be returned")
+				fmt.Fprintf(dst, "\nfunc (v *%s) %s() %s {", structname, exportedName, typname(fv.Type.Elem()))
+				fmt.Fprintf(dst, "\nif !v.Has%s() {", exportedName)
+				fmt.Fprintf(dst, "\nreturn %v", reflect.Zero(fv.Type.Elem()).Interface())
+				fmt.Fprintf(dst, "\n}")
+				fmt.Fprintf(dst, "\nreturn *v.%s", unexportedName)
+				fmt.Fprintf(dst, "\n}")
+			} else {
+				fmt.Fprintf(dst, "\n\nfunc (v *%s) %s() %s {", structname, exportedName, typname(fv.Type))
+				fmt.Fprintf(dst, "\nreturn v.%s", unexportedName)
+				fmt.Fprintf(dst, "\n}")
+			}
 		}
 	}
 
@@ -838,7 +872,7 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 		fmt.Fprintf(dst, "\nreturn err")
 		fmt.Fprintf(dst, "\n}")
 
-		fmt.Fprintf(dst, "\nif raw := proxy[\"$ref\"]; len(raw) > 0 {")
+		fmt.Fprintf(dst, "\nif raw, ok := proxy[\"$ref\"]; ok {")
 		fmt.Fprintf(dst, "\nif err := json.Unmarshal(raw, &v.reference); err != nil {")
 		fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to unmarshal $ref`)")
 		fmt.Fprintf(dst, "\n}")
@@ -862,7 +896,7 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 			}
 
 			if isList(exportedName(fv.Type.Name())) {
-				fmt.Fprintf(dst, "\n\nif raw := proxy[%s]; len(raw) > 0 {", strconv.Quote(jsonName))
+				fmt.Fprintf(dst, "\n\nif raw, ok := proxy[%s]; ok {", strconv.Quote(jsonName))
 				fmt.Fprintf(dst, "\nvar decoded %s", typname(fv.Type))
 				fmt.Fprintf(dst, "\nif err := json.Unmarshal(raw, &decoded); err != nil {")
 				fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to unmarshal field %s`)", exportedName(fv.Name))
@@ -873,7 +907,7 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 				fmt.Fprintf(dst, "\ndelete(proxy, %s)", strconv.Quote(jsonName))
 				fmt.Fprintf(dst, "\n}")
 			} else if isMap(exportedName(fv.Type.Name())) {
-				fmt.Fprintf(dst, "\n\nif raw := proxy[%s]; len(raw) > 0 {", strconv.Quote(jsonName))
+				fmt.Fprintf(dst, "\n\nif raw, ok := proxy[%s]; ok {", strconv.Quote(jsonName))
 				fmt.Fprintf(dst, "\nvar decoded %s", typname(fv.Type))
 				fmt.Fprintf(dst, "\nif err := json.Unmarshal(raw, &decoded); err != nil {")
 				fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to unmarshal field %s`)", exportedName(fv.Name))
@@ -884,7 +918,7 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 				fmt.Fprintf(dst, "\ndelete(proxy, %s)", strconv.Quote(jsonName))
 				fmt.Fprintf(dst, "\n}")
 			} else if isEntity(unexportedName(fv.Type.Name())) {
-				fmt.Fprintf(dst, "\n\nif raw := proxy[%s]; len(raw) > 0 {", strconv.Quote(jsonName))
+				fmt.Fprintf(dst, "\n\nif raw, ok := proxy[%s]; ok {", strconv.Quote(jsonName))
 				fmt.Fprintf(dst, "\nvar decoded %s", unexportedName(typname(fv.Type)))
 				fmt.Fprintf(dst, "\nif err := json.Unmarshal(raw, &decoded); err != nil {")
 				fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to unmarshal field %s`)", exportedName(fv.Name))
@@ -893,8 +927,12 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 				fmt.Fprintf(dst, "\ndelete(proxy, %s)", strconv.Quote(jsonName))
 				fmt.Fprintf(dst, "\n}")
 			} else {
-				fmt.Fprintf(dst, "\n\nif raw := proxy[%s]; len(raw) > 0 {", strconv.Quote(jsonName))
-				fmt.Fprintf(dst, "\nvar decoded %s", typname(fv.Type))
+				fmt.Fprintf(dst, "\n\nif raw, ok := proxy[%s]; ok {", strconv.Quote(jsonName))
+				if fv.Tag.Get("mutator") == "indirect" {
+					fmt.Fprintf(dst, "\nvar decoded %s", typname(fv.Type.Elem()))
+				} else {
+					fmt.Fprintf(dst, "\nvar decoded %s", typname(fv.Type))
+				}
 				fmt.Fprintf(dst, "\nif err := json.Unmarshal(raw, &decoded); err != nil {")
 				fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to unmarshal field %s`)", jsonName)
 				fmt.Fprintf(dst, "\n}")
@@ -1120,36 +1158,50 @@ func generateMutatorFromEntity(e interface{}) error {
 		switch {
 		case isMap(fieldType):
 			log.Printf(" * Generating map element mutator for %s", fieldType)
-			fmt.Fprintf(dst, "\n\nfunc (b *%sMutator) Clear%s() *%sMutator {", ifacename, exportedName, ifacename)
-			fmt.Fprintf(dst, "\nb.proxy.%s.Clear()", unexportedName)
-			fmt.Fprintf(dst, "\nreturn b")
+			fmt.Fprintf(dst, "\n\nfunc (m *%sMutator) Clear%s() *%sMutator {", ifacename, exportedName, ifacename)
+			fmt.Fprintf(dst, "\nm.proxy.%s.Clear()", unexportedName)
+			fmt.Fprintf(dst, "\nreturn m")
 			fmt.Fprintf(dst, "\n}")
-			fmt.Fprintf(dst, "\n\nfunc (b *%sMutator) %s(key %sKey, value %s) *%sMutator {", ifacename, inflection.Singular(exportedName), fieldType, typname(fv.Type.Elem()), ifacename)
-			fmt.Fprintf(dst, "\nif b.proxy.%s == nil {", unexportedName)
-			fmt.Fprintf(dst, "\nb.proxy.%s = %s{}", unexportedName, fieldType)
+			fmt.Fprintf(dst, "\n\nfunc (m *%sMutator) %s(key %sKey, value %s) *%sMutator {", ifacename, inflection.Singular(exportedName), fieldType, typname(fv.Type.Elem()), ifacename)
+			fmt.Fprintf(dst, "\nif m.proxy.%s == nil {", unexportedName)
+			fmt.Fprintf(dst, "\nm.proxy.%s = %s{}", unexportedName, fieldType)
 			fmt.Fprintf(dst, "\n}")
-			fmt.Fprintf(dst, "\n\nb.proxy.%s[key] = value", unexportedName)
+			fmt.Fprintf(dst, "\n\nm.proxy.%s[key] = value", unexportedName)
 			if isEntity(fv.Type.Elem().Name()) {
 				fmt.Fprintf(dst, ".Clone()")
 			}
-			fmt.Fprintf(dst, "\nreturn b")
+			fmt.Fprintf(dst, "\nreturn m")
 			fmt.Fprintf(dst, "\n}")
 		case isList(fieldType):
 			log.Printf(" * Generating list element mutator for %s", fieldType)
-			fmt.Fprintf(dst, "\n\nfunc (b *%sMutator) Clear%s() *%sMutator {", ifacename, exportedName, ifacename)
-			fmt.Fprintf(dst, "\nb.proxy.%s.Clear()", unexportedName)
-			fmt.Fprintf(dst, "\nreturn b")
+			fmt.Fprintf(dst, "\n\nfunc (m *%sMutator) Clear%s() *%sMutator {", ifacename, exportedName, ifacename)
+			fmt.Fprintf(dst, "\nm.proxy.%s.Clear()", unexportedName)
+			fmt.Fprintf(dst, "\nreturn m")
 			fmt.Fprintf(dst, "\n}")
-			fmt.Fprintf(dst, "\n\nfunc (b *%sMutator) %s(value %s) *%sMutator {", ifacename, inflection.Singular(exportedName), typname(fv.Type.Elem()), ifacename)
-			fmt.Fprintf(dst, "\nb.proxy.%s = append(b.proxy.%s, value)", unexportedName, unexportedName)
-			fmt.Fprintf(dst, "\nreturn b")
+			fmt.Fprintf(dst, "\n\nfunc (m *%sMutator) %s(value %s) *%sMutator {", ifacename, inflection.Singular(exportedName), typname(fv.Type.Elem()), ifacename)
+			fmt.Fprintf(dst, "\nm.proxy.%s = append(m.proxy.%s, value)", unexportedName, unexportedName)
+			fmt.Fprintf(dst, "\nreturn m")
 			fmt.Fprintf(dst, "\n}")
 		default:
-			fmt.Fprintf(dst, "\n\n// %s sets the %s field for object %s.", exportedName, exportedName, ifacename)
-			fmt.Fprintf(dst, "\nfunc (b *%sMutator) %s(v %s) *%sMutator {", ifacename, exportedName, typname(fv.Type), ifacename)
-			fmt.Fprintf(dst, "\nb.proxy.%s = v", unexportedName)
-			fmt.Fprintf(dst, "\nreturn b")
-			fmt.Fprintf(dst, "\n}")
+			if fv.Tag.Get("mutator") == "indirect" {
+				fmt.Fprintf(dst, "\n\n// Clear%s clears the %s field", exportedName, unexportedName)
+				fmt.Fprintf(dst, "\nfunc (m *%sMutator) Clear%s() *%sMutator {", ifacename, exportedName, ifacename)
+				fmt.Fprintf(dst, "\nm.proxy.%s = nil", unexportedName)
+				fmt.Fprintf(dst, "\nreturn m")
+				fmt.Fprintf(dst, "\n}")
+				fmt.Fprintf(dst, "\n\n// %s sets the %s field.", exportedName, unexportedName, ifacename)
+				fmt.Fprintf(dst, "\nfunc (m *%sMutator) %s(v %s) *%sMutator {", ifacename, exportedName, typname(fv.Type.Elem()), ifacename)
+				fmt.Fprintf(dst, "\nm.proxy.%s = &v", unexportedName)
+				fmt.Fprintf(dst, "\nreturn m")
+				fmt.Fprintf(dst, "\n}")
+			} else {
+
+				fmt.Fprintf(dst, "\n\n// %s sets the %s field for object %s.", exportedName, exportedName, ifacename)
+				fmt.Fprintf(dst, "\nfunc (m *%sMutator) %s(v %s) *%sMutator {", ifacename, exportedName, typname(fv.Type), ifacename)
+				fmt.Fprintf(dst, "\nm.proxy.%s = v", unexportedName)
+				fmt.Fprintf(dst, "\nreturn m")
+				fmt.Fprintf(dst, "\n}")
+			}
 		}
 	}
 

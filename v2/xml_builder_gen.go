@@ -40,31 +40,31 @@ func NewXML() *XMLBuilder {
 	}
 }
 
-// Name sets the Name field for object XML.
+// Name sets the name field for object XML.
 func (b *XMLBuilder) Name(v string) *XMLBuilder {
 	b.target.name = v
 	return b
 }
 
-// Namespace sets the Namespace field for object XML.
+// Namespace sets the namespace field for object XML.
 func (b *XMLBuilder) Namespace(v string) *XMLBuilder {
 	b.target.namespace = v
 	return b
 }
 
-// Prefix sets the Prefix field for object XML.
+// Prefix sets the prefix field for object XML.
 func (b *XMLBuilder) Prefix(v string) *XMLBuilder {
 	b.target.prefix = v
 	return b
 }
 
-// Attribute sets the Attribute field for object XML.
+// Attribute sets the attribute field for object XML.
 func (b *XMLBuilder) Attribute(v bool) *XMLBuilder {
 	b.target.attribute = v
 	return b
 }
 
-// Wrapped sets the Wrapped field for object XML.
+// Wrapped sets the wrapped field for object XML.
 func (b *XMLBuilder) Wrapped(v bool) *XMLBuilder {
 	b.target.wrapped = v
 	return b

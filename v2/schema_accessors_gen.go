@@ -27,56 +27,177 @@ func (v *schema) Title() string {
 	return v.title
 }
 
+// HasMultipleOf returns true if the value for multipleOf has been
+// explicitly specified
+func (v *schema) HasMultipleOf() bool {
+	return v.multipleOf != nil
+}
+
+// MultipleOf returns the value of multipleOf. If the value has not
+// been explicitly, set, the zero value will be returned
 func (v *schema) MultipleOf() float64 {
-	return v.multipleOf
+	if !v.HasMultipleOf() {
+		return 0
+	}
+	return *v.multipleOf
 }
 
+// HasMaximum returns true if the value for maximum has been
+// explicitly specified
+func (v *schema) HasMaximum() bool {
+	return v.maximum != nil
+}
+
+// Maximum returns the value of maximum. If the value has not
+// been explicitly, set, the zero value will be returned
 func (v *schema) Maximum() float64 {
-	return v.maximum
+	if !v.HasMaximum() {
+		return 0
+	}
+	return *v.maximum
 }
 
+// HasExclusiveMaximum returns true if the value for exclusiveMaximum has been
+// explicitly specified
+func (v *schema) HasExclusiveMaximum() bool {
+	return v.exclusiveMaximum != nil
+}
+
+// ExclusiveMaximum returns the value of exclusiveMaximum. If the value has not
+// been explicitly, set, the zero value will be returned
 func (v *schema) ExclusiveMaximum() float64 {
-	return v.exclusiveMaximum
+	if !v.HasExclusiveMaximum() {
+		return 0
+	}
+	return *v.exclusiveMaximum
 }
 
+// HasMinimum returns true if the value for minimum has been
+// explicitly specified
+func (v *schema) HasMinimum() bool {
+	return v.minimum != nil
+}
+
+// Minimum returns the value of minimum. If the value has not
+// been explicitly, set, the zero value will be returned
 func (v *schema) Minimum() float64 {
-	return v.minimum
+	if !v.HasMinimum() {
+		return 0
+	}
+	return *v.minimum
 }
 
+// HasExclusiveMinimum returns true if the value for exclusiveMinimum has been
+// explicitly specified
+func (v *schema) HasExclusiveMinimum() bool {
+	return v.exclusiveMinimum != nil
+}
+
+// ExclusiveMinimum returns the value of exclusiveMinimum. If the value has not
+// been explicitly, set, the zero value will be returned
 func (v *schema) ExclusiveMinimum() float64 {
-	return v.exclusiveMinimum
+	if !v.HasExclusiveMinimum() {
+		return 0
+	}
+	return *v.exclusiveMinimum
 }
 
+// HasMaxLength returns true if the value for maxLength has been
+// explicitly specified
+func (v *schema) HasMaxLength() bool {
+	return v.maxLength != nil
+}
+
+// MaxLength returns the value of maxLength. If the value has not
+// been explicitly, set, the zero value will be returned
 func (v *schema) MaxLength() int {
-	return v.maxLength
+	if !v.HasMaxLength() {
+		return 0
+	}
+	return *v.maxLength
 }
 
+// HasMinLength returns true if the value for minLength has been
+// explicitly specified
+func (v *schema) HasMinLength() bool {
+	return v.minLength != nil
+}
+
+// MinLength returns the value of minLength. If the value has not
+// been explicitly, set, the zero value will be returned
 func (v *schema) MinLength() int {
-	return v.minLength
+	if !v.HasMinLength() {
+		return 0
+	}
+	return *v.minLength
 }
 
 func (v *schema) Pattern() string {
 	return v.pattern
 }
 
-func (v *schema) MaxItems() int {
-	return v.maxItems
+// HasMaxItems returns true if the value for maxItems has been
+// explicitly specified
+func (v *schema) HasMaxItems() bool {
+	return v.maxItems != nil
 }
 
+// MaxItems returns the value of maxItems. If the value has not
+// been explicitly, set, the zero value will be returned
+func (v *schema) MaxItems() int {
+	if !v.HasMaxItems() {
+		return 0
+	}
+	return *v.maxItems
+}
+
+// HasMinItems returns true if the value for minItems has been
+// explicitly specified
+func (v *schema) HasMinItems() bool {
+	return v.minItems != nil
+}
+
+// MinItems returns the value of minItems. If the value has not
+// been explicitly, set, the zero value will be returned
 func (v *schema) MinItems() int {
-	return v.minItems
+	if !v.HasMinItems() {
+		return 0
+	}
+	return *v.minItems
 }
 
 func (v *schema) UniqueItems() bool {
 	return v.uniqueItems
 }
 
-func (v *schema) MaxProperties() int {
-	return v.maxProperties
+// HasMaxProperties returns true if the value for maxProperties has been
+// explicitly specified
+func (v *schema) HasMaxProperties() bool {
+	return v.maxProperties != nil
 }
 
+// MaxProperties returns the value of maxProperties. If the value has not
+// been explicitly, set, the zero value will be returned
+func (v *schema) MaxProperties() int {
+	if !v.HasMaxProperties() {
+		return 0
+	}
+	return *v.maxProperties
+}
+
+// HasMinProperties returns true if the value for minProperties has been
+// explicitly specified
+func (v *schema) HasMinProperties() bool {
+	return v.minProperties != nil
+}
+
+// MinProperties returns the value of minProperties. If the value has not
+// been explicitly, set, the zero value will be returned
 func (v *schema) MinProperties() int {
-	return v.minProperties
+	if !v.HasMinProperties() {
+		return 0
+	}
+	return *v.minProperties
 }
 
 func (v *schema) Required() *StringListIterator {
@@ -145,7 +266,7 @@ func (v *schema) AdditionaProperties() *SchemaMapIterator {
 	return &iter
 }
 
-func (v *schema) DefaultValue() interface{} {
+func (v *schema) Default() interface{} {
 	return v.defaultValue
 }
 

@@ -44,73 +44,73 @@ func NewSwagger(info Info, paths Paths) *SwaggerBuilder {
 	}
 }
 
-// Host sets the Host field for object Swagger.
+// Host sets the host field for object Swagger.
 func (b *SwaggerBuilder) Host(v string) *SwaggerBuilder {
 	b.target.host = v
 	return b
 }
 
-// BasePath sets the BasePath field for object Swagger.
+// BasePath sets the basePath field for object Swagger.
 func (b *SwaggerBuilder) BasePath(v string) *SwaggerBuilder {
 	b.target.basePath = v
 	return b
 }
 
-// Schemes sets the Schemes field for object Swagger.
+// Schemes sets the schemes field for object Swagger.
 func (b *SwaggerBuilder) Schemes(v ...Scheme) *SwaggerBuilder {
 	b.target.schemes = v
 	return b
 }
 
-// Consumes sets the Consumes field for object Swagger.
+// Consumes sets the consumes field for object Swagger.
 func (b *SwaggerBuilder) Consumes(v ...MIMEType) *SwaggerBuilder {
 	b.target.consumes = v
 	return b
 }
 
-// Produces sets the Produces field for object Swagger.
+// Produces sets the produces field for object Swagger.
 func (b *SwaggerBuilder) Produces(v ...MIMEType) *SwaggerBuilder {
 	b.target.produces = v
 	return b
 }
 
-// Definitions sets the Definitions field for object Swagger.
+// Definitions sets the definitions field for object Swagger.
 func (b *SwaggerBuilder) Definitions(v InterfaceMap) *SwaggerBuilder {
 	b.target.definitions = v
 	return b
 }
 
-// Parameters sets the Parameters field for object Swagger.
+// Parameters sets the parameters field for object Swagger.
 func (b *SwaggerBuilder) Parameters(v ParameterMap) *SwaggerBuilder {
 	b.target.parameters = v
 	return b
 }
 
-// Responses sets the Responses field for object Swagger.
+// Responses sets the responses field for object Swagger.
 func (b *SwaggerBuilder) Responses(v ResponseMap) *SwaggerBuilder {
 	b.target.responses = v
 	return b
 }
 
-// SecurityDefinitions sets the SecurityDefinitions field for object Swagger.
+// SecurityDefinitions sets the securityDefinitions field for object Swagger.
 func (b *SwaggerBuilder) SecurityDefinitions(v SecuritySchemeMap) *SwaggerBuilder {
 	b.target.securityDefinitions = v
 	return b
 }
 
-// Security sets the Security field for object Swagger.
+// Security sets the security field for object Swagger.
 func (b *SwaggerBuilder) Security(v ...SecurityRequirement) *SwaggerBuilder {
 	b.target.security = v
 	return b
 }
 
-// Tags sets the Tags field for object Swagger.
+// Tags sets the tags field for object Swagger.
 func (b *SwaggerBuilder) Tags(v ...Tag) *SwaggerBuilder {
 	b.target.tags = v
 	return b
 }
 
-// ExternalDocs sets the ExternalDocs field for object Swagger.
+// ExternalDocs sets the externalDocs field for object Swagger.
 func (b *SwaggerBuilder) ExternalDocs(v ExternalDocumentation) *SwaggerBuilder {
 	b.target.externalDocs = v
 	return b

@@ -70,7 +70,7 @@ func (v *operation) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &proxy); err != nil {
 		return err
 	}
-	if raw := proxy["$ref"]; len(raw) > 0 {
+	if raw, ok := proxy["$ref"]; ok {
 		if err := json.Unmarshal(raw, &v.reference); err != nil {
 			return errors.Wrap(err, `failed to unmarshal $ref`)
 		}
@@ -79,7 +79,7 @@ func (v *operation) UnmarshalJSON(data []byte) error {
 
 	mutator := MutateOperation(v)
 
-	if raw := proxy["tags"]; len(raw) > 0 {
+	if raw, ok := proxy["tags"]; ok {
 		var decoded StringList
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Tags`)
@@ -90,7 +90,7 @@ func (v *operation) UnmarshalJSON(data []byte) error {
 		delete(proxy, "tags")
 	}
 
-	if raw := proxy["summary"]; len(raw) > 0 {
+	if raw, ok := proxy["summary"]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field summary`)
@@ -99,7 +99,7 @@ func (v *operation) UnmarshalJSON(data []byte) error {
 		delete(proxy, "summary")
 	}
 
-	if raw := proxy["description"]; len(raw) > 0 {
+	if raw, ok := proxy["description"]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field description`)
@@ -108,7 +108,7 @@ func (v *operation) UnmarshalJSON(data []byte) error {
 		delete(proxy, "description")
 	}
 
-	if raw := proxy["externalDocs"]; len(raw) > 0 {
+	if raw, ok := proxy["externalDocs"]; ok {
 		var decoded externalDocumentation
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field ExternalDocs`)
@@ -118,7 +118,7 @@ func (v *operation) UnmarshalJSON(data []byte) error {
 		delete(proxy, "externalDocs")
 	}
 
-	if raw := proxy["operationId"]; len(raw) > 0 {
+	if raw, ok := proxy["operationId"]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field operationId`)
@@ -127,7 +127,7 @@ func (v *operation) UnmarshalJSON(data []byte) error {
 		delete(proxy, "operationId")
 	}
 
-	if raw := proxy["consumes"]; len(raw) > 0 {
+	if raw, ok := proxy["consumes"]; ok {
 		var decoded MIMETypeList
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Consumes`)
@@ -138,7 +138,7 @@ func (v *operation) UnmarshalJSON(data []byte) error {
 		delete(proxy, "consumes")
 	}
 
-	if raw := proxy["produces"]; len(raw) > 0 {
+	if raw, ok := proxy["produces"]; ok {
 		var decoded MIMETypeList
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Produces`)
@@ -149,7 +149,7 @@ func (v *operation) UnmarshalJSON(data []byte) error {
 		delete(proxy, "produces")
 	}
 
-	if raw := proxy["parameters"]; len(raw) > 0 {
+	if raw, ok := proxy["parameters"]; ok {
 		var decoded ParameterList
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Parameters`)
@@ -160,7 +160,7 @@ func (v *operation) UnmarshalJSON(data []byte) error {
 		delete(proxy, "parameters")
 	}
 
-	if raw := proxy["responses"]; len(raw) > 0 {
+	if raw, ok := proxy["responses"]; ok {
 		var decoded responses
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Responses`)
@@ -170,7 +170,7 @@ func (v *operation) UnmarshalJSON(data []byte) error {
 		delete(proxy, "responses")
 	}
 
-	if raw := proxy["schemes"]; len(raw) > 0 {
+	if raw, ok := proxy["schemes"]; ok {
 		var decoded SchemeList
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Schemes`)
@@ -181,7 +181,7 @@ func (v *operation) UnmarshalJSON(data []byte) error {
 		delete(proxy, "schemes")
 	}
 
-	if raw := proxy["deprecated"]; len(raw) > 0 {
+	if raw, ok := proxy["deprecated"]; ok {
 		var decoded bool
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field deprecated`)
@@ -190,7 +190,7 @@ func (v *operation) UnmarshalJSON(data []byte) error {
 		delete(proxy, "deprecated")
 	}
 
-	if raw := proxy["security"]; len(raw) > 0 {
+	if raw, ok := proxy["security"]; ok {
 		var decoded SecurityRequirementList
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Security`)

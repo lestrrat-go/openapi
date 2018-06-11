@@ -32,9 +32,9 @@ func MutateResponses(v Responses) *ResponsesMutator {
 }
 
 // DefaultValue sets the DefaultValue field for object Responses.
-func (b *ResponsesMutator) DefaultValue(v Response) *ResponsesMutator {
-	b.proxy.defaultValue = v
-	return b
+func (m *ResponsesMutator) DefaultValue(v Response) *ResponsesMutator {
+	m.proxy.defaultValue = v
+	return m
 }
 func (b *ResponsesMutator) Extension(name string, value interface{}) *ResponsesMutator {
 	if b.proxy.extensions == nil {

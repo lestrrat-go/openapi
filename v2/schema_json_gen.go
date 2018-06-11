@@ -23,19 +23,19 @@ type schemaMarshalProxy struct {
 	Type                PrimitiveType         `json:"type,omitempty"`
 	Format              string                `json:"format,omitempty"`
 	Title               string                `json:"title,omitempty"`
-	MultipleOf          float64               `json:"multipleOf,omitempty"`
-	Maximum             float64               `json:"maximum,omitempty"`
-	ExclusiveMaximum    float64               `json:"exclusiveMaximum,omitempty"`
-	Minimum             float64               `json:"minimum,omitempty"`
-	ExclusiveMinimum    float64               `json:"exclusiveMinimum,omitempty"`
-	MaxLength           int                   `json:"maxLength,omitempty"`
-	MinLength           int                   `json:"minLength,omitempty"`
+	MultipleOf          *float64              `json:"multipleOf,omitempty"`
+	Maximum             *float64              `json:"maximum,omitempty"`
+	ExclusiveMaximum    *float64              `json:"exclusiveMaximum,omitempty"`
+	Minimum             *float64              `json:"minimum,omitempty"`
+	ExclusiveMinimum    *float64              `json:"exclusiveMinimum,omitempty"`
+	MaxLength           *int                  `json:"maxLength,omitempty"`
+	MinLength           *int                  `json:"minLength,omitempty"`
 	Pattern             string                `json:"pattern,omitempty"`
-	MaxItems            int                   `json:"maxItems,omitempty"`
-	MinItems            int                   `json:"minItems,omitempty"`
+	MaxItems            *int                  `json:"maxItems,omitempty"`
+	MinItems            *int                  `json:"minItems,omitempty"`
 	UniqueItems         bool                  `json:"uniqueItems,omitempty"`
-	MaxProperties       int                   `json:"maxProperties,omitempty"`
-	MinProperties       int                   `json:"minProperties,omitempty"`
+	MaxProperties       *int                  `json:"maxProperties,omitempty"`
+	MinProperties       *int                  `json:"minProperties,omitempty"`
 	Required            StringList            `json:"required,omitempty"`
 	Enum                InterfaceList         `json:"enum,omitempty"`
 	AllOf               SchemaList            `json:"allOf,omitempty"`
@@ -104,7 +104,7 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &proxy); err != nil {
 		return err
 	}
-	if raw := proxy["$ref"]; len(raw) > 0 {
+	if raw, ok := proxy["$ref"]; ok {
 		if err := json.Unmarshal(raw, &v.reference); err != nil {
 			return errors.Wrap(err, `failed to unmarshal $ref`)
 		}
@@ -113,7 +113,7 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 
 	mutator := MutateSchema(v)
 
-	if raw := proxy["type"]; len(raw) > 0 {
+	if raw, ok := proxy["type"]; ok {
 		var decoded PrimitiveType
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field type`)
@@ -122,7 +122,7 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 		delete(proxy, "type")
 	}
 
-	if raw := proxy["format"]; len(raw) > 0 {
+	if raw, ok := proxy["format"]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field format`)
@@ -131,7 +131,7 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 		delete(proxy, "format")
 	}
 
-	if raw := proxy["title"]; len(raw) > 0 {
+	if raw, ok := proxy["title"]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field title`)
@@ -140,7 +140,7 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 		delete(proxy, "title")
 	}
 
-	if raw := proxy["multipleOf"]; len(raw) > 0 {
+	if raw, ok := proxy["multipleOf"]; ok {
 		var decoded float64
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field multipleOf`)
@@ -149,7 +149,7 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 		delete(proxy, "multipleOf")
 	}
 
-	if raw := proxy["maximum"]; len(raw) > 0 {
+	if raw, ok := proxy["maximum"]; ok {
 		var decoded float64
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field maximum`)
@@ -158,7 +158,7 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 		delete(proxy, "maximum")
 	}
 
-	if raw := proxy["exclusiveMaximum"]; len(raw) > 0 {
+	if raw, ok := proxy["exclusiveMaximum"]; ok {
 		var decoded float64
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field exclusiveMaximum`)
@@ -167,7 +167,7 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 		delete(proxy, "exclusiveMaximum")
 	}
 
-	if raw := proxy["minimum"]; len(raw) > 0 {
+	if raw, ok := proxy["minimum"]; ok {
 		var decoded float64
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field minimum`)
@@ -176,7 +176,7 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 		delete(proxy, "minimum")
 	}
 
-	if raw := proxy["exclusiveMinimum"]; len(raw) > 0 {
+	if raw, ok := proxy["exclusiveMinimum"]; ok {
 		var decoded float64
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field exclusiveMinimum`)
@@ -185,7 +185,7 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 		delete(proxy, "exclusiveMinimum")
 	}
 
-	if raw := proxy["maxLength"]; len(raw) > 0 {
+	if raw, ok := proxy["maxLength"]; ok {
 		var decoded int
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field maxLength`)
@@ -194,7 +194,7 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 		delete(proxy, "maxLength")
 	}
 
-	if raw := proxy["minLength"]; len(raw) > 0 {
+	if raw, ok := proxy["minLength"]; ok {
 		var decoded int
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field minLength`)
@@ -203,7 +203,7 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 		delete(proxy, "minLength")
 	}
 
-	if raw := proxy["pattern"]; len(raw) > 0 {
+	if raw, ok := proxy["pattern"]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field pattern`)
@@ -212,7 +212,7 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 		delete(proxy, "pattern")
 	}
 
-	if raw := proxy["maxItems"]; len(raw) > 0 {
+	if raw, ok := proxy["maxItems"]; ok {
 		var decoded int
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field maxItems`)
@@ -221,7 +221,7 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 		delete(proxy, "maxItems")
 	}
 
-	if raw := proxy["minItems"]; len(raw) > 0 {
+	if raw, ok := proxy["minItems"]; ok {
 		var decoded int
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field minItems`)
@@ -230,7 +230,7 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 		delete(proxy, "minItems")
 	}
 
-	if raw := proxy["uniqueItems"]; len(raw) > 0 {
+	if raw, ok := proxy["uniqueItems"]; ok {
 		var decoded bool
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field uniqueItems`)
@@ -239,7 +239,7 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 		delete(proxy, "uniqueItems")
 	}
 
-	if raw := proxy["maxProperties"]; len(raw) > 0 {
+	if raw, ok := proxy["maxProperties"]; ok {
 		var decoded int
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field maxProperties`)
@@ -248,7 +248,7 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 		delete(proxy, "maxProperties")
 	}
 
-	if raw := proxy["minProperties"]; len(raw) > 0 {
+	if raw, ok := proxy["minProperties"]; ok {
 		var decoded int
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field minProperties`)
@@ -257,7 +257,7 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 		delete(proxy, "minProperties")
 	}
 
-	if raw := proxy["required"]; len(raw) > 0 {
+	if raw, ok := proxy["required"]; ok {
 		var decoded StringList
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Required`)
@@ -268,7 +268,7 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 		delete(proxy, "required")
 	}
 
-	if raw := proxy["enum"]; len(raw) > 0 {
+	if raw, ok := proxy["enum"]; ok {
 		var decoded InterfaceList
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Enum`)
@@ -279,7 +279,7 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 		delete(proxy, "enum")
 	}
 
-	if raw := proxy["allOf"]; len(raw) > 0 {
+	if raw, ok := proxy["allOf"]; ok {
 		var decoded SchemaList
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field AllOf`)
@@ -290,7 +290,7 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 		delete(proxy, "allOf")
 	}
 
-	if raw := proxy["items"]; len(raw) > 0 {
+	if raw, ok := proxy["items"]; ok {
 		var decoded schema
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Items`)
@@ -300,7 +300,7 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 		delete(proxy, "items")
 	}
 
-	if raw := proxy["properties"]; len(raw) > 0 {
+	if raw, ok := proxy["properties"]; ok {
 		var decoded SchemaMap
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Properties`)
@@ -311,7 +311,7 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 		delete(proxy, "properties")
 	}
 
-	if raw := proxy["additionalProperties"]; len(raw) > 0 {
+	if raw, ok := proxy["additionalProperties"]; ok {
 		var decoded SchemaMap
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field AdditionaProperties`)
@@ -322,7 +322,7 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 		delete(proxy, "additionalProperties")
 	}
 
-	if raw := proxy["default"]; len(raw) > 0 {
+	if raw, ok := proxy["default"]; ok {
 		var decoded interface{}
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field default`)
@@ -331,7 +331,7 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 		delete(proxy, "default")
 	}
 
-	if raw := proxy["discriminator"]; len(raw) > 0 {
+	if raw, ok := proxy["discriminator"]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field discriminator`)
@@ -340,7 +340,7 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 		delete(proxy, "discriminator")
 	}
 
-	if raw := proxy["readOnly"]; len(raw) > 0 {
+	if raw, ok := proxy["readOnly"]; ok {
 		var decoded bool
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field readOnly`)
@@ -349,7 +349,7 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 		delete(proxy, "readOnly")
 	}
 
-	if raw := proxy["externalDocs"]; len(raw) > 0 {
+	if raw, ok := proxy["externalDocs"]; ok {
 		var decoded externalDocumentation
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field ExternalDocs`)
@@ -359,7 +359,7 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 		delete(proxy, "externalDocs")
 	}
 
-	if raw := proxy["example"]; len(raw) > 0 {
+	if raw, ok := proxy["example"]; ok {
 		var decoded interface{}
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field example`)
@@ -368,7 +368,7 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 		delete(proxy, "example")
 	}
 
-	if raw := proxy["deprecated"]; len(raw) > 0 {
+	if raw, ok := proxy["deprecated"]; ok {
 		var decoded bool
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field deprecated`)
@@ -377,7 +377,7 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 		delete(proxy, "deprecated")
 	}
 
-	if raw := proxy["xml"]; len(raw) > 0 {
+	if raw, ok := proxy["xml"]; ok {
 		var decoded xml
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field XML`)

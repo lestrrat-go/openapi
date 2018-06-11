@@ -32,59 +32,59 @@ func MutateSecurityScheme(v SecurityScheme) *SecuritySchemeMutator {
 }
 
 // Type sets the Type field for object SecurityScheme.
-func (b *SecuritySchemeMutator) Type(v string) *SecuritySchemeMutator {
-	b.proxy.typ = v
-	return b
+func (m *SecuritySchemeMutator) Type(v string) *SecuritySchemeMutator {
+	m.proxy.typ = v
+	return m
 }
 
 // Description sets the Description field for object SecurityScheme.
-func (b *SecuritySchemeMutator) Description(v string) *SecuritySchemeMutator {
-	b.proxy.description = v
-	return b
+func (m *SecuritySchemeMutator) Description(v string) *SecuritySchemeMutator {
+	m.proxy.description = v
+	return m
 }
 
 // Name sets the Name field for object SecurityScheme.
-func (b *SecuritySchemeMutator) Name(v string) *SecuritySchemeMutator {
-	b.proxy.name = v
-	return b
+func (m *SecuritySchemeMutator) Name(v string) *SecuritySchemeMutator {
+	m.proxy.name = v
+	return m
 }
 
 // In sets the In field for object SecurityScheme.
-func (b *SecuritySchemeMutator) In(v string) *SecuritySchemeMutator {
-	b.proxy.in = v
-	return b
+func (m *SecuritySchemeMutator) In(v string) *SecuritySchemeMutator {
+	m.proxy.in = v
+	return m
 }
 
 // Flow sets the Flow field for object SecurityScheme.
-func (b *SecuritySchemeMutator) Flow(v string) *SecuritySchemeMutator {
-	b.proxy.flow = v
-	return b
+func (m *SecuritySchemeMutator) Flow(v string) *SecuritySchemeMutator {
+	m.proxy.flow = v
+	return m
 }
 
 // AuthorizationURL sets the AuthorizationURL field for object SecurityScheme.
-func (b *SecuritySchemeMutator) AuthorizationURL(v string) *SecuritySchemeMutator {
-	b.proxy.authorizationURL = v
-	return b
+func (m *SecuritySchemeMutator) AuthorizationURL(v string) *SecuritySchemeMutator {
+	m.proxy.authorizationURL = v
+	return m
 }
 
 // TokenURL sets the TokenURL field for object SecurityScheme.
-func (b *SecuritySchemeMutator) TokenURL(v string) *SecuritySchemeMutator {
-	b.proxy.tokenURL = v
-	return b
+func (m *SecuritySchemeMutator) TokenURL(v string) *SecuritySchemeMutator {
+	m.proxy.tokenURL = v
+	return m
 }
 
-func (b *SecuritySchemeMutator) ClearScopes() *SecuritySchemeMutator {
-	b.proxy.scopes.Clear()
-	return b
+func (m *SecuritySchemeMutator) ClearScopes() *SecuritySchemeMutator {
+	m.proxy.scopes.Clear()
+	return m
 }
 
-func (b *SecuritySchemeMutator) Scope(key StringMapKey, value string) *SecuritySchemeMutator {
-	if b.proxy.scopes == nil {
-		b.proxy.scopes = StringMap{}
+func (m *SecuritySchemeMutator) Scope(key StringMapKey, value string) *SecuritySchemeMutator {
+	if m.proxy.scopes == nil {
+		m.proxy.scopes = StringMap{}
 	}
 
-	b.proxy.scopes[key] = value
-	return b
+	m.proxy.scopes[key] = value
+	return m
 }
 func (b *SecuritySchemeMutator) Extension(name string, value interface{}) *SecuritySchemeMutator {
 	if b.proxy.extensions == nil {

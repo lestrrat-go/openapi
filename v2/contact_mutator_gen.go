@@ -32,21 +32,21 @@ func MutateContact(v Contact) *ContactMutator {
 }
 
 // Name sets the Name field for object Contact.
-func (b *ContactMutator) Name(v string) *ContactMutator {
-	b.proxy.name = v
-	return b
+func (m *ContactMutator) Name(v string) *ContactMutator {
+	m.proxy.name = v
+	return m
 }
 
 // URL sets the URL field for object Contact.
-func (b *ContactMutator) URL(v string) *ContactMutator {
-	b.proxy.url = v
-	return b
+func (m *ContactMutator) URL(v string) *ContactMutator {
+	m.proxy.url = v
+	return m
 }
 
 // Email sets the Email field for object Contact.
-func (b *ContactMutator) Email(v string) *ContactMutator {
-	b.proxy.email = v
-	return b
+func (m *ContactMutator) Email(v string) *ContactMutator {
+	m.proxy.email = v
+	return m
 }
 func (b *ContactMutator) Extension(name string, value interface{}) *ContactMutator {
 	if b.proxy.extensions == nil {

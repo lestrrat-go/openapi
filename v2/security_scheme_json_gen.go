@@ -62,7 +62,7 @@ func (v *securityScheme) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &proxy); err != nil {
 		return err
 	}
-	if raw := proxy["$ref"]; len(raw) > 0 {
+	if raw, ok := proxy["$ref"]; ok {
 		if err := json.Unmarshal(raw, &v.reference); err != nil {
 			return errors.Wrap(err, `failed to unmarshal $ref`)
 		}
@@ -71,7 +71,7 @@ func (v *securityScheme) UnmarshalJSON(data []byte) error {
 
 	mutator := MutateSecurityScheme(v)
 
-	if raw := proxy["type"]; len(raw) > 0 {
+	if raw, ok := proxy["type"]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field type`)
@@ -80,7 +80,7 @@ func (v *securityScheme) UnmarshalJSON(data []byte) error {
 		delete(proxy, "type")
 	}
 
-	if raw := proxy["description"]; len(raw) > 0 {
+	if raw, ok := proxy["description"]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field description`)
@@ -89,7 +89,7 @@ func (v *securityScheme) UnmarshalJSON(data []byte) error {
 		delete(proxy, "description")
 	}
 
-	if raw := proxy["name"]; len(raw) > 0 {
+	if raw, ok := proxy["name"]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field name`)
@@ -98,7 +98,7 @@ func (v *securityScheme) UnmarshalJSON(data []byte) error {
 		delete(proxy, "name")
 	}
 
-	if raw := proxy["in"]; len(raw) > 0 {
+	if raw, ok := proxy["in"]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field in`)
@@ -107,7 +107,7 @@ func (v *securityScheme) UnmarshalJSON(data []byte) error {
 		delete(proxy, "in")
 	}
 
-	if raw := proxy["flow"]; len(raw) > 0 {
+	if raw, ok := proxy["flow"]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field flow`)
@@ -116,7 +116,7 @@ func (v *securityScheme) UnmarshalJSON(data []byte) error {
 		delete(proxy, "flow")
 	}
 
-	if raw := proxy["authorizationUrl"]; len(raw) > 0 {
+	if raw, ok := proxy["authorizationUrl"]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field authorizationUrl`)
@@ -125,7 +125,7 @@ func (v *securityScheme) UnmarshalJSON(data []byte) error {
 		delete(proxy, "authorizationUrl")
 	}
 
-	if raw := proxy["tokenUrl"]; len(raw) > 0 {
+	if raw, ok := proxy["tokenUrl"]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field tokenUrl`)
@@ -134,7 +134,7 @@ func (v *securityScheme) UnmarshalJSON(data []byte) error {
 		delete(proxy, "tokenUrl")
 	}
 
-	if raw := proxy["scopes"]; len(raw) > 0 {
+	if raw, ok := proxy["scopes"]; ok {
 		var decoded StringMap
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Scopes`)

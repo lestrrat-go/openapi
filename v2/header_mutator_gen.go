@@ -32,121 +32,121 @@ func MutateHeader(v Header) *HeaderMutator {
 }
 
 // Name sets the Name field for object Header.
-func (b *HeaderMutator) Name(v string) *HeaderMutator {
-	b.proxy.name = v
-	return b
+func (m *HeaderMutator) Name(v string) *HeaderMutator {
+	m.proxy.name = v
+	return m
 }
 
 // Description sets the Description field for object Header.
-func (b *HeaderMutator) Description(v string) *HeaderMutator {
-	b.proxy.description = v
-	return b
+func (m *HeaderMutator) Description(v string) *HeaderMutator {
+	m.proxy.description = v
+	return m
 }
 
 // Type sets the Type field for object Header.
-func (b *HeaderMutator) Type(v string) *HeaderMutator {
-	b.proxy.typ = v
-	return b
+func (m *HeaderMutator) Type(v string) *HeaderMutator {
+	m.proxy.typ = v
+	return m
 }
 
 // Format sets the Format field for object Header.
-func (b *HeaderMutator) Format(v string) *HeaderMutator {
-	b.proxy.format = v
-	return b
+func (m *HeaderMutator) Format(v string) *HeaderMutator {
+	m.proxy.format = v
+	return m
 }
 
 // Items sets the Items field for object Header.
-func (b *HeaderMutator) Items(v Items) *HeaderMutator {
-	b.proxy.items = v
-	return b
+func (m *HeaderMutator) Items(v Items) *HeaderMutator {
+	m.proxy.items = v
+	return m
 }
 
 // CollectionFormat sets the CollectionFormat field for object Header.
-func (b *HeaderMutator) CollectionFormat(v CollectionFormat) *HeaderMutator {
-	b.proxy.collectionFormat = v
-	return b
+func (m *HeaderMutator) CollectionFormat(v CollectionFormat) *HeaderMutator {
+	m.proxy.collectionFormat = v
+	return m
 }
 
 // DefaultValue sets the DefaultValue field for object Header.
-func (b *HeaderMutator) DefaultValue(v interface{}) *HeaderMutator {
-	b.proxy.defaultValue = v
-	return b
+func (m *HeaderMutator) DefaultValue(v interface{}) *HeaderMutator {
+	m.proxy.defaultValue = v
+	return m
 }
 
 // Maximum sets the Maximum field for object Header.
-func (b *HeaderMutator) Maximum(v float64) *HeaderMutator {
-	b.proxy.maximum = v
-	return b
+func (m *HeaderMutator) Maximum(v float64) *HeaderMutator {
+	m.proxy.maximum = v
+	return m
 }
 
 // ExclusiveMaximum sets the ExclusiveMaximum field for object Header.
-func (b *HeaderMutator) ExclusiveMaximum(v float64) *HeaderMutator {
-	b.proxy.exclusiveMaximum = v
-	return b
+func (m *HeaderMutator) ExclusiveMaximum(v float64) *HeaderMutator {
+	m.proxy.exclusiveMaximum = v
+	return m
 }
 
 // Minimum sets the Minimum field for object Header.
-func (b *HeaderMutator) Minimum(v float64) *HeaderMutator {
-	b.proxy.minimum = v
-	return b
+func (m *HeaderMutator) Minimum(v float64) *HeaderMutator {
+	m.proxy.minimum = v
+	return m
 }
 
 // ExclusiveMinimum sets the ExclusiveMinimum field for object Header.
-func (b *HeaderMutator) ExclusiveMinimum(v float64) *HeaderMutator {
-	b.proxy.exclusiveMinimum = v
-	return b
+func (m *HeaderMutator) ExclusiveMinimum(v float64) *HeaderMutator {
+	m.proxy.exclusiveMinimum = v
+	return m
 }
 
 // MaxLength sets the MaxLength field for object Header.
-func (b *HeaderMutator) MaxLength(v int) *HeaderMutator {
-	b.proxy.maxLength = v
-	return b
+func (m *HeaderMutator) MaxLength(v int) *HeaderMutator {
+	m.proxy.maxLength = v
+	return m
 }
 
 // MinLength sets the MinLength field for object Header.
-func (b *HeaderMutator) MinLength(v int) *HeaderMutator {
-	b.proxy.minLength = v
-	return b
+func (m *HeaderMutator) MinLength(v int) *HeaderMutator {
+	m.proxy.minLength = v
+	return m
 }
 
 // Pattern sets the Pattern field for object Header.
-func (b *HeaderMutator) Pattern(v string) *HeaderMutator {
-	b.proxy.pattern = v
-	return b
+func (m *HeaderMutator) Pattern(v string) *HeaderMutator {
+	m.proxy.pattern = v
+	return m
 }
 
 // MaxItems sets the MaxItems field for object Header.
-func (b *HeaderMutator) MaxItems(v int) *HeaderMutator {
-	b.proxy.maxItems = v
-	return b
+func (m *HeaderMutator) MaxItems(v int) *HeaderMutator {
+	m.proxy.maxItems = v
+	return m
 }
 
 // MinItems sets the MinItems field for object Header.
-func (b *HeaderMutator) MinItems(v int) *HeaderMutator {
-	b.proxy.minItems = v
-	return b
+func (m *HeaderMutator) MinItems(v int) *HeaderMutator {
+	m.proxy.minItems = v
+	return m
 }
 
 // UniqueItems sets the UniqueItems field for object Header.
-func (b *HeaderMutator) UniqueItems(v bool) *HeaderMutator {
-	b.proxy.uniqueItems = v
-	return b
+func (m *HeaderMutator) UniqueItems(v bool) *HeaderMutator {
+	m.proxy.uniqueItems = v
+	return m
 }
 
-func (b *HeaderMutator) ClearEnum() *HeaderMutator {
-	b.proxy.enum.Clear()
-	return b
+func (m *HeaderMutator) ClearEnum() *HeaderMutator {
+	m.proxy.enum.Clear()
+	return m
 }
 
-func (b *HeaderMutator) Enum(value interface{}) *HeaderMutator {
-	b.proxy.enum = append(b.proxy.enum, value)
-	return b
+func (m *HeaderMutator) Enum(value interface{}) *HeaderMutator {
+	m.proxy.enum = append(m.proxy.enum, value)
+	return m
 }
 
 // MultipleOf sets the MultipleOf field for object Header.
-func (b *HeaderMutator) MultipleOf(v float64) *HeaderMutator {
-	b.proxy.multipleOf = v
-	return b
+func (m *HeaderMutator) MultipleOf(v float64) *HeaderMutator {
+	m.proxy.multipleOf = v
+	return m
 }
 func (b *HeaderMutator) Extension(name string, value interface{}) *HeaderMutator {
 	if b.proxy.extensions == nil {

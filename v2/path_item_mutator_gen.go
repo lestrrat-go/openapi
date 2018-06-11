@@ -31,14 +31,14 @@ func MutatePathItem(v PathItem) *PathItemMutator {
 	}
 }
 
-func (b *PathItemMutator) ClearParameters() *PathItemMutator {
-	b.proxy.parameters.Clear()
-	return b
+func (m *PathItemMutator) ClearParameters() *PathItemMutator {
+	m.proxy.parameters.Clear()
+	return m
 }
 
-func (b *PathItemMutator) Parameter(value Parameter) *PathItemMutator {
-	b.proxy.parameters = append(b.proxy.parameters, value)
-	return b
+func (m *PathItemMutator) Parameter(value Parameter) *PathItemMutator {
+	m.proxy.parameters = append(m.proxy.parameters, value)
+	return m
 }
 func (b *PathItemMutator) Extension(name string, value interface{}) *PathItemMutator {
 	if b.proxy.extensions == nil {

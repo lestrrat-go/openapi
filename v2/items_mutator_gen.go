@@ -32,109 +32,109 @@ func MutateItems(v Items) *ItemsMutator {
 }
 
 // Type sets the Type field for object Items.
-func (b *ItemsMutator) Type(v PrimitiveType) *ItemsMutator {
-	b.proxy.typ = v
-	return b
+func (m *ItemsMutator) Type(v PrimitiveType) *ItemsMutator {
+	m.proxy.typ = v
+	return m
 }
 
 // Format sets the Format field for object Items.
-func (b *ItemsMutator) Format(v string) *ItemsMutator {
-	b.proxy.format = v
-	return b
+func (m *ItemsMutator) Format(v string) *ItemsMutator {
+	m.proxy.format = v
+	return m
 }
 
 // Items sets the Items field for object Items.
-func (b *ItemsMutator) Items(v Items) *ItemsMutator {
-	b.proxy.items = v
-	return b
+func (m *ItemsMutator) Items(v Items) *ItemsMutator {
+	m.proxy.items = v
+	return m
 }
 
 // CollectionFormat sets the CollectionFormat field for object Items.
-func (b *ItemsMutator) CollectionFormat(v CollectionFormat) *ItemsMutator {
-	b.proxy.collectionFormat = v
-	return b
+func (m *ItemsMutator) CollectionFormat(v CollectionFormat) *ItemsMutator {
+	m.proxy.collectionFormat = v
+	return m
 }
 
 // DefaultValue sets the DefaultValue field for object Items.
-func (b *ItemsMutator) DefaultValue(v interface{}) *ItemsMutator {
-	b.proxy.defaultValue = v
-	return b
+func (m *ItemsMutator) DefaultValue(v interface{}) *ItemsMutator {
+	m.proxy.defaultValue = v
+	return m
 }
 
 // Maximum sets the Maximum field for object Items.
-func (b *ItemsMutator) Maximum(v float64) *ItemsMutator {
-	b.proxy.maximum = v
-	return b
+func (m *ItemsMutator) Maximum(v float64) *ItemsMutator {
+	m.proxy.maximum = v
+	return m
 }
 
 // ExclusiveMaximum sets the ExclusiveMaximum field for object Items.
-func (b *ItemsMutator) ExclusiveMaximum(v float64) *ItemsMutator {
-	b.proxy.exclusiveMaximum = v
-	return b
+func (m *ItemsMutator) ExclusiveMaximum(v float64) *ItemsMutator {
+	m.proxy.exclusiveMaximum = v
+	return m
 }
 
 // Minimum sets the Minimum field for object Items.
-func (b *ItemsMutator) Minimum(v float64) *ItemsMutator {
-	b.proxy.minimum = v
-	return b
+func (m *ItemsMutator) Minimum(v float64) *ItemsMutator {
+	m.proxy.minimum = v
+	return m
 }
 
 // ExclusiveMinimum sets the ExclusiveMinimum field for object Items.
-func (b *ItemsMutator) ExclusiveMinimum(v float64) *ItemsMutator {
-	b.proxy.exclusiveMinimum = v
-	return b
+func (m *ItemsMutator) ExclusiveMinimum(v float64) *ItemsMutator {
+	m.proxy.exclusiveMinimum = v
+	return m
 }
 
 // MaxLength sets the MaxLength field for object Items.
-func (b *ItemsMutator) MaxLength(v int) *ItemsMutator {
-	b.proxy.maxLength = v
-	return b
+func (m *ItemsMutator) MaxLength(v int) *ItemsMutator {
+	m.proxy.maxLength = v
+	return m
 }
 
 // MinLength sets the MinLength field for object Items.
-func (b *ItemsMutator) MinLength(v int) *ItemsMutator {
-	b.proxy.minLength = v
-	return b
+func (m *ItemsMutator) MinLength(v int) *ItemsMutator {
+	m.proxy.minLength = v
+	return m
 }
 
 // Pattern sets the Pattern field for object Items.
-func (b *ItemsMutator) Pattern(v string) *ItemsMutator {
-	b.proxy.pattern = v
-	return b
+func (m *ItemsMutator) Pattern(v string) *ItemsMutator {
+	m.proxy.pattern = v
+	return m
 }
 
 // MaxItems sets the MaxItems field for object Items.
-func (b *ItemsMutator) MaxItems(v int) *ItemsMutator {
-	b.proxy.maxItems = v
-	return b
+func (m *ItemsMutator) MaxItems(v int) *ItemsMutator {
+	m.proxy.maxItems = v
+	return m
 }
 
 // MinItems sets the MinItems field for object Items.
-func (b *ItemsMutator) MinItems(v int) *ItemsMutator {
-	b.proxy.minItems = v
-	return b
+func (m *ItemsMutator) MinItems(v int) *ItemsMutator {
+	m.proxy.minItems = v
+	return m
 }
 
 // UniqueItems sets the UniqueItems field for object Items.
-func (b *ItemsMutator) UniqueItems(v bool) *ItemsMutator {
-	b.proxy.uniqueItems = v
-	return b
+func (m *ItemsMutator) UniqueItems(v bool) *ItemsMutator {
+	m.proxy.uniqueItems = v
+	return m
 }
 
-func (b *ItemsMutator) ClearEnum() *ItemsMutator {
-	b.proxy.enum.Clear()
-	return b
+func (m *ItemsMutator) ClearEnum() *ItemsMutator {
+	m.proxy.enum.Clear()
+	return m
 }
 
-func (b *ItemsMutator) Enum(value interface{}) *ItemsMutator {
-	b.proxy.enum = append(b.proxy.enum, value)
-	return b
+func (m *ItemsMutator) Enum(value interface{}) *ItemsMutator {
+	m.proxy.enum = append(m.proxy.enum, value)
+	return m
 }
 
 // MultipleOf sets the MultipleOf field for object Items.
-func (b *ItemsMutator) MultipleOf(v float64) *ItemsMutator {
-	b.proxy.multipleOf = v
-	return b
+func (m *ItemsMutator) MultipleOf(v float64) *ItemsMutator {
+	m.proxy.multipleOf = v
+	return m
 }
 func (b *ItemsMutator) Extension(name string, value interface{}) *ItemsMutator {
 	if b.proxy.extensions == nil {

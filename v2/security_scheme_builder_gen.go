@@ -42,43 +42,43 @@ func NewSecurityScheme(typ string) *SecuritySchemeBuilder {
 	}
 }
 
-// Description sets the Description field for object SecurityScheme.
+// Description sets the description field for object SecurityScheme.
 func (b *SecuritySchemeBuilder) Description(v string) *SecuritySchemeBuilder {
 	b.target.description = v
 	return b
 }
 
-// Name sets the Name field for object SecurityScheme.
+// Name sets the name field for object SecurityScheme.
 func (b *SecuritySchemeBuilder) Name(v string) *SecuritySchemeBuilder {
 	b.target.name = v
 	return b
 }
 
-// In sets the In field for object SecurityScheme.
+// In sets the in field for object SecurityScheme.
 func (b *SecuritySchemeBuilder) In(v string) *SecuritySchemeBuilder {
 	b.target.in = v
 	return b
 }
 
-// Flow sets the Flow field for object SecurityScheme.
+// Flow sets the flow field for object SecurityScheme.
 func (b *SecuritySchemeBuilder) Flow(v string) *SecuritySchemeBuilder {
 	b.target.flow = v
 	return b
 }
 
-// AuthorizationURL sets the AuthorizationURL field for object SecurityScheme.
+// AuthorizationURL sets the authorizationURL field for object SecurityScheme.
 func (b *SecuritySchemeBuilder) AuthorizationURL(v string) *SecuritySchemeBuilder {
 	b.target.authorizationURL = v
 	return b
 }
 
-// TokenURL sets the TokenURL field for object SecurityScheme.
+// TokenURL sets the tokenURL field for object SecurityScheme.
 func (b *SecuritySchemeBuilder) TokenURL(v string) *SecuritySchemeBuilder {
 	b.target.tokenURL = v
 	return b
 }
 
-// Scopes sets the Scopes field for object SecurityScheme.
+// Scopes sets the scopes field for object SecurityScheme.
 func (b *SecuritySchemeBuilder) Scopes(v StringMap) *SecuritySchemeBuilder {
 	b.target.scopes = v
 	return b

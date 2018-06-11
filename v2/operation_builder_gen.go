@@ -42,67 +42,67 @@ func NewOperation(responses Responses) *OperationBuilder {
 	}
 }
 
-// Tags sets the Tags field for object Operation.
+// Tags sets the tags field for object Operation.
 func (b *OperationBuilder) Tags(v ...string) *OperationBuilder {
 	b.target.tags = v
 	return b
 }
 
-// Summary sets the Summary field for object Operation.
+// Summary sets the summary field for object Operation.
 func (b *OperationBuilder) Summary(v string) *OperationBuilder {
 	b.target.summary = v
 	return b
 }
 
-// Description sets the Description field for object Operation.
+// Description sets the description field for object Operation.
 func (b *OperationBuilder) Description(v string) *OperationBuilder {
 	b.target.description = v
 	return b
 }
 
-// ExternalDocs sets the ExternalDocs field for object Operation.
+// ExternalDocs sets the externalDocs field for object Operation.
 func (b *OperationBuilder) ExternalDocs(v ExternalDocumentation) *OperationBuilder {
 	b.target.externalDocs = v
 	return b
 }
 
-// OperationID sets the OperationID field for object Operation.
+// OperationID sets the operationID field for object Operation.
 func (b *OperationBuilder) OperationID(v string) *OperationBuilder {
 	b.target.operationID = v
 	return b
 }
 
-// Consumes sets the Consumes field for object Operation.
+// Consumes sets the consumes field for object Operation.
 func (b *OperationBuilder) Consumes(v ...MIMEType) *OperationBuilder {
 	b.target.consumes = v
 	return b
 }
 
-// Produces sets the Produces field for object Operation.
+// Produces sets the produces field for object Operation.
 func (b *OperationBuilder) Produces(v ...MIMEType) *OperationBuilder {
 	b.target.produces = v
 	return b
 }
 
-// Parameters sets the Parameters field for object Operation.
+// Parameters sets the parameters field for object Operation.
 func (b *OperationBuilder) Parameters(v ...Parameter) *OperationBuilder {
 	b.target.parameters = v
 	return b
 }
 
-// Schemes sets the Schemes field for object Operation.
+// Schemes sets the schemes field for object Operation.
 func (b *OperationBuilder) Schemes(v ...Scheme) *OperationBuilder {
 	b.target.schemes = v
 	return b
 }
 
-// Deprecated sets the Deprecated field for object Operation.
+// Deprecated sets the deprecated field for object Operation.
 func (b *OperationBuilder) Deprecated(v bool) *OperationBuilder {
 	b.target.deprecated = v
 	return b
 }
 
-// Security sets the Security field for object Operation.
+// Security sets the security field for object Operation.
 func (b *OperationBuilder) Security(v ...SecurityRequirement) *OperationBuilder {
 	b.target.security = v
 	return b

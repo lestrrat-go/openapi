@@ -56,7 +56,7 @@ func (v *xml) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &proxy); err != nil {
 		return err
 	}
-	if raw := proxy["$ref"]; len(raw) > 0 {
+	if raw, ok := proxy["$ref"]; ok {
 		if err := json.Unmarshal(raw, &v.reference); err != nil {
 			return errors.Wrap(err, `failed to unmarshal $ref`)
 		}
@@ -65,7 +65,7 @@ func (v *xml) UnmarshalJSON(data []byte) error {
 
 	mutator := MutateXML(v)
 
-	if raw := proxy["name"]; len(raw) > 0 {
+	if raw, ok := proxy["name"]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field name`)
@@ -74,7 +74,7 @@ func (v *xml) UnmarshalJSON(data []byte) error {
 		delete(proxy, "name")
 	}
 
-	if raw := proxy["namespace"]; len(raw) > 0 {
+	if raw, ok := proxy["namespace"]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field namespace`)
@@ -83,7 +83,7 @@ func (v *xml) UnmarshalJSON(data []byte) error {
 		delete(proxy, "namespace")
 	}
 
-	if raw := proxy["prefix"]; len(raw) > 0 {
+	if raw, ok := proxy["prefix"]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field prefix`)
@@ -92,7 +92,7 @@ func (v *xml) UnmarshalJSON(data []byte) error {
 		delete(proxy, "prefix")
 	}
 
-	if raw := proxy["attribute"]; len(raw) > 0 {
+	if raw, ok := proxy["attribute"]; ok {
 		var decoded bool
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field attribute`)
@@ -101,7 +101,7 @@ func (v *xml) UnmarshalJSON(data []byte) error {
 		delete(proxy, "attribute")
 	}
 
-	if raw := proxy["wrapped"]; len(raw) > 0 {
+	if raw, ok := proxy["wrapped"]; ok {
 		var decoded bool
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field wrapped`)

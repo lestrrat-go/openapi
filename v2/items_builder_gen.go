@@ -40,103 +40,103 @@ func NewItems() *ItemsBuilder {
 	}
 }
 
-// Type sets the Type field for object Items.
+// Type sets the typ field for object Items.
 func (b *ItemsBuilder) Type(v PrimitiveType) *ItemsBuilder {
 	b.target.typ = v
 	return b
 }
 
-// Format sets the Format field for object Items.
+// Format sets the format field for object Items.
 func (b *ItemsBuilder) Format(v string) *ItemsBuilder {
 	b.target.format = v
 	return b
 }
 
-// Items sets the Items field for object Items.
+// Items sets the items field for object Items.
 func (b *ItemsBuilder) Items(v Items) *ItemsBuilder {
 	b.target.items = v
 	return b
 }
 
-// CollectionFormat sets the CollectionFormat field for object Items.
+// CollectionFormat sets the collectionFormat field for object Items.
 func (b *ItemsBuilder) CollectionFormat(v CollectionFormat) *ItemsBuilder {
 	b.target.collectionFormat = v
 	return b
 }
 
-// DefaultValue sets the DefaultValue field for object Items.
-func (b *ItemsBuilder) DefaultValue(v interface{}) *ItemsBuilder {
+// Default sets the defaultValue field for object Items.
+func (b *ItemsBuilder) Default(v interface{}) *ItemsBuilder {
 	b.target.defaultValue = v
 	return b
 }
 
-// Maximum sets the Maximum field for object Items.
+// Maximum sets the maximum field for object Items.
 func (b *ItemsBuilder) Maximum(v float64) *ItemsBuilder {
 	b.target.maximum = v
 	return b
 }
 
-// ExclusiveMaximum sets the ExclusiveMaximum field for object Items.
+// ExclusiveMaximum sets the exclusiveMaximum field for object Items.
 func (b *ItemsBuilder) ExclusiveMaximum(v float64) *ItemsBuilder {
 	b.target.exclusiveMaximum = v
 	return b
 }
 
-// Minimum sets the Minimum field for object Items.
+// Minimum sets the minimum field for object Items.
 func (b *ItemsBuilder) Minimum(v float64) *ItemsBuilder {
 	b.target.minimum = v
 	return b
 }
 
-// ExclusiveMinimum sets the ExclusiveMinimum field for object Items.
+// ExclusiveMinimum sets the exclusiveMinimum field for object Items.
 func (b *ItemsBuilder) ExclusiveMinimum(v float64) *ItemsBuilder {
 	b.target.exclusiveMinimum = v
 	return b
 }
 
-// MaxLength sets the MaxLength field for object Items.
+// MaxLength sets the maxLength field for object Items.
 func (b *ItemsBuilder) MaxLength(v int) *ItemsBuilder {
 	b.target.maxLength = v
 	return b
 }
 
-// MinLength sets the MinLength field for object Items.
+// MinLength sets the minLength field for object Items.
 func (b *ItemsBuilder) MinLength(v int) *ItemsBuilder {
 	b.target.minLength = v
 	return b
 }
 
-// Pattern sets the Pattern field for object Items.
+// Pattern sets the pattern field for object Items.
 func (b *ItemsBuilder) Pattern(v string) *ItemsBuilder {
 	b.target.pattern = v
 	return b
 }
 
-// MaxItems sets the MaxItems field for object Items.
+// MaxItems sets the maxItems field for object Items.
 func (b *ItemsBuilder) MaxItems(v int) *ItemsBuilder {
 	b.target.maxItems = v
 	return b
 }
 
-// MinItems sets the MinItems field for object Items.
+// MinItems sets the minItems field for object Items.
 func (b *ItemsBuilder) MinItems(v int) *ItemsBuilder {
 	b.target.minItems = v
 	return b
 }
 
-// UniqueItems sets the UniqueItems field for object Items.
+// UniqueItems sets the uniqueItems field for object Items.
 func (b *ItemsBuilder) UniqueItems(v bool) *ItemsBuilder {
 	b.target.uniqueItems = v
 	return b
 }
 
-// Enum sets the Enum field for object Items.
+// Enum sets the enum field for object Items.
 func (b *ItemsBuilder) Enum(v ...interface{}) *ItemsBuilder {
 	b.target.enum = v
 	return b
 }
 
-// MultipleOf sets the MultipleOf field for object Items.
+// MultipleOf sets the multipleOf field for object Items.
 func (b *ItemsBuilder) MultipleOf(v float64) *ItemsBuilder {
 	b.target.multipleOf = v
 	return b

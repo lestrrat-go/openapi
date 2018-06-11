@@ -32,21 +32,21 @@ func MutateTag(v Tag) *TagMutator {
 }
 
 // Name sets the Name field for object Tag.
-func (b *TagMutator) Name(v string) *TagMutator {
-	b.proxy.name = v
-	return b
+func (m *TagMutator) Name(v string) *TagMutator {
+	m.proxy.name = v
+	return m
 }
 
 // Description sets the Description field for object Tag.
-func (b *TagMutator) Description(v string) *TagMutator {
-	b.proxy.description = v
-	return b
+func (m *TagMutator) Description(v string) *TagMutator {
+	m.proxy.description = v
+	return m
 }
 
 // ExternalDocs sets the ExternalDocs field for object Tag.
-func (b *TagMutator) ExternalDocs(v ExternalDocumentation) *TagMutator {
-	b.proxy.externalDocs = v
-	return b
+func (m *TagMutator) ExternalDocs(v ExternalDocumentation) *TagMutator {
+	m.proxy.externalDocs = v
+	return m
 }
 func (b *TagMutator) Extension(name string, value interface{}) *TagMutator {
 	if b.proxy.extensions == nil {

@@ -42,31 +42,31 @@ func NewResponse(description string) *ResponseBuilder {
 	}
 }
 
-// Name sets the Name field for object Response.
+// Name sets the name field for object Response.
 func (b *ResponseBuilder) Name(v string) *ResponseBuilder {
 	b.target.name = v
 	return b
 }
 
-// StatusCode sets the StatusCode field for object Response.
+// StatusCode sets the statusCode field for object Response.
 func (b *ResponseBuilder) StatusCode(v string) *ResponseBuilder {
 	b.target.statusCode = v
 	return b
 }
 
-// Schema sets the Schema field for object Response.
+// Schema sets the schema field for object Response.
 func (b *ResponseBuilder) Schema(v Schema) *ResponseBuilder {
 	b.target.schema = v
 	return b
 }
 
-// Headers sets the Headers field for object Response.
+// Headers sets the headers field for object Response.
 func (b *ResponseBuilder) Headers(v HeaderMap) *ResponseBuilder {
 	b.target.headers = v
 	return b
 }
 
-// Examples sets the Examples field for object Response.
+// Examples sets the examples field for object Response.
 func (b *ResponseBuilder) Examples(v ExampleMap) *ResponseBuilder {
 	b.target.examples = v
 	return b

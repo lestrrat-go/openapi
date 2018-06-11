@@ -32,15 +32,15 @@ func MutateExternalDocumentation(v ExternalDocumentation) *ExternalDocumentation
 }
 
 // URL sets the URL field for object ExternalDocumentation.
-func (b *ExternalDocumentationMutator) URL(v string) *ExternalDocumentationMutator {
-	b.proxy.url = v
-	return b
+func (m *ExternalDocumentationMutator) URL(v string) *ExternalDocumentationMutator {
+	m.proxy.url = v
+	return m
 }
 
 // Description sets the Description field for object ExternalDocumentation.
-func (b *ExternalDocumentationMutator) Description(v string) *ExternalDocumentationMutator {
-	b.proxy.description = v
-	return b
+func (m *ExternalDocumentationMutator) Description(v string) *ExternalDocumentationMutator {
+	m.proxy.description = v
+	return m
 }
 func (b *ExternalDocumentationMutator) Extension(name string, value interface{}) *ExternalDocumentationMutator {
 	if b.proxy.extensions == nil {

@@ -40,13 +40,13 @@ func NewResponses() *ResponsesBuilder {
 	}
 }
 
-// DefaultValue sets the DefaultValue field for object Responses.
-func (b *ResponsesBuilder) DefaultValue(v Response) *ResponsesBuilder {
+// Default sets the defaultValue field for object Responses.
+func (b *ResponsesBuilder) Default(v Response) *ResponsesBuilder {
 	b.target.defaultValue = v
 	return b
 }
 
-// Responses sets the Responses field for object Responses.
+// Responses sets the responses field for object Responses.
 func (b *ResponsesBuilder) Responses(v ResponseMap) *ResponsesBuilder {
 	b.target.responses = v
 	return b

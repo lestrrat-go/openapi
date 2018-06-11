@@ -32,55 +32,55 @@ func MutateResponse(v Response) *ResponseMutator {
 }
 
 // Name sets the Name field for object Response.
-func (b *ResponseMutator) Name(v string) *ResponseMutator {
-	b.proxy.name = v
-	return b
+func (m *ResponseMutator) Name(v string) *ResponseMutator {
+	m.proxy.name = v
+	return m
 }
 
 // StatusCode sets the StatusCode field for object Response.
-func (b *ResponseMutator) StatusCode(v string) *ResponseMutator {
-	b.proxy.statusCode = v
-	return b
+func (m *ResponseMutator) StatusCode(v string) *ResponseMutator {
+	m.proxy.statusCode = v
+	return m
 }
 
 // Description sets the Description field for object Response.
-func (b *ResponseMutator) Description(v string) *ResponseMutator {
-	b.proxy.description = v
-	return b
+func (m *ResponseMutator) Description(v string) *ResponseMutator {
+	m.proxy.description = v
+	return m
 }
 
 // Schema sets the Schema field for object Response.
-func (b *ResponseMutator) Schema(v Schema) *ResponseMutator {
-	b.proxy.schema = v
-	return b
+func (m *ResponseMutator) Schema(v Schema) *ResponseMutator {
+	m.proxy.schema = v
+	return m
 }
 
-func (b *ResponseMutator) ClearHeaders() *ResponseMutator {
-	b.proxy.headers.Clear()
-	return b
+func (m *ResponseMutator) ClearHeaders() *ResponseMutator {
+	m.proxy.headers.Clear()
+	return m
 }
 
-func (b *ResponseMutator) Header(key HeaderMapKey, value Header) *ResponseMutator {
-	if b.proxy.headers == nil {
-		b.proxy.headers = HeaderMap{}
+func (m *ResponseMutator) Header(key HeaderMapKey, value Header) *ResponseMutator {
+	if m.proxy.headers == nil {
+		m.proxy.headers = HeaderMap{}
 	}
 
-	b.proxy.headers[key] = value
-	return b
+	m.proxy.headers[key] = value
+	return m
 }
 
-func (b *ResponseMutator) ClearExamples() *ResponseMutator {
-	b.proxy.examples.Clear()
-	return b
+func (m *ResponseMutator) ClearExamples() *ResponseMutator {
+	m.proxy.examples.Clear()
+	return m
 }
 
-func (b *ResponseMutator) Example(key ExampleMapKey, value interface{}) *ResponseMutator {
-	if b.proxy.examples == nil {
-		b.proxy.examples = ExampleMap{}
+func (m *ResponseMutator) Example(key ExampleMapKey, value interface{}) *ResponseMutator {
+	if m.proxy.examples == nil {
+		m.proxy.examples = ExampleMap{}
 	}
 
-	b.proxy.examples[key] = value
-	return b
+	m.proxy.examples[key] = value
+	return m
 }
 func (b *ResponseMutator) Extension(name string, value interface{}) *ResponseMutator {
 	if b.proxy.extensions == nil {

@@ -58,7 +58,7 @@ func (v *info) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &proxy); err != nil {
 		return err
 	}
-	if raw := proxy["$ref"]; len(raw) > 0 {
+	if raw, ok := proxy["$ref"]; ok {
 		if err := json.Unmarshal(raw, &v.reference); err != nil {
 			return errors.Wrap(err, `failed to unmarshal $ref`)
 		}
@@ -67,7 +67,7 @@ func (v *info) UnmarshalJSON(data []byte) error {
 
 	mutator := MutateInfo(v)
 
-	if raw := proxy["title"]; len(raw) > 0 {
+	if raw, ok := proxy["title"]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field title`)
@@ -76,7 +76,7 @@ func (v *info) UnmarshalJSON(data []byte) error {
 		delete(proxy, "title")
 	}
 
-	if raw := proxy["version"]; len(raw) > 0 {
+	if raw, ok := proxy["version"]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field version`)
@@ -85,7 +85,7 @@ func (v *info) UnmarshalJSON(data []byte) error {
 		delete(proxy, "version")
 	}
 
-	if raw := proxy["description"]; len(raw) > 0 {
+	if raw, ok := proxy["description"]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field description`)
@@ -94,7 +94,7 @@ func (v *info) UnmarshalJSON(data []byte) error {
 		delete(proxy, "description")
 	}
 
-	if raw := proxy["termsOfService"]; len(raw) > 0 {
+	if raw, ok := proxy["termsOfService"]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field termsOfService`)
@@ -103,7 +103,7 @@ func (v *info) UnmarshalJSON(data []byte) error {
 		delete(proxy, "termsOfService")
 	}
 
-	if raw := proxy["contact"]; len(raw) > 0 {
+	if raw, ok := proxy["contact"]; ok {
 		var decoded contact
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Contact`)
@@ -113,7 +113,7 @@ func (v *info) UnmarshalJSON(data []byte) error {
 		delete(proxy, "contact")
 	}
 
-	if raw := proxy["license"]; len(raw) > 0 {
+	if raw, ok := proxy["license"]; ok {
 		var decoded license
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field License`)

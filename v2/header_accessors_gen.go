@@ -35,7 +35,7 @@ func (v *header) CollectionFormat() CollectionFormat {
 	return v.collectionFormat
 }
 
-func (v *header) DefaultValue() interface{} {
+func (v *header) Default() interface{} {
 	return v.defaultValue
 }
 

@@ -42,13 +42,13 @@ func NewTag(name string) *TagBuilder {
 	}
 }
 
-// Description sets the Description field for object Tag.
+// Description sets the description field for object Tag.
 func (b *TagBuilder) Description(v string) *TagBuilder {
 	b.target.description = v
 	return b
 }
 
-// ExternalDocs sets the ExternalDocs field for object Tag.
+// ExternalDocs sets the externalDocs field for object Tag.
 func (b *TagBuilder) ExternalDocs(v ExternalDocumentation) *TagBuilder {
 	b.target.externalDocs = v
 	return b

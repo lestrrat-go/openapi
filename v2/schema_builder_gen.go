@@ -40,175 +40,169 @@ func NewSchema() *SchemaBuilder {
 	}
 }
 
-// Type sets the Type field for object Schema.
+// Type sets the typ field for object Schema.
 func (b *SchemaBuilder) Type(v PrimitiveType) *SchemaBuilder {
 	b.target.typ = v
 	return b
 }
 
-// Format sets the Format field for object Schema.
+// Format sets the format field for object Schema.
 func (b *SchemaBuilder) Format(v string) *SchemaBuilder {
 	b.target.format = v
 	return b
 }
 
-// Title sets the Title field for object Schema.
+// Title sets the title field for object Schema.
 func (b *SchemaBuilder) Title(v string) *SchemaBuilder {
 	b.target.title = v
 	return b
 }
 
-// MultipleOf sets the MultipleOf field for object Schema.
+// MultipleOf sets the multipleOf field for object Schema.
 func (b *SchemaBuilder) MultipleOf(v float64) *SchemaBuilder {
-	b.target.multipleOf = v
+	b.target.multipleOf = &v
 	return b
 }
 
-// Maximum sets the Maximum field for object Schema.
+// Maximum sets the maximum field for object Schema.
 func (b *SchemaBuilder) Maximum(v float64) *SchemaBuilder {
-	b.target.maximum = v
+	b.target.maximum = &v
 	return b
 }
 
-// ExclusiveMaximum sets the ExclusiveMaximum field for object Schema.
+// ExclusiveMaximum sets the exclusiveMaximum field for object Schema.
 func (b *SchemaBuilder) ExclusiveMaximum(v float64) *SchemaBuilder {
-	b.target.exclusiveMaximum = v
+	b.target.exclusiveMaximum = &v
 	return b
 }
 
-// Minimum sets the Minimum field for object Schema.
+// Minimum sets the minimum field for object Schema.
 func (b *SchemaBuilder) Minimum(v float64) *SchemaBuilder {
-	b.target.minimum = v
+	b.target.minimum = &v
 	return b
 }
 
-// ExclusiveMinimum sets the ExclusiveMinimum field for object Schema.
+// ExclusiveMinimum sets the exclusiveMinimum field for object Schema.
 func (b *SchemaBuilder) ExclusiveMinimum(v float64) *SchemaBuilder {
-	b.target.exclusiveMinimum = v
+	b.target.exclusiveMinimum = &v
 	return b
 }
 
-// MaxLength sets the MaxLength field for object Schema.
+// MaxLength sets the maxLength field for object Schema.
 func (b *SchemaBuilder) MaxLength(v int) *SchemaBuilder {
-	b.target.maxLength = v
+	b.target.maxLength = &v
 	return b
 }
 
-// MinLength sets the MinLength field for object Schema.
+// MinLength sets the minLength field for object Schema.
 func (b *SchemaBuilder) MinLength(v int) *SchemaBuilder {
-	b.target.minLength = v
+	b.target.minLength = &v
 	return b
 }
 
-// Pattern sets the Pattern field for object Schema.
+// Pattern sets the pattern field for object Schema.
 func (b *SchemaBuilder) Pattern(v string) *SchemaBuilder {
 	b.target.pattern = v
 	return b
 }
 
-// MaxItems sets the MaxItems field for object Schema.
+// MaxItems sets the maxItems field for object Schema.
 func (b *SchemaBuilder) MaxItems(v int) *SchemaBuilder {
-	b.target.maxItems = v
+	b.target.maxItems = &v
 	return b
 }
 
-// MinItems sets the MinItems field for object Schema.
+// MinItems sets the minItems field for object Schema.
 func (b *SchemaBuilder) MinItems(v int) *SchemaBuilder {
-	b.target.minItems = v
+	b.target.minItems = &v
 	return b
 }
 
-// UniqueItems sets the UniqueItems field for object Schema.
+// UniqueItems sets the uniqueItems field for object Schema.
 func (b *SchemaBuilder) UniqueItems(v bool) *SchemaBuilder {
 	b.target.uniqueItems = v
 	return b
 }
 
-// MaxProperties sets the MaxProperties field for object Schema.
+// MaxProperties sets the maxProperties field for object Schema.
 func (b *SchemaBuilder) MaxProperties(v int) *SchemaBuilder {
-	b.target.maxProperties = v
+	b.target.maxProperties = &v
 	return b
 }
 
-// MinProperties sets the MinProperties field for object Schema.
+// MinProperties sets the minProperties field for object Schema.
 func (b *SchemaBuilder) MinProperties(v int) *SchemaBuilder {
-	b.target.minProperties = v
+	b.target.minProperties = &v
 	return b
 }
 
-// Required sets the Required field for object Schema.
+// Required sets the required field for object Schema.
 func (b *SchemaBuilder) Required(v ...string) *SchemaBuilder {
 	b.target.required = v
 	return b
 }
 
-// Enum sets the Enum field for object Schema.
+// Enum sets the enum field for object Schema.
 func (b *SchemaBuilder) Enum(v ...interface{}) *SchemaBuilder {
 	b.target.enum = v
 	return b
 }
 
-// AllOf sets the AllOf field for object Schema.
+// AllOf sets the allOf field for object Schema.
 func (b *SchemaBuilder) AllOf(v ...Schema) *SchemaBuilder {
 	b.target.allOf = v
 	return b
 }
 
-// Items sets the Items field for object Schema.
+// Items sets the items field for object Schema.
 func (b *SchemaBuilder) Items(v Schema) *SchemaBuilder {
 	b.target.items = v
 	return b
 }
 
-// Properties sets the Properties field for object Schema.
-func (b *SchemaBuilder) Properties(v SchemaMap) *SchemaBuilder {
-	b.target.properties = v
-	return b
-}
-
-// AdditionaProperties sets the AdditionaProperties field for object Schema.
+// AdditionaProperties sets the additionaProperties field for object Schema.
 func (b *SchemaBuilder) AdditionaProperties(v SchemaMap) *SchemaBuilder {
 	b.target.additionaProperties = v
 	return b
 }
 
-// DefaultValue sets the DefaultValue field for object Schema.
-func (b *SchemaBuilder) DefaultValue(v interface{}) *SchemaBuilder {
+// Default sets the defaultValue field for object Schema.
+func (b *SchemaBuilder) Default(v interface{}) *SchemaBuilder {
 	b.target.defaultValue = v
 	return b
 }
 
-// Discriminator sets the Discriminator field for object Schema.
+// Discriminator sets the discriminator field for object Schema.
 func (b *SchemaBuilder) Discriminator(v string) *SchemaBuilder {
 	b.target.discriminator = v
 	return b
 }
 
-// ReadOnly sets the ReadOnly field for object Schema.
+// ReadOnly sets the readOnly field for object Schema.
 func (b *SchemaBuilder) ReadOnly(v bool) *SchemaBuilder {
 	b.target.readOnly = v
 	return b
 }
 
-// ExternalDocs sets the ExternalDocs field for object Schema.
+// ExternalDocs sets the externalDocs field for object Schema.
 func (b *SchemaBuilder) ExternalDocs(v ExternalDocumentation) *SchemaBuilder {
 	b.target.externalDocs = v
 	return b
 }
 
-// Example sets the Example field for object Schema.
+// Example sets the example field for object Schema.
 func (b *SchemaBuilder) Example(v interface{}) *SchemaBuilder {
 	b.target.example = v
 	return b
 }
 
-// Deprecated sets the Deprecated field for object Schema.
+// Deprecated sets the deprecated field for object Schema.
 func (b *SchemaBuilder) Deprecated(v bool) *SchemaBuilder {
 	b.target.deprecated = v
 	return b
 }
 
-// XML sets the XML field for object Schema.
+// XML sets the xml field for object Schema.
 func (b *SchemaBuilder) XML(v XML) *SchemaBuilder {
 	b.target.xml = v
 	return b

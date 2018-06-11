@@ -62,7 +62,7 @@ func (v *pathItem) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &proxy); err != nil {
 		return err
 	}
-	if raw := proxy["$ref"]; len(raw) > 0 {
+	if raw, ok := proxy["$ref"]; ok {
 		if err := json.Unmarshal(raw, &v.reference); err != nil {
 			return errors.Wrap(err, `failed to unmarshal $ref`)
 		}
@@ -71,7 +71,7 @@ func (v *pathItem) UnmarshalJSON(data []byte) error {
 
 	mutator := MutatePathItem(v)
 
-	if raw := proxy["get"]; len(raw) > 0 {
+	if raw, ok := proxy["get"]; ok {
 		var decoded operation
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Get`)
@@ -81,7 +81,7 @@ func (v *pathItem) UnmarshalJSON(data []byte) error {
 		delete(proxy, "get")
 	}
 
-	if raw := proxy["put"]; len(raw) > 0 {
+	if raw, ok := proxy["put"]; ok {
 		var decoded operation
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Put`)
@@ -91,7 +91,7 @@ func (v *pathItem) UnmarshalJSON(data []byte) error {
 		delete(proxy, "put")
 	}
 
-	if raw := proxy["post"]; len(raw) > 0 {
+	if raw, ok := proxy["post"]; ok {
 		var decoded operation
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Post`)
@@ -101,7 +101,7 @@ func (v *pathItem) UnmarshalJSON(data []byte) error {
 		delete(proxy, "post")
 	}
 
-	if raw := proxy["delete"]; len(raw) > 0 {
+	if raw, ok := proxy["delete"]; ok {
 		var decoded operation
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Delete`)
@@ -111,7 +111,7 @@ func (v *pathItem) UnmarshalJSON(data []byte) error {
 		delete(proxy, "delete")
 	}
 
-	if raw := proxy["options"]; len(raw) > 0 {
+	if raw, ok := proxy["options"]; ok {
 		var decoded operation
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Options`)
@@ -121,7 +121,7 @@ func (v *pathItem) UnmarshalJSON(data []byte) error {
 		delete(proxy, "options")
 	}
 
-	if raw := proxy["head"]; len(raw) > 0 {
+	if raw, ok := proxy["head"]; ok {
 		var decoded operation
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Head`)
@@ -131,7 +131,7 @@ func (v *pathItem) UnmarshalJSON(data []byte) error {
 		delete(proxy, "head")
 	}
 
-	if raw := proxy["patch"]; len(raw) > 0 {
+	if raw, ok := proxy["patch"]; ok {
 		var decoded operation
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Patch`)
@@ -141,7 +141,7 @@ func (v *pathItem) UnmarshalJSON(data []byte) error {
 		delete(proxy, "patch")
 	}
 
-	if raw := proxy["parameters"]; len(raw) > 0 {
+	if raw, ok := proxy["parameters"]; ok {
 		var decoded ParameterList
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Parameters`)

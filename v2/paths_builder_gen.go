@@ -40,7 +40,7 @@ func NewPaths() *PathsBuilder {
 	}
 }
 
-// Paths sets the Paths field for object Paths.
+// Paths sets the paths field for object Paths.
 func (b *PathsBuilder) Paths(v PathItemMap) *PathsBuilder {
 	b.target.paths = v
 	return b

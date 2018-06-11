@@ -32,145 +32,145 @@ func MutateSwagger(v Swagger) *SwaggerMutator {
 }
 
 // Version sets the Version field for object Swagger.
-func (b *SwaggerMutator) Version(v string) *SwaggerMutator {
-	b.proxy.version = v
-	return b
+func (m *SwaggerMutator) Version(v string) *SwaggerMutator {
+	m.proxy.version = v
+	return m
 }
 
 // Info sets the Info field for object Swagger.
-func (b *SwaggerMutator) Info(v Info) *SwaggerMutator {
-	b.proxy.info = v
-	return b
+func (m *SwaggerMutator) Info(v Info) *SwaggerMutator {
+	m.proxy.info = v
+	return m
 }
 
 // Host sets the Host field for object Swagger.
-func (b *SwaggerMutator) Host(v string) *SwaggerMutator {
-	b.proxy.host = v
-	return b
+func (m *SwaggerMutator) Host(v string) *SwaggerMutator {
+	m.proxy.host = v
+	return m
 }
 
 // BasePath sets the BasePath field for object Swagger.
-func (b *SwaggerMutator) BasePath(v string) *SwaggerMutator {
-	b.proxy.basePath = v
-	return b
+func (m *SwaggerMutator) BasePath(v string) *SwaggerMutator {
+	m.proxy.basePath = v
+	return m
 }
 
-func (b *SwaggerMutator) ClearSchemes() *SwaggerMutator {
-	b.proxy.schemes.Clear()
-	return b
+func (m *SwaggerMutator) ClearSchemes() *SwaggerMutator {
+	m.proxy.schemes.Clear()
+	return m
 }
 
-func (b *SwaggerMutator) Scheme(value string) *SwaggerMutator {
-	b.proxy.schemes = append(b.proxy.schemes, value)
-	return b
+func (m *SwaggerMutator) Scheme(value string) *SwaggerMutator {
+	m.proxy.schemes = append(m.proxy.schemes, value)
+	return m
 }
 
-func (b *SwaggerMutator) ClearConsumes() *SwaggerMutator {
-	b.proxy.consumes.Clear()
-	return b
+func (m *SwaggerMutator) ClearConsumes() *SwaggerMutator {
+	m.proxy.consumes.Clear()
+	return m
 }
 
-func (b *SwaggerMutator) Consume(value string) *SwaggerMutator {
-	b.proxy.consumes = append(b.proxy.consumes, value)
-	return b
+func (m *SwaggerMutator) Consume(value string) *SwaggerMutator {
+	m.proxy.consumes = append(m.proxy.consumes, value)
+	return m
 }
 
-func (b *SwaggerMutator) ClearProduces() *SwaggerMutator {
-	b.proxy.produces.Clear()
-	return b
+func (m *SwaggerMutator) ClearProduces() *SwaggerMutator {
+	m.proxy.produces.Clear()
+	return m
 }
 
-func (b *SwaggerMutator) Produce(value string) *SwaggerMutator {
-	b.proxy.produces = append(b.proxy.produces, value)
-	return b
+func (m *SwaggerMutator) Produce(value string) *SwaggerMutator {
+	m.proxy.produces = append(m.proxy.produces, value)
+	return m
 }
 
 // Paths sets the Paths field for object Swagger.
-func (b *SwaggerMutator) Paths(v Paths) *SwaggerMutator {
-	b.proxy.paths = v
-	return b
+func (m *SwaggerMutator) Paths(v Paths) *SwaggerMutator {
+	m.proxy.paths = v
+	return m
 }
 
-func (b *SwaggerMutator) ClearDefinitions() *SwaggerMutator {
-	b.proxy.definitions.Clear()
-	return b
+func (m *SwaggerMutator) ClearDefinitions() *SwaggerMutator {
+	m.proxy.definitions.Clear()
+	return m
 }
 
-func (b *SwaggerMutator) Definition(key InterfaceMapKey, value interface{}) *SwaggerMutator {
-	if b.proxy.definitions == nil {
-		b.proxy.definitions = InterfaceMap{}
+func (m *SwaggerMutator) Definition(key InterfaceMapKey, value interface{}) *SwaggerMutator {
+	if m.proxy.definitions == nil {
+		m.proxy.definitions = InterfaceMap{}
 	}
 
-	b.proxy.definitions[key] = value
-	return b
+	m.proxy.definitions[key] = value
+	return m
 }
 
-func (b *SwaggerMutator) ClearParameters() *SwaggerMutator {
-	b.proxy.parameters.Clear()
-	return b
+func (m *SwaggerMutator) ClearParameters() *SwaggerMutator {
+	m.proxy.parameters.Clear()
+	return m
 }
 
-func (b *SwaggerMutator) Parameter(key ParameterMapKey, value Parameter) *SwaggerMutator {
-	if b.proxy.parameters == nil {
-		b.proxy.parameters = ParameterMap{}
+func (m *SwaggerMutator) Parameter(key ParameterMapKey, value Parameter) *SwaggerMutator {
+	if m.proxy.parameters == nil {
+		m.proxy.parameters = ParameterMap{}
 	}
 
-	b.proxy.parameters[key] = value
-	return b
+	m.proxy.parameters[key] = value
+	return m
 }
 
-func (b *SwaggerMutator) ClearResponses() *SwaggerMutator {
-	b.proxy.responses.Clear()
-	return b
+func (m *SwaggerMutator) ClearResponses() *SwaggerMutator {
+	m.proxy.responses.Clear()
+	return m
 }
 
-func (b *SwaggerMutator) Response(key ResponseMapKey, value Response) *SwaggerMutator {
-	if b.proxy.responses == nil {
-		b.proxy.responses = ResponseMap{}
+func (m *SwaggerMutator) Response(key ResponseMapKey, value Response) *SwaggerMutator {
+	if m.proxy.responses == nil {
+		m.proxy.responses = ResponseMap{}
 	}
 
-	b.proxy.responses[key] = value
-	return b
+	m.proxy.responses[key] = value
+	return m
 }
 
-func (b *SwaggerMutator) ClearSecurityDefinitions() *SwaggerMutator {
-	b.proxy.securityDefinitions.Clear()
-	return b
+func (m *SwaggerMutator) ClearSecurityDefinitions() *SwaggerMutator {
+	m.proxy.securityDefinitions.Clear()
+	return m
 }
 
-func (b *SwaggerMutator) SecurityDefinition(key SecuritySchemeMapKey, value SecurityScheme) *SwaggerMutator {
-	if b.proxy.securityDefinitions == nil {
-		b.proxy.securityDefinitions = SecuritySchemeMap{}
+func (m *SwaggerMutator) SecurityDefinition(key SecuritySchemeMapKey, value SecurityScheme) *SwaggerMutator {
+	if m.proxy.securityDefinitions == nil {
+		m.proxy.securityDefinitions = SecuritySchemeMap{}
 	}
 
-	b.proxy.securityDefinitions[key] = value
-	return b
+	m.proxy.securityDefinitions[key] = value
+	return m
 }
 
-func (b *SwaggerMutator) ClearSecurity() *SwaggerMutator {
-	b.proxy.security.Clear()
-	return b
+func (m *SwaggerMutator) ClearSecurity() *SwaggerMutator {
+	m.proxy.security.Clear()
+	return m
 }
 
-func (b *SwaggerMutator) Security(value SecurityRequirement) *SwaggerMutator {
-	b.proxy.security = append(b.proxy.security, value)
-	return b
+func (m *SwaggerMutator) Security(value SecurityRequirement) *SwaggerMutator {
+	m.proxy.security = append(m.proxy.security, value)
+	return m
 }
 
-func (b *SwaggerMutator) ClearTags() *SwaggerMutator {
-	b.proxy.tags.Clear()
-	return b
+func (m *SwaggerMutator) ClearTags() *SwaggerMutator {
+	m.proxy.tags.Clear()
+	return m
 }
 
-func (b *SwaggerMutator) Tag(value Tag) *SwaggerMutator {
-	b.proxy.tags = append(b.proxy.tags, value)
-	return b
+func (m *SwaggerMutator) Tag(value Tag) *SwaggerMutator {
+	m.proxy.tags = append(m.proxy.tags, value)
+	return m
 }
 
 // ExternalDocs sets the ExternalDocs field for object Swagger.
-func (b *SwaggerMutator) ExternalDocs(v ExternalDocumentation) *SwaggerMutator {
-	b.proxy.externalDocs = v
-	return b
+func (m *SwaggerMutator) ExternalDocs(v ExternalDocumentation) *SwaggerMutator {
+	m.proxy.externalDocs = v
+	return m
 }
 func (b *SwaggerMutator) Extension(name string, value interface{}) *SwaggerMutator {
 	if b.proxy.extensions == nil {

@@ -27,7 +27,7 @@ func (v *items) CollectionFormat() CollectionFormat {
 	return v.collectionFormat
 }
 
-func (v *items) DefaultValue() interface{} {
+func (v *items) Default() interface{} {
 	return v.defaultValue
 }
 
