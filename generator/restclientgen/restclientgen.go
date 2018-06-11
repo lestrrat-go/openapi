@@ -20,8 +20,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-type Generator struct{}
-
 type genCtx struct {
 	client      *Client
 	compiling   map[string]struct{}
@@ -119,12 +117,13 @@ type Response struct {
 }
 
 type Field struct {
-	name string
-	typ  string
-	tag  string
+	name   string // raw name
+	goName string // camelCase name
+	typ    string
+	tag    string
 }
 
-func (g *Generator) Generate(dst io.Writer, spec openapi.Swagger, options ...Option) error {
+func Generate(spec openapi.Swagger, options ...Option) error {
 	var dir string
 	var packageName string
 	for _, option := range options {
@@ -317,7 +316,7 @@ func compileClient(ctx *genCtx) error {
 		_, pi := piter.Item()
 		for operiter := pi.Operations(); operiter.Next(); {
 			if err := compileCall(ctx, operiter.Item()); err != nil {
-				return errors.Wrap(err, `failed to compile call object`)
+				return errors.Wrapf(err, `failed to compile call object for path %s`, pi.Path())
 			}
 		}
 	}
@@ -375,9 +374,10 @@ func compileStruct(ctx *genCtx, schema openapi.Schema) (Type, error) {
 		}
 
 		obj.fields = append(obj.fields, &Field{
-			name: codegen.ExportedName(name),
-			tag:  fmt.Sprintf(`json:"%s"`, name),
-			typ:  fieldMsg.Name(),
+			name:   name,
+			goName: codegen.ExportedName(name),
+			tag:    fmt.Sprintf(`json:"%s"`, name),
+			typ:    fieldMsg.Name(),
 		})
 	}
 	return &obj, nil
@@ -537,7 +537,8 @@ func compileParameterType(ctx *genCtx, param openapi.Parameter) (string, error) 
 		param = newp
 	}
 
-	if schema := param.Schema(); schema != nil {
+	if param.In() == openapi.InBody {
+		schema := param.Schema() // presence of this element should be guaranteed by calling validate
 		// If this is an array type, we create a []T  instead of type T struct { something []X }
 		switch schema.Type() {
 		case openapi.Array:
@@ -594,10 +595,13 @@ func compileCall(ctx *genCtx, oper openapi.Operation) error {
 	for piter := oper.Parameters(); piter.Next(); {
 		param := piter.Item()
 		var field Field
-		field.name = stringutil.LowerCamel(param.Name())
+		field.name = param.Name()
+		field.goName = stringutil.LowerCamel(param.Name())
 		typ, err := compileParameterType(ctx, param)
 		if err != nil {
-			return errors.Wrapf(err, `failed to compile parameter %s`, field.name)
+			// XXX use param.Name, not field.name because we might have
+			// transformed it
+			return errors.Wrapf(err, `failed to compile parameter %s`, param.Name())
 		}
 		field.typ = typ
 		if param.Required() {
@@ -809,7 +813,7 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 	fmt.Fprintf(dst, "\n\nfunc (call %s) AsMap() map[string]interface{} {", call.name)
 	fmt.Fprintf(dst, "\nm := make(map[string]interface{})")
 	for _, param := range append(call.optionals, call.requireds...) {
-		fmt.Fprintf(dst, "\nm[%#v] = call.%s", param.name, param.name)
+		fmt.Fprintf(dst, "\nm[%#v] = call.%s", param.name, param.goName)
 	}
 	fmt.Fprintf(dst, "\nreturn m")
 	fmt.Fprintf(dst, "\n}")
@@ -915,6 +919,8 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 			fmt.Fprintf(dst, "\napires.data = resdata")
 		}
 	}
+	fmt.Fprintf(dst, "\ndefault:")
+	fmt.Fprintf(dst, "\nreturn nil, errors.Errorf(`invalid response code %%d`, res.StatusCode)")
 	fmt.Fprintf(dst, "\n}")
 
 	fmt.Fprintf(dst, "\n\nreturn &apires, nil")
