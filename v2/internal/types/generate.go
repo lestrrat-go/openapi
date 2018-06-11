@@ -70,7 +70,7 @@ func GenerateCode() error {
 		name := reflect.TypeOf(e).Name()
 		entityTypes[name] = e
 		switch name {
-		case "swagger", "parameter":
+		case "swagger", "paths", "parameter", "operation":
 		default:
 			validators[name] = struct{}{}
 		}
@@ -662,16 +662,20 @@ func generateAccessorsFromEntity(e interface{}) error {
 	for i := 0; i < rv.NumField(); i++ {
 		fv := rv.Type().Field(i)
 		if fv.Tag.Get("accessor") == "-" {
+			log.Printf(" - Skipping field %s", fv.Name)
 			continue
 		}
+		log.Printf(" * Checking field %s", fv.Name)
 
 		exportedName := exportedName(fv.Name)
-		unexportedName := unexportedName(fv.Name)
+		unexportedName := codegen.UnexportedName(fv.Name)
 		fieldType := fv.Type.Name()
 
 		// keep track of all fields whose type is one of our entity types
-		if isEntity(unexportedName) || isContainer(fieldType) {
-			entityFields = append(entityFields, fv)
+		if fv.Tag.Get("json") != "-" {
+			if isEntity(codegen.UnexportedName(fieldType)) || isContainer(fieldType) {
+				entityFields = append(entityFields, fv)
+			}
 		}
 
 		switch {
@@ -751,7 +755,7 @@ func generateAccessorsFromEntity(e interface{}) error {
 		for _, field := range entityFields {
 			fmt.Fprintf(dst, "\nif elem := v.%s; elem != nil {", field.Name)
 			fmt.Fprintf(dst, "\nif err := elem.Validate(true); err != nil {")
-			fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to validate %s`)", field.Name)
+			fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to validate field %s`)", strconv.Quote(field.Name))
 			fmt.Fprintf(dst, "\n}")
 			fmt.Fprintf(dst, "\n}")
 		}

@@ -92,17 +92,17 @@ func (v *response) Validate(recurse bool) error {
 func (v *response) recurseValidate() error {
 	if elem := v.schema; elem != nil {
 		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate schema`)
+			return errors.Wrap(err, `failed to validate field "schema"`)
 		}
 	}
 	if elem := v.headers; elem != nil {
 		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate headers`)
+			return errors.Wrap(err, `failed to validate field "headers"`)
 		}
 	}
 	if elem := v.examples; elem != nil {
 		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate examples`)
+			return errors.Wrap(err, `failed to validate field "examples"`)
 		}
 	}
 	return nil

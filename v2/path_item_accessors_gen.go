@@ -88,9 +88,44 @@ func (v *pathItem) Validate(recurse bool) error {
 }
 
 func (v *pathItem) recurseValidate() error {
+	if elem := v.get; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate field "get"`)
+		}
+	}
+	if elem := v.put; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate field "put"`)
+		}
+	}
+	if elem := v.post; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate field "post"`)
+		}
+	}
+	if elem := v.delete; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate field "delete"`)
+		}
+	}
+	if elem := v.options; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate field "options"`)
+		}
+	}
+	if elem := v.head; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate field "head"`)
+		}
+	}
+	if elem := v.patch; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate field "patch"`)
+		}
+	}
 	if elem := v.parameters; elem != nil {
 		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate parameters`)
+			return errors.Wrap(err, `failed to validate field "parameters"`)
 		}
 	}
 	return nil

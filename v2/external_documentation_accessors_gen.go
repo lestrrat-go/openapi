@@ -12,7 +12,7 @@ var _ = sort.Strings
 var _ = errors.Cause
 
 func (v *externalDocumentation) URL() string {
-	return v.uRL
+	return v.url
 }
 
 func (v *externalDocumentation) Description() string {

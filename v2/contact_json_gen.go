@@ -31,7 +31,7 @@ func (v *contact) MarshalJSON() ([]byte, error) {
 		return []byte(fmt.Sprintf(refOnlyTmpl, strconv.Quote(s))), nil
 	}
 	proxy.Name = v.name
-	proxy.URL = v.uRL
+	proxy.URL = v.url
 	proxy.Email = v.email
 	buf, err := json.Marshal(proxy)
 	if err != nil {
@@ -125,7 +125,7 @@ func (v *contact) QueryJSON(path string) (ret interface{}, ok bool) {
 	case "name":
 		target = v.name
 	case "url":
-		target = v.uRL
+		target = v.url
 	case "email":
 		target = v.email
 	default:

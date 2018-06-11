@@ -68,12 +68,12 @@ func (v *info) Validate(recurse bool) error {
 func (v *info) recurseValidate() error {
 	if elem := v.contact; elem != nil {
 		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate contact`)
+			return errors.Wrap(err, `failed to validate field "contact"`)
 		}
 	}
 	if elem := v.license; elem != nil {
 		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate license`)
+			return errors.Wrap(err, `failed to validate field "license"`)
 		}
 	}
 	return nil

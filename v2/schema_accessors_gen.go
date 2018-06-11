@@ -206,37 +206,42 @@ func (v *schema) Validate(recurse bool) error {
 func (v *schema) recurseValidate() error {
 	if elem := v.required; elem != nil {
 		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate required`)
+			return errors.Wrap(err, `failed to validate field "required"`)
 		}
 	}
 	if elem := v.enum; elem != nil {
 		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate enum`)
+			return errors.Wrap(err, `failed to validate field "enum"`)
 		}
 	}
 	if elem := v.allOf; elem != nil {
 		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate allOf`)
+			return errors.Wrap(err, `failed to validate field "allOf"`)
 		}
 	}
 	if elem := v.items; elem != nil {
 		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate items`)
+			return errors.Wrap(err, `failed to validate field "items"`)
 		}
 	}
 	if elem := v.properties; elem != nil {
 		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate properties`)
+			return errors.Wrap(err, `failed to validate field "properties"`)
 		}
 	}
 	if elem := v.additionaProperties; elem != nil {
 		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate additionaProperties`)
+			return errors.Wrap(err, `failed to validate field "additionaProperties"`)
+		}
+	}
+	if elem := v.externalDocs; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate field "externalDocs"`)
 		}
 	}
 	if elem := v.xml; elem != nil {
 		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate xml`)
+			return errors.Wrap(err, `failed to validate field "xml"`)
 		}
 	}
 	return nil

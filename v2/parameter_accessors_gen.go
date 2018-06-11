@@ -139,17 +139,17 @@ func (v *parameter) Extensions() *ExtensionsIterator {
 func (v *parameter) recurseValidate() error {
 	if elem := v.schema; elem != nil {
 		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate schema`)
+			return errors.Wrap(err, `failed to validate field "schema"`)
 		}
 	}
 	if elem := v.items; elem != nil {
 		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate items`)
+			return errors.Wrap(err, `failed to validate field "items"`)
 		}
 	}
 	if elem := v.enum; elem != nil {
 		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate enum`)
+			return errors.Wrap(err, `failed to validate field "enum"`)
 		}
 	}
 	return nil

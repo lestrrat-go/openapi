@@ -30,7 +30,7 @@ func (v *license) MarshalJSON() ([]byte, error) {
 		return []byte(fmt.Sprintf(refOnlyTmpl, strconv.Quote(s))), nil
 	}
 	proxy.Name = v.name
-	proxy.URL = v.uRL
+	proxy.URL = v.url
 	buf, err := json.Marshal(proxy)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to marshal struct`)
@@ -114,7 +114,7 @@ func (v *license) QueryJSON(path string) (ret interface{}, ok bool) {
 	case "name":
 		target = v.name
 	case "url":
-		target = v.uRL
+		target = v.url
 	default:
 		return nil, false
 	}

@@ -108,6 +108,8 @@ type Call struct {
 	optionals           []*Field
 	pathparams          []*Field
 	queryparams         []*Field
+	formparams          []*Field
+	bodyParam           *Field
 	responses           []*Response
 }
 
@@ -124,6 +126,10 @@ type Field struct {
 }
 
 func Generate(spec openapi.Swagger, options ...Option) error {
+	if err := spec.Validate(true); err != nil {
+		return errors.Wrap(err, `failed to validate spec`)
+	}
+
 	var dir string
 	var packageName string
 	for _, option := range options {
@@ -615,6 +621,10 @@ func compileCall(ctx *genCtx, oper openapi.Operation) error {
 			call.pathparams = append(call.pathparams, &field)
 		case openapi.InQuery:
 			call.queryparams = append(call.queryparams, &field)
+		case openapi.InBody:
+			call.bodyParam = &field
+		case openapi.InForm:
+			call.formparams = append(call.formparams, &field)
 		}
 	}
 

@@ -54,6 +54,10 @@ func (v *tag) Validate(recurse bool) error {
 }
 
 func (v *tag) recurseValidate() error {
-	return nil
+	if elem := v.externalDocs; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate field "externalDocs"`)
+		}
+	}
 	return nil
 }

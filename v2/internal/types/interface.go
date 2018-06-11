@@ -105,7 +105,7 @@ type Contact interface {
 
 type contact struct {
 	name  string `json:"name"`
-	uRL   string `json:"url"`
+	url   string `json:"url"`
 	email string `json:"email"`
 }
 
@@ -114,7 +114,7 @@ type License interface {
 
 type license struct {
 	name string `json:"name" builder:"required"`
-	uRL  string `json:"url"`
+	url  string `json:"url"`
 }
 
 type Paths interface {
@@ -170,7 +170,7 @@ type ExternalDocumentation interface {
 }
 
 type externalDocumentation struct {
-	uRL         string `json:"url" builder:"required"`
+	url         string `json:"url" builder:"required"`
 	description string `json:"description,omitempty"`
 }
 

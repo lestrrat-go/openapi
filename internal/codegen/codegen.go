@@ -9,6 +9,7 @@ import (
 	"os"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/lestrrat-go/openapi/internal/stringutil"
 	"github.com/pkg/errors"
@@ -24,11 +25,32 @@ func DumpCode(dst io.Writer, src io.Reader) {
 }
 
 func ExportedName(s string) string {
+	switch s {
+	case "url":
+		return "URL"
+	case "xml":
+		return "XML"
+	case "typ":
+		return "Type"
+	}
+
 	return stringutil.Camel(stringutil.Snake(s))
 }
 
 func UnexportedName(s string) string {
-	return stringutil.LcFirst(stringutil.Camel(stringutil.Snake(s)))
+	switch s {
+	case "URL":
+		return "url"
+	case "XML":
+		return "xml"
+	case "Type":
+		return "typ"
+	}
+
+	s = stringutil.LcFirst(stringutil.Camel(stringutil.Snake(s)))
+	s = strings.Replace(s, "Id", "ID", -1)
+	s = strings.Replace(s, "Url", "URL", -1)
+	return s
 }
 
 func WritePreamble(dst io.Writer, pkg string) error {

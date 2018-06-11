@@ -88,7 +88,7 @@ func (v *securityScheme) Validate(recurse bool) error {
 func (v *securityScheme) recurseValidate() error {
 	if elem := v.scopes; elem != nil {
 		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate scopes`)
+			return errors.Wrap(err, `failed to validate field "scopes"`)
 		}
 	}
 	return nil

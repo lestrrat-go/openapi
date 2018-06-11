@@ -29,7 +29,7 @@ func (v *externalDocumentation) MarshalJSON() ([]byte, error) {
 	if s := v.reference; len(s) > 0 {
 		return []byte(fmt.Sprintf(refOnlyTmpl, strconv.Quote(s))), nil
 	}
-	proxy.URL = v.uRL
+	proxy.URL = v.url
 	proxy.Description = v.description
 	buf, err := json.Marshal(proxy)
 	if err != nil {
@@ -112,7 +112,7 @@ func (v *externalDocumentation) QueryJSON(path string) (ret interface{}, ok bool
 
 	switch frag {
 	case "url":
-		target = v.uRL
+		target = v.url
 	case "description":
 		target = v.description
 	default:

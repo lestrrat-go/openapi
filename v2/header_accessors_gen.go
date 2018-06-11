@@ -126,12 +126,12 @@ func (v *header) Validate(recurse bool) error {
 func (v *header) recurseValidate() error {
 	if elem := v.items; elem != nil {
 		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate items`)
+			return errors.Wrap(err, `failed to validate field "items"`)
 		}
 	}
 	if elem := v.enum; elem != nil {
 		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate enum`)
+			return errors.Wrap(err, `failed to validate field "enum"`)
 		}
 	}
 	return nil

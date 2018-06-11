@@ -1,6 +1,10 @@
 package openapi
 
-import "github.com/pkg/errors"
+import (
+	"strconv"
+
+	"github.com/pkg/errors"
+)
 
 func (v *parameter) Validate(recurse bool) error {
 	// https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#parameterObject
@@ -9,7 +13,7 @@ func (v *parameter) Validate(recurse bool) error {
 	}
 
 	if !validLocation(v.in) {
-		return errors.Errorf(`invalid parameter: invalid value in "in" field: %s`, v.in)
+		return errors.Errorf(`invalid parameter: invalid value in "in" field: %s`, strconv.Quote(string(v.in)))
 	}
 
 	if v.in == InBody {

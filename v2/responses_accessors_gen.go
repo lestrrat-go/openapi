@@ -62,9 +62,9 @@ func (v *responses) Validate(recurse bool) error {
 }
 
 func (v *responses) recurseValidate() error {
-	if elem := v.responses; elem != nil {
+	if elem := v.defaultValue; elem != nil {
 		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate responses`)
+			return errors.Wrap(err, `failed to validate field "defaultValue"`)
 		}
 	}
 	return nil

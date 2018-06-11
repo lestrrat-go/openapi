@@ -126,52 +126,45 @@ func (v *operation) Extensions() *ExtensionsIterator {
 	return &iter
 }
 
-func (v *operation) Validate(recurse bool) error {
-	if recurse {
-		return v.recurseValidate()
-	}
-	return nil
-}
-
 func (v *operation) recurseValidate() error {
-	if elem := v.pathItem; elem != nil {
-		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate pathItem`)
-		}
-	}
 	if elem := v.tags; elem != nil {
 		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate tags`)
+			return errors.Wrap(err, `failed to validate field "tags"`)
+		}
+	}
+	if elem := v.externalDocs; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate field "externalDocs"`)
 		}
 	}
 	if elem := v.consumes; elem != nil {
 		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate consumes`)
+			return errors.Wrap(err, `failed to validate field "consumes"`)
 		}
 	}
 	if elem := v.produces; elem != nil {
 		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate produces`)
+			return errors.Wrap(err, `failed to validate field "produces"`)
 		}
 	}
 	if elem := v.parameters; elem != nil {
 		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate parameters`)
+			return errors.Wrap(err, `failed to validate field "parameters"`)
 		}
 	}
 	if elem := v.responses; elem != nil {
 		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate responses`)
+			return errors.Wrap(err, `failed to validate field "responses"`)
 		}
 	}
 	if elem := v.schemes; elem != nil {
 		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate schemes`)
+			return errors.Wrap(err, `failed to validate field "schemes"`)
 		}
 	}
 	if elem := v.security; elem != nil {
 		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate security`)
+			return errors.Wrap(err, `failed to validate field "security"`)
 		}
 	}
 	return nil

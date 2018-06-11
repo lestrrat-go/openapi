@@ -33,7 +33,7 @@ func MutateExternalDocumentation(v ExternalDocumentation) *ExternalDocumentation
 
 // URL sets the URL field for object ExternalDocumentation.
 func (b *ExternalDocumentationMutator) URL(v string) *ExternalDocumentationMutator {
-	b.proxy.uRL = v
+	b.proxy.url = v
 	return b
 }
 

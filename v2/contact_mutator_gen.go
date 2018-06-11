@@ -39,7 +39,7 @@ func (b *ContactMutator) Name(v string) *ContactMutator {
 
 // URL sets the URL field for object Contact.
 func (b *ContactMutator) URL(v string) *ContactMutator {
-	b.proxy.uRL = v
+	b.proxy.url = v
 	return b
 }
 

@@ -39,7 +39,7 @@ func (b *LicenseMutator) Name(v string) *LicenseMutator {
 
 // URL sets the URL field for object License.
 func (b *LicenseMutator) URL(v string) *LicenseMutator {
-	b.proxy.uRL = v
+	b.proxy.url = v
 	return b
 }
 func (b *LicenseMutator) Extension(name string, value interface{}) *LicenseMutator {

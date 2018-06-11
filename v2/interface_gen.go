@@ -162,7 +162,7 @@ type contact struct {
 	resolved   bool       `json:"-"`
 	extensions Extensions `json:"-"`
 	name       string     `json:"name"`
-	uRL        string     `json:"url"`
+	url        string     `json:"url"`
 	email      string     `json:"email"`
 }
 
@@ -183,7 +183,7 @@ type license struct {
 	resolved   bool       `json:"-"`
 	extensions Extensions `json:"-"`
 	name       string     `json:"name" builder:"required"`
-	uRL        string     `json:"url"`
+	url        string     `json:"url"`
 }
 
 type Paths interface {
@@ -306,7 +306,7 @@ type externalDocumentation struct {
 	reference   string     `json:"$ref,omitempty"`
 	resolved    bool       `json:"-"`
 	extensions  Extensions `json:"-"`
-	uRL         string     `json:"url" builder:"required"`
+	url         string     `json:"url" builder:"required"`
 	description string     `json:"description,omitempty"`
 }
 

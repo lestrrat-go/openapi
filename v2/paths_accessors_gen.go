@@ -50,18 +50,7 @@ func (v *paths) Extensions() *ExtensionsIterator {
 	return &iter
 }
 
-func (v *paths) Validate(recurse bool) error {
-	if recurse {
-		return v.recurseValidate()
-	}
-	return nil
-}
-
 func (v *paths) recurseValidate() error {
-	if elem := v.paths; elem != nil {
-		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate paths`)
-		}
-	}
+	return nil
 	return nil
 }

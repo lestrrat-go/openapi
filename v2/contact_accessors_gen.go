@@ -16,7 +16,7 @@ func (v *contact) Name() string {
 }
 
 func (v *contact) URL() string {
-	return v.uRL
+	return v.url
 }
 
 func (v *contact) Email() string {

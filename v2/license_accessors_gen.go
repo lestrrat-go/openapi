@@ -16,7 +16,7 @@ func (v *license) Name() string {
 }
 
 func (v *license) URL() string {
-	return v.uRL
+	return v.url
 }
 
 func (v *license) Reference() string {
