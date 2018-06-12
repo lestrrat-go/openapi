@@ -21,14 +21,15 @@ import (
 )
 
 type genCtx struct {
-	client      *Client
-	compiling   map[string]struct{}
-	currentCall *Call
-	dir         string
-	packageName string
-	resolver    openapi.Resolver
-	root        openapi.Swagger
-	types       map[string]Type // json ref to message
+	client             *Client
+	compiling          map[string]struct{}
+	currentCall        *Call
+	dir                string
+	packageName        string
+	defaultServiceName string
+	resolver           openapi.Resolver
+	root               openapi.Swagger
+	types              map[string]Type // json ref to message
 }
 
 type Client struct {
@@ -144,8 +145,11 @@ func Generate(spec openapi.Swagger, options ...Option) error {
 
 	var dir string
 	var packageName string
+	var defaultServiceName string
 	for _, option := range options {
 		switch option.Name() {
+		case optkeyDefaultServiceName:
+			defaultServiceName = option.Value().(string)
 		case optkeyDirectory:
 			dir = option.Value().(string)
 		case optkeyPackageName:
@@ -167,6 +171,10 @@ func Generate(spec openapi.Swagger, options ...Option) error {
 		}
 	}
 
+	if defaultServiceName == "" {
+		defaultServiceName = packageName
+	}
+
 	if _, err := os.Stat(dir); err != nil {
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			return errors.Wrapf(err, `failed to create directory %s`, dir)
@@ -174,13 +182,14 @@ func Generate(spec openapi.Swagger, options ...Option) error {
 	}
 
 	ctx := genCtx{
-		compiling:   make(map[string]struct{}),
-		dir:         dir,
-		packageName: packageName,
-		resolver:    openapi.NewResolver(spec),
-		root:        spec,
-		client:      &Client{services: make(map[string]*Service), types: make(map[string]Type)},
-		types:       make(map[string]Type),
+		compiling:          make(map[string]struct{}),
+		dir:                dir,
+		packageName:        packageName,
+		defaultServiceName: defaultServiceName,
+		resolver:           openapi.NewResolver(spec),
+		root:               spec,
+		client:             &Client{services: make(map[string]*Service), types: make(map[string]Type)},
+		types:              make(map[string]Type),
 	}
 	if err := compileClient(&ctx); err != nil {
 		return errors.Wrap(err, `failed to compile restclient`)
@@ -286,7 +295,7 @@ func writeServiceFiles(ctx *genCtx) error {
 	for _, name := range serviceNames {
 		// Remove the "service" from the filename
 		fn := strings.TrimSuffix(name, "Service")
-		fn = filepath.Join(ctx.dir, stringutil.Snake(fn)+"_gen.go")
+		fn = filepath.Join(ctx.dir, stringutil.Snake(fn)+"_service_gen.go")
 		log.Printf("Generating %s", fn)
 
 		var buf bytes.Buffer
@@ -485,7 +494,6 @@ func compileBuiltin(ctx *genCtx, schema openapi.Schema) (Type, error) {
 }
 
 func compileResponseType(ctx *genCtx, response openapi.Response) (string, error) {
-	log.Printf("compileResponseType %+v", response)
 	if ref := response.Reference(); ref != "" {
 		// this better be resolvable via Definitions
 		thing, err := ctx.resolver.Resolve(ref)
@@ -765,7 +773,7 @@ func compileCall(ctx *genCtx, oper openapi.Operation) error {
 	}
 
 	// grab the service.
-	svcName := ctx.packageName
+	svcName := ctx.defaultServiceName
 	rawSvcName, ok := oper.Extension("x-service")
 	if ok {
 		svcName, ok = rawSvcName.(string)
