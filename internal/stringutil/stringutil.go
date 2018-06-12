@@ -61,12 +61,15 @@ func Snake(s string) string {
 
 		var buf bytes.Buffer
 		for i > -1 {
-			buf.WriteString(tmp[:i])
-			if tmp[i-1] != '_' {
-				buf.WriteByte('_')
-				buf.WriteString(strings.ToLower(wd))
-				tmp = tmp[i+len(wd):]
+			if i > 0 {
+				buf.WriteString(tmp[:i])
+				if tmp[i-1] != '_' {
+					buf.WriteByte('_')
+				}
 			}
+
+			buf.WriteString(strings.ToLower(wd))
+			tmp = tmp[i+len(wd):]
 			i = strings.Index(tmp, wd)
 		}
 
