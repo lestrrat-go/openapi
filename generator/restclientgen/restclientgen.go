@@ -599,7 +599,7 @@ func compileParameterType(ctx *genCtx, param openapi.Parameter) (Type, error) {
 
 			return typ, nil
 		default:
-			return nil, errors.Errorf(`unimplemented parameter type %s`, strconv.Quote(string(schema.Type())))
+			return nil, errors.Errorf(`unhandled parameter type %s`, strconv.Quote(string(schema.Type())))
 		}
 	}
 
@@ -774,7 +774,7 @@ func compileCall(ctx *genCtx, oper openapi.Operation) error {
 		call.formType = formType
 
 		if len(call.requestContentTypes) == 0 {
-			call.requestContentTypes = append(call.requestContentTypes, "application/www-form-urlencoded")
+			call.requestContentTypes = append(call.requestContentTypes, "application/x-www-form-urlencoded")
 		}
 	}
 
@@ -973,7 +973,7 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 	fmt.Fprintf(dst, "\ncall.server = svc.server")
 	fmt.Fprintf(dst, "\ncall.marshalers = map[string]Marshaler{")
 	fmt.Fprintf(dst, "\n`application/json`: MarshalFunc(json.Marshal),")
-	fmt.Fprintf(dst, "\n`application/www-form-urlencoded`: MarshalFunc(urlenc.Marshal),")
+	fmt.Fprintf(dst, "\n`application/x-www-form-urlencoded`: MarshalFunc(urlenc.Marshal),")
 	fmt.Fprintf(dst, "\n}")
 	for _, field := range call.requireds {
 		if field.inBody {
@@ -1028,8 +1028,15 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 	fmt.Fprintf(dst, "\n\nfunc (call *%s) Do(ctx context.Context, options ...CallOption) (Response, error) {", call.name)
 	fmt.Fprintf(dst, "\nconst basepath = %s", strconv.Quote(call.path))
 
-	if len(call.requestContentTypes) > 0 {
-		fmt.Fprintf(dst, "\n\ncontentType := %#v", call.requestContentTypes[0])
+	if call.bodyType != nil || call.formType != nil {
+		// default to "application/x-www-form-urlencoded"
+		var defaultCt string
+		if len(call.requestContentTypes) == 0 {
+			defaultCt = "application/x-www-form-urlencoded"
+		} else {
+			defaultCt = call.requestContentTypes[0]
+		}
+		fmt.Fprintf(dst, "\n\ncontentType := %#v", defaultCt)
 		fmt.Fprintf(dst, "\nfor _, option := range options {")
 		fmt.Fprintf(dst, "\nswitch option.Name() {")
 		fmt.Fprintf(dst, "\ncase optkeyRequestContentType:")
@@ -1067,7 +1074,7 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 	}
 
 	var body = "nil"
-	if len(call.requestContentTypes) > 0 {
+	if call.bodyType != nil || call.formType != nil {
 		body = "body"
 
 		fmt.Fprintf(dst, "\nmtype, _, err := mime.ParseMediaType(contentType)")
@@ -1099,7 +1106,7 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 	fmt.Fprintf(dst, "\nreturn nil, errors.Wrap(err, `failed to create request`)")
 	fmt.Fprintf(dst, "\n}")
 
-	if len(call.requestContentTypes) > 0 {
+	if call.bodyType != nil || call.formType != nil {
 		fmt.Fprintf(dst, "\nreq.Header.Set(`Content-Type`, contentType)")
 	}
 
