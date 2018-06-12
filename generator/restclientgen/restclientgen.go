@@ -527,6 +527,10 @@ func compileResponseType(ctx *genCtx, response openapi.Response) (string, error)
 		if err != nil {
 			return "", errors.Wrap(err, `failed to compile object response`)
 		}
+		if typ.Name() == "" {
+			typ.SetName(codegen.ExportedName(ctx.currentCall.name + "_Response"))
+			registerType(ctx, fmt.Sprintf("#/generated/%s", typ.Name()), typ)
+		}
 		return typ.Name(), nil
 	default:
 		return "", errors.Errorf(`unimplemented %s`, schema.Type())
