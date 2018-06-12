@@ -11,6 +11,10 @@ func (v *operation) setVerb(s string) {
 }
 
 func (v *operation) Validate(recurse bool) error {
+	if v.responses == nil {
+		return errors.New(`missing required field "responses"`)
+	}
+
 	inMap := make(map[Location][]string) // map of parameter location to param name
 	for piter := v.Parameters(); piter.Next(); {
 		param := piter.Item()
