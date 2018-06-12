@@ -7,12 +7,18 @@ openapi
 
 [![GoDoc](https://godoc.org/github.com/lestrrat-go/openapi?status.svg)](https://godoc.org/github.com/lestrrat-go/openapi)
 
+# Status
+
+* v2 is currently being worked on (as of Jun 2018)
+* v3 was created first, but because of that has problems that has since been fixed in v2
+
 # Programmatically Build an OpenAPI spec
 
 * API is geared towards regularity and to be easier for a program to generate this code
 * Use the `builder` API to build a spec
 * Each `builder` constructor takes in the required arguments for that component
 * Finalize and build the OpenAPI nodes by calling Build() at the end
+* Properly validate structures
 
 # Easier Navigation
 
