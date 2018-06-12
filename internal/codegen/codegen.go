@@ -72,6 +72,7 @@ var importDummies = map[string]string{
 	"encoding/json":         "json.Unmarshal",
 	"log":                   "log.Printf",
 	"sort":                  "sort.Strings",
+	"strconv":               "strconv.Quote",
 }
 
 func WriteImports(dst io.Writer, libs ...string) error {

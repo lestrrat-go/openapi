@@ -7,6 +7,7 @@ type Option = option.Interface
 const (
 	optkeyDefaultServiceName = "serviceName"
 	optkeyDirectory = "directory"
+	optkeyExportNew = "exportNew"
 	optkeyPackageName = "packageName"
 )
 
@@ -20,4 +21,8 @@ func WithPackageName(s string) Option {
 
 func WithDefaultServiceName(s string) Option {
 	return option.New(optkeyDefaultServiceName, s)
+}
+
+func WithExportNew(v bool) Option {
+	return option.New(optkeyExportNew, v)
 }

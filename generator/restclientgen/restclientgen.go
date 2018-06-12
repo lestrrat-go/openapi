@@ -30,6 +30,7 @@ type genCtx struct {
 	resolver           openapi.Resolver
 	root               openapi.Swagger
 	types              map[string]Type // json ref to message
+	exportNew          bool
 }
 
 type Client struct {
@@ -146,6 +147,7 @@ func Generate(spec openapi.Swagger, options ...Option) error {
 	var dir string
 	var packageName string
 	var defaultServiceName string
+	exportNew := true
 	for _, option := range options {
 		switch option.Name() {
 		case optkeyDefaultServiceName:
@@ -154,6 +156,8 @@ func Generate(spec openapi.Swagger, options ...Option) error {
 			dir = option.Value().(string)
 		case optkeyPackageName:
 			packageName = option.Value().(string)
+		case optkeyExportNew:
+			exportNew = option.Value().(bool)
 		}
 	}
 
@@ -186,6 +190,7 @@ func Generate(spec openapi.Swagger, options ...Option) error {
 		dir:                dir,
 		packageName:        packageName,
 		defaultServiceName: defaultServiceName,
+		exportNew:          exportNew,
 		resolver:           openapi.NewResolver(spec),
 		root:               spec,
 		client:             &Client{services: make(map[string]*Service), types: make(map[string]Type)},
@@ -419,7 +424,8 @@ func compileSchema(ctx *genCtx, schema openapi.Schema) (t Type, err error) {
 
 		defer func() {
 			if strings.HasPrefix(ref, "#/definitions/") {
-				t.SetName(strings.TrimPrefix(ref, "#/definitions/"))
+				n := codegen.ExportedName(strings.TrimPrefix(ref, "#/definitions/"))
+				t.SetName(n)
 			}
 			registerType(ctx, ref, t)
 		}()
@@ -842,19 +848,25 @@ func formatClient(ctx *genCtx, dst io.Writer, cl *Client) error {
 	}
 	fmt.Fprintf(dst, "\n}")
 
-	for path, typ := range ctx.types {
-		if !strings.HasPrefix(path, "#/generated/") {
-			continue
-		}
-
+	for _, typ := range ctx.types {
 		if st, ok := typ.(*Struct); ok {
 			st.WriteCode(dst)
 		}
 	}
 
-	fmt.Fprintf(dst, "\n\n// New creates a new client. If your API require additional OAuth authentication,")
-	fmt.Fprintf(dst, "\n// JWT authorization, etc, pass an http.Client with a custom Transport to handle it")
-	fmt.Fprintf(dst, "\nfunc New(cl *http.Client, options ...ClientOption) *Client {")
+	// There are cases where we don't want to export New(): e.g.
+	// you want to put more custom logic around the creation of
+	// a new client object.
+	// In such cases, use the WithExportNew option
+	newFuncName := "New"
+	if !ctx.exportNew {
+		newFuncName = "newClient"
+	}
+
+	fmt.Fprintf(dst, "\n\n// %s creates a new client. For example, if your API require additional", newFuncName)
+	fmt.Fprintf(dst, "\n// OAuth authentication, JWT authorization, etc, pass an http.Client with")
+	fmt.Fprintf(dst, "\n// a custom Transport to handle it")
+	fmt.Fprintf(dst, "\nfunc %s(cl *http.Client, options ...ClientOption) *Client {", newFuncName)
 	fmt.Fprintf(dst, "\nvar server string")
 	fmt.Fprintf(dst, "\nfor _, option := range options {")
 	fmt.Fprintf(dst, "\nswitch option.Name() {")
