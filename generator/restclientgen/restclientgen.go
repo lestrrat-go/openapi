@@ -22,7 +22,7 @@ import (
 )
 
 type typeDefinition struct {
-	Path string
+	Path    string
 	Context string
 	Type    Type
 }
@@ -85,9 +85,25 @@ func (a *Array) SetName(s string) {
 	a.name = s
 }
 
+func isBuiltinType(s string) bool {
+	switch s {
+	case "string",
+		"int", "int8", "int16", "int32", "int64",
+		"uint", "uint8", "uint16", "uint32", "uint64",
+		"float32", "float64", "byte", "rune":
+		return true
+	default:
+		return false
+	}
+}
+
 func (a *Array) Name() string {
 	if a.name == "" {
-		return "[]*" + a.elem
+		if isBuiltinType(a.elem) {
+			return "[]" + a.elem
+		} else {
+			return "[]*" + a.elem
+		}
 	}
 	return a.name
 }
@@ -290,6 +306,7 @@ func writeTypesFile(ctx *genCtx) error {
 
 	for _, typDef := range typDefs {
 		typ := typDef.Type
+		log.Printf("   * Generating definition for %s", typ.Name())
 		switch t := typ.(type) {
 		case *Array:
 			fmt.Fprintf(dst, "\n\ntype %s []%s", t.name, t.elem)
@@ -451,8 +468,8 @@ func registerType(ctx *genCtx, path string, t Type, where string) {
 
 	log.Printf(" * Registering type %s (%s)", t.Name(), path)
 	ctx.types[path] = typeDefinition{
-		Path: path,
-		Type: t,
+		Path:    path,
+		Type:    t,
 		Context: where,
 	}
 	ctx.client.types[t.Name()] = t
@@ -1055,7 +1072,7 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 		if strings.HasPrefix(optional.typ, "[]") {
 			fmt.Fprintf(dst, "\n\nfunc (call *%s) %s(v ...%s) *%s {", call.name, codegen.ExportedName(optional.name), strings.TrimPrefix(optional.typ, "[]"), call.name)
 			if optional.inBody {
-				fmt.Fprintf(dst, "\ncall.body.%[1]s = append(call.body.%[1]s, v...)", optional.name)
+				fmt.Fprintf(dst, "\ncall.body.%[1]s = append(call.body.%[1]s, v...)", codegen.ExportedName(optional.name))
 			} else {
 				fmt.Fprintf(dst, "\ncall.%[1]s = append(call.%[1]s, v...)", optional.name)
 			}
@@ -1064,7 +1081,7 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 		} else {
 			fmt.Fprintf(dst, "\n\nfunc (call *%s) %s(v %s) *%s {", call.name, stringutil.Camel(optional.name), optional.typ, call.name)
 			if optional.inBody {
-				fmt.Fprintf(dst, "\ncall.body.%s = v", optional.name)
+				fmt.Fprintf(dst, "\ncall.body.%s = v", codegen.ExportedName(optional.name))
 			} else {
 				fmt.Fprintf(dst, "\ncall.%s = v", optional.name)
 			}
