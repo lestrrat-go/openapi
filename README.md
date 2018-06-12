@@ -48,6 +48,22 @@ structure is immutable once the tree is created, and in doing so we can
 automatically memoizing some of the information in the components towards the
 inner scope.
 
+# Code Generation
+
+`oagen` command is available to generate code. Compile using `go build ./cmd/oagen/oagen.go`
+
+## Go REST Client
+
+Currently `oagen restclient` command will generate a Go REST client loosely based on
+Google-ish api (see https://google.golang.org/api)
+
+```
+oagen restclient \
+    -directory=path/to/dir \
+    -package=packageName
+    ...
+```
+
 # CAVEATS
 
 *JSON Reference* (those pesky `$ref`s) are supported, but only if it's internal to the document itself.
