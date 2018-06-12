@@ -694,6 +694,8 @@ func compileParameterType(ctx *genCtx, param openapi.Parameter) (Type, error) {
 			registerType(ctx, fmt.Sprintf("#/generated/%s", typ.Name()), typ, ctx.currentCall.name+" parameter")
 
 			return typ, nil
+		case openapi.String:
+			return compileBuiltin(ctx,schema)
 		default:
 			return nil, errors.Errorf(`unhandled parameter type %s`, strconv.Quote(string(schema.Type())))
 		}
@@ -1074,7 +1076,7 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 		if field.inBody {
 			fmt.Fprintf(dst, "\ncall.body.%s = %s", field.goName, codegen.UnexportedName(field.goName))
 		} else {
-			fmt.Fprintf(dst, "\ncall.%s: %s", field.goName, codegen.UnexportedName(field.goName))
+			fmt.Fprintf(dst, "\ncall.%s = %s", field.goName, codegen.UnexportedName(field.goName))
 		}
 	}
 	fmt.Fprintf(dst, "\nreturn &call")
@@ -1179,7 +1181,7 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 			return errors.New(`can't proceed when call.bodyType == nil and call.formType == nil`)
 		}
 		fmt.Fprintf(dst, "\nif err != nil {")
-		fmt.Fprintf(dst, "\nreturn nil, errors.Wrap(err, `failed to marshal request payload`)")
+		fmt.Fprintf(dst, "\nreturn nil, errors.Wrapf(err, `failed to marshal request payload as %%s`, mtype)")
 		fmt.Fprintf(dst, "\n}")
 	}
 
