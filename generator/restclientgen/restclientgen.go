@@ -90,7 +90,7 @@ func isBuiltinType(s string) bool {
 	case "string",
 		"int", "int8", "int16", "int32", "int64",
 		"uint", "uint8", "uint16", "uint32", "uint64",
-		"float32", "float64", "byte", "rune":
+		"float32", "float64", "byte", "rune", "bool":
 		return true
 	default:
 		return false
@@ -556,7 +556,7 @@ func compileSchema(ctx *genCtx, schema openapi.Schema) (t Type, err error) {
 	}
 
 	switch schema.Type() {
-	case openapi.String, openapi.Integer:
+	case openapi.String, openapi.Integer, openapi.Boolean:
 		return compileBuiltin(ctx, schema)
 	case openapi.Array:
 		subtyp, err := compileSchema(ctx, schema.Items())
@@ -577,6 +577,8 @@ func compileSchema(ctx *genCtx, schema openapi.Schema) (t Type, err error) {
 
 func compileBuiltin(ctx *genCtx, schema openapi.Schema) (Type, error) {
 	switch schema.Type() {
+	case openapi.Boolean:
+		return Builtin("bool"), nil
 	case openapi.String:
 		return Builtin(schema.Type()), nil
 	case openapi.Integer:
