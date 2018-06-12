@@ -21,6 +21,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+type typeDefinition struct {
+	Path string
+	Context string
+	Type    Type
+}
+
 type genCtx struct {
 	client             *Client
 	compiling          map[string]struct{}
@@ -30,7 +36,7 @@ type genCtx struct {
 	defaultServiceName string
 	resolver           openapi.Resolver
 	root               openapi.Swagger
-	types              map[string]Type // json ref to message
+	types              map[string]typeDefinition
 	exportNew          bool
 	consumes           []string
 	produces           []string
@@ -67,7 +73,7 @@ type Struct struct {
 }
 
 func (v *Struct) WriteCode(dst io.Writer) error {
-	fmt.Fprintf(dst, "\n\ntype %s struct {", v.name)
+	fmt.Fprintf(dst, "\ntype %s struct {", v.name)
 	for _, field := range v.fields {
 		fmt.Fprintf(dst, "\n%s %s `%s`", field.goName, field.typ, field.tag)
 	}
@@ -234,7 +240,7 @@ func Generate(spec openapi.Swagger, options ...Option) error {
 		resolver:           openapi.NewResolver(spec),
 		root:               spec,
 		client:             &Client{services: make(map[string]*Service), types: make(map[string]Type)},
-		types:              make(map[string]Type),
+		types:              make(map[string]typeDefinition),
 	}
 
 	consumes, err := canonicalConsumesList(spec.Consumes())
@@ -247,8 +253,12 @@ func Generate(spec openapi.Swagger, options ...Option) error {
 		return errors.Wrap(err, `failed to compile restclient`)
 	}
 
-	if err := writeSupportFiles(&ctx); err != nil {
-		return errors.Wrap(err, `failed to write support files`)
+	if err := writeTypesFile(&ctx); err != nil {
+		return errors.Wrap(err, `failed to write options file`)
+	}
+
+	if err := writeOptionsFile(&ctx); err != nil {
+		return errors.Wrap(err, `failed to write options file`)
 	}
 
 	if err := writeClientFile(&ctx); err != nil {
@@ -262,7 +272,41 @@ func Generate(spec openapi.Swagger, options ...Option) error {
 	return nil
 }
 
-func writeSupportFiles(ctx *genCtx) error {
+func writeTypesFile(ctx *genCtx) error {
+	fn := filepath.Join(ctx.dir, "types_gen.go")
+	log.Printf("Generating %s", fn)
+
+	var buf bytes.Buffer
+	var dst io.Writer = &buf
+	codegen.WritePreamble(dst, ctx.packageName)
+
+	var typDefs []typeDefinition
+	for _, typ := range ctx.types {
+		typDefs = append(typDefs, typ)
+	}
+	sort.Slice(typDefs, func(i, j int) bool {
+		return typDefs[i].Type.Name() < typDefs[j].Type.Name()
+	})
+
+	for _, typDef := range typDefs {
+		typ := typDef.Type
+		switch t := typ.(type) {
+		case *Array:
+			fmt.Fprintf(dst, "\n\ntype %s []%s", t.name, t.elem)
+		case *Struct:
+			fmt.Fprintf(dst, "\n\n// %s represents the data structure defined in %s", typ.Name(), typDef.Context)
+			t.WriteCode(dst)
+		}
+	}
+
+	if err := codegen.WriteFormattedToFile(fn, buf.Bytes()); err != nil {
+		codegen.DumpCode(os.Stdout, bytes.NewReader(buf.Bytes()))
+		return errors.Wrapf(err, `failed to write to %s`, fn)
+	}
+	return nil
+}
+
+func writeOptionsFile(ctx *genCtx) error {
 	fn := filepath.Join(ctx.dir, "options_gen.go")
 	log.Printf("Generating %s", fn)
 
@@ -384,13 +428,6 @@ func callName(oper openapi.Operation) string {
 }
 
 func compileClient(ctx *genCtx) error {
-	/*
-		// First, compile definitions
-		if err := compileDefinitions(ctx); err != nil {
-			return errors.Wrap(err, `failed to compile definitions`)
-		}
-	*/
-
 	for piter := ctx.root.Paths().Paths(); piter.Next(); {
 		_, pi := piter.Item()
 		for operiter := pi.Operations(); operiter.Next(); {
@@ -403,32 +440,23 @@ func compileClient(ctx *genCtx) error {
 	return nil
 }
 
-func registerType(ctx *genCtx, path string, t Type) {
-	ctx.types[path] = t
-
+func registerType(ctx *genCtx, path string, t Type, where string) {
 	if t.Name() == "" {
 		panic("anonymous type")
 	}
+
+	if _, ok := ctx.client.types[t.Name()]; ok {
+		return
+	}
+
+	log.Printf(" * Registering type %s (%s)", t.Name(), path)
+	ctx.types[path] = typeDefinition{
+		Path: path,
+		Type: t,
+		Context: where,
+	}
 	ctx.client.types[t.Name()] = t
 }
-
-/*
-func compileDefinitions(ctx *genCtx) error {
-	for defiter := ctx.root.Definitions(); defiter.Next(); {
-		name, def := defiter.Item()
-
-		typ, err := compileSchema(def)
-		if err != nil {
-			return errors.Wrapf(err, `failed to compile #/definitions/%s`, name)
-		}
-		typ.name = name
-
-		// Remember this message type
-		registerMessage(ctx, fmt.Sprintf("#/definitions/%s", name), typ)
-	}
-	return nil
-}
-*/
 
 func compileNumeric(s string) Type {
 	switch s {
@@ -474,7 +502,7 @@ func compileSchema(ctx *genCtx, schema openapi.Schema) (t Type, err error) {
 				n := codegen.ExportedName(strings.TrimPrefix(ref, "#/definitions/"))
 				t.SetName(n)
 			}
-			registerType(ctx, ref, t)
+			registerType(ctx, ref, t, ref)
 		}()
 
 		ctx.compiling[ref] = struct{}{}
@@ -483,7 +511,7 @@ func compileSchema(ctx *genCtx, schema openapi.Schema) (t Type, err error) {
 		}()
 
 		if cached, ok := ctx.types[ref]; ok {
-			return cached, nil
+			return cached.Type, nil
 		}
 
 		// this better be resolvable via Definitions
@@ -590,7 +618,7 @@ func compileResponseType(ctx *genCtx, response openapi.Response) (string, error)
 		}
 		if typ.Name() == "" {
 			typ.SetName(codegen.ExportedName(ctx.currentCall.name + "_Response"))
-			registerType(ctx, fmt.Sprintf("#/generated/%s", typ.Name()), typ)
+			registerType(ctx, fmt.Sprintf("#/generated/%s", typ.Name()), typ, ctx.currentCall.name+" response")
 		}
 		return typ.Name(), nil
 	default:
@@ -642,7 +670,7 @@ func compileParameterType(ctx *genCtx, param openapi.Parameter) (Type, error) {
 				typ.SetName(codegen.ExportedName(ctx.currentCall.name + "_" + param.Name()))
 			}
 
-			registerType(ctx, fmt.Sprintf("#/generated/%s", typ.Name()), typ)
+			registerType(ctx, fmt.Sprintf("#/generated/%s", typ.Name()), typ, ctx.currentCall.name+" parameter")
 
 			return typ, nil
 		default:
@@ -673,7 +701,6 @@ func compileCall(ctx *genCtx, oper openapi.Operation) error {
 	// The OpenAPI spec allows you to specify multiple "consumes"
 	// clause, but we only support JSON or appliation/x-www-form-urlencoded
 	// by default
-
 
 	consumesList, err := canonicalConsumesList(oper.Consumes())
 	if err != nil {
@@ -825,7 +852,7 @@ func compileCall(ctx *genCtx, oper openapi.Operation) error {
 		}
 		if formType.Name() == "" {
 			formType.SetName(codegen.ExportedName(call.name + "_Form"))
-			registerType(ctx, fmt.Sprintf("#/generated/%s", formType.Name()), formType)
+			registerType(ctx, fmt.Sprintf("#/generated/%s", formType.Name()), formType, call.name+" body form")
 		}
 		call.formType = formType
 
@@ -854,14 +881,6 @@ func formatClient(ctx *genCtx, dst io.Writer, cl *Client) error {
 	codegen.WritePreamble(dst, ctx.packageName)
 	codegen.WriteImports(dst, "net/http")
 	fmt.Fprintf(dst, "\n\n")
-	var typNames []string
-	for path, typ := range cl.types {
-		if strings.HasPrefix(path, "#/defnitions/") {
-			typNames = append(typNames, typ.Name())
-		}
-	}
-	sort.Strings(typNames)
-
 	var serviceNames []string
 	for name := range cl.services {
 		serviceNames = append(serviceNames, name)
@@ -904,12 +923,6 @@ func formatClient(ctx *genCtx, dst io.Writer, cl *Client) error {
 	}
 	fmt.Fprintf(dst, "\n}")
 
-	for _, typ := range ctx.types {
-		if st, ok := typ.(*Struct); ok {
-			st.WriteCode(dst)
-		}
-	}
-
 	// There are cases where we don't want to export New(): e.g.
 	// you want to put more custom logic around the creation of
 	// a new client object.
@@ -946,26 +959,12 @@ func formatClient(ctx *genCtx, dst io.Writer, cl *Client) error {
 		fmt.Fprintf(dst, "\n}")
 	}
 
-	for _, typName := range typNames {
-		typ := cl.types[typName]
-		switch t := typ.(type) {
-		case *Array:
-			fmt.Fprintf(dst, "\n\ntype %s []%s", t.name, t.elem)
-		case *Struct:
-			fmt.Fprintf(dst, "\n\ntype %s struct {", typ.Name())
-			for _, field := range t.fields {
-				fmt.Fprintf(dst, "\n%s %s `%s`", field.name, field.typ, field.tag)
-			}
-			fmt.Fprintf(dst, "\n}")
-		}
-	}
-
 	return nil
 }
 
 func formatService(ctx *genCtx, dst io.Writer, svc *Service) error {
+	log.Printf(" * Generating Service %s", svc.name)
 	codegen.WritePreamble(dst, ctx.packageName)
-
 	codegen.WriteImports(dst, "bytes", "context", "encoding/json", "mime", "net/http", "net/url", "strings", "strconv", "github.com/pkg/errors", "github.com/lestrrat-go/urlenc")
 
 	fmt.Fprintf(dst, "\n\ntype %s struct {", svc.name)
@@ -991,6 +990,7 @@ func formatService(ctx *genCtx, dst io.Writer, svc *Service) error {
 //		Cats(message.Cat{...}, ...).
 //		Do(ctx)
 func formatCall(dst io.Writer, svcName string, call *Call) error {
+	log.Printf("   * Generating Call object %s", call.name)
 	var allFields []*Field
 	allFields = append(append(allFields, call.requireds...), call.optionals...)
 	sort.Slice(allFields, func(i, j int) bool {
@@ -1019,6 +1019,8 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 	sort.Slice(call.requireds, func(i, j int) bool {
 		return call.requireds[i].name < call.requireds[j].name
 	})
+
+	log.Printf("      * Generating constructor")
 	fmt.Fprintf(dst, "\n\nfunc (svc *%s) %s(", svcName, strings.TrimSuffix(call.name, "Call"))
 	for i, field := range call.requireds {
 		fmt.Fprintf(dst, "%s %s", codegen.UnexportedName(field.goName), field.typ)
@@ -1049,6 +1051,7 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 		return call.optionals[i].name < call.optionals[i].name
 	})
 	for _, optional := range call.optionals {
+		log.Printf("      * Generating optional method for %s", codegen.ExportedName(optional.name))
 		if strings.HasPrefix(optional.typ, "[]") {
 			fmt.Fprintf(dst, "\n\nfunc (call *%s) %s(v ...%s) *%s {", call.name, codegen.ExportedName(optional.name), strings.TrimPrefix(optional.typ, "[]"), call.name)
 			if optional.inBody {
