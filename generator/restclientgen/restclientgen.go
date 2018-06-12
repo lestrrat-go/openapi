@@ -269,10 +269,12 @@ func Generate(spec openapi.Swagger, options ...Option) error {
 		return errors.Wrap(err, `failed to compile restclient`)
 	}
 
+	// declare types
 	if err := writeTypesFile(&ctx); err != nil {
 		return errors.Wrap(err, `failed to write options file`)
 	}
 
+	// define options
 	if err := writeOptionsFile(&ctx); err != nil {
 		return errors.Wrap(err, `failed to write options file`)
 	}
@@ -898,7 +900,7 @@ func compileCall(ctx *genCtx, oper openapi.Operation) error {
 
 func formatClient(ctx *genCtx, dst io.Writer, cl *Client) error {
 	codegen.WritePreamble(dst, ctx.packageName)
-	codegen.WriteImports(dst, "net/http")
+	codegen.WriteImports(dst, "bytes", "io", "net/http", "github.com/pkg/errors")
 	fmt.Fprintf(dst, "\n\n")
 	var serviceNames []string
 	for name := range cl.services {
@@ -934,6 +936,18 @@ func formatClient(ctx *genCtx, dst io.Writer, cl *Client) error {
 
 	fmt.Fprintf(dst, "\n\nfunc (r *response) Data() interface{} {")
 	fmt.Fprintf(dst, "\nreturn r.data")
+	fmt.Fprintf(dst, "\n}")
+
+	fmt.Fprintf(dst, "\n\nfunc encodeCallPayload(marshalers map[string]Marshaler, mtype string, payload interface{}) (io.Reader, error) {")
+	fmt.Fprintf(dst, "\nmarshaler, ok := marshalers[mtype]")
+  fmt.Fprintf(dst, "\nif !ok {")
+	fmt.Fprintf(dst, "\nreturn nil, errors.Errorf(`missing marshaler for request content type %s`, mtype)")
+	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\n\nencoded, err := marshaler.Marshal(payload)")
+	fmt.Fprintf(dst, "\nif err != nil {")
+	fmt.Fprintf(dst, "\nreturn nil, errors.Wrap(err, `failed to marshal payload`)")
+	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\nreturn bytes.NewBuffer(encoded), nil")
 	fmt.Fprintf(dst, "\n}")
 
 	fmt.Fprintf(dst, "\n\ntype Client struct {")
@@ -984,7 +998,7 @@ func formatClient(ctx *genCtx, dst io.Writer, cl *Client) error {
 func formatService(ctx *genCtx, dst io.Writer, svc *Service) error {
 	log.Printf(" * Generating Service %s", svc.name)
 	codegen.WritePreamble(dst, ctx.packageName)
-	codegen.WriteImports(dst, "bytes", "context", "encoding/json", "mime", "net/http", "net/url", "strings", "strconv", "github.com/pkg/errors", "github.com/lestrrat-go/urlenc")
+	codegen.WriteImports(dst, "context", "encoding/json", "mime", "net/http", "net/url", "strings", "strconv", "github.com/pkg/errors", "github.com/lestrrat-go/urlenc")
 
 	fmt.Fprintf(dst, "\n\ntype %s struct {", svc.name)
 	fmt.Fprintf(dst, "\nhttpCl *http.Client")
@@ -1157,23 +1171,16 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 		fmt.Fprintf(dst, "\nreturn nil, errors.Wrapf(err, `failed to parse request content type %%s`, contentType)")
 		fmt.Fprintf(dst, "\n}")
 
-		fmt.Fprintf(dst, "\n\nmarshaler, ok := call.marshalers[mtype]")
-		fmt.Fprintf(dst, "\nif !ok {")
-		fmt.Fprintf(dst, "\nreturn nil, errors.Errorf(`missing marshaler for request content type %%s`, mtype)")
-		fmt.Fprintf(dst, "\n}")
-
 		if call.bodyType != nil {
-			fmt.Fprintf(dst, "\n\nencoded, err := marshaler.Marshal(call.body)")
+		fmt.Fprintf(dst, "\n\nbody, err := encodeCallPayload(call.marshalers, mtype, call.body)")
 		} else if call.formType != nil {
-			fmt.Fprintf(dst, "\n\nencoded, err := marshaler.Marshal(call.form)")
+		fmt.Fprintf(dst, "\n\nbody, err := encodeCallPayload(call.marshalers, mtype, call.form)")
 		} else {
-			return errors.New(`can't proceed when call.bodyTyp == nil and call.formType == nil`)
+			return errors.New(`can't proceed when call.bodyType == nil and call.formType == nil`)
 		}
 		fmt.Fprintf(dst, "\nif err != nil {")
-		fmt.Fprintf(dst, "\nreturn nil, errors.Wrap(err, `failed to marshal request parameters`)")
+		fmt.Fprintf(dst, "\nreturn nil, errors.Wrap(err, `failed to marshal request payload`)")
 		fmt.Fprintf(dst, "\n}")
-
-		fmt.Fprintf(dst, "\nbody := bytes.NewBuffer(encoded)")
 	}
 
 	fmt.Fprintf(dst, "\n\nreq, err := http.NewRequest(%s, path, %s)", strconv.Quote(call.verb), body)
