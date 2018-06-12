@@ -87,12 +87,44 @@ func WriteImports(dst io.Writer, libs ...string) error {
 		return nil
 	}
 
-	sort.Strings(libs)
+	// first, separate out stdlib and everything else
+	var stdlibs []string
+	var extlibs []string
+	for _, lib := range libs {
+		i := strings.IndexByte(lib, '/')
+		if i == -1 {
+			stdlibs = append(stdlibs, lib)
+			continue
+		}
+
+		i = strings.IndexByte(lib[:i], '.')
+		if i == -1 {
+			stdlibs = append(stdlibs, lib)
+		} else {
+			extlibs = append(extlibs, lib)
+		}
+	}
+
+	sort.Strings(stdlibs)
+	sort.Strings(extlibs)
 
 	fmt.Fprintf(dst, "(")
-	for _, lib := range libs {
+
+	// Start with stdlibs
+	for _, lib := range stdlibs {
 		fmt.Fprintf(dst, "\n%s", strconv.Quote(lib))
 	}
+
+	if len(extlibs) > 0 {
+		if len(stdlibs) > 0 {
+			fmt.Fprintf(dst, "\n")
+		}
+
+		for _, lib := range extlibs {
+			fmt.Fprintf(dst, "\n%s", strconv.Quote(lib))
+		}
+	}
+
 	fmt.Fprintf(dst, "\n)")
 
 	// check to see if we need dummies
