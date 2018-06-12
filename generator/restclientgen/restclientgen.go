@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"mime"
 	"os"
 	"path/filepath"
 	"sort"
@@ -31,6 +32,8 @@ type genCtx struct {
 	root               openapi.Swagger
 	types              map[string]Type // json ref to message
 	exportNew          bool
+	consumes           []string
+	produces           []string
 }
 
 type Client struct {
@@ -111,18 +114,30 @@ func (s *Service) addCall(call *Call) {
 }
 
 type Call struct {
-	name                string
-	path                string
-	verb                string
-	requestContentTypes []string
-	responseContentType string
-	requireds           []*Field
-	optionals           []*Field
-	pathparams          []*Field
-	queryparams         []*Field
-	formType            Type
-	bodyType            Type
-	responses           []*Response
+	name        string
+	path        string
+	verb        string
+	consumes    []string
+	produces    []string
+	requireds   []*Field
+	optionals   []*Field
+	pathparams  []*Field
+	queryparams []*Field
+	formType    Type
+	bodyType    Type
+	responses   []*Response
+}
+
+func (call *Call) DefaultConsumes() string {
+	// default to "application/x-www-form-urlencoded"
+	if len(call.consumes) == 0 {
+		return "application/x-www-form-urlencoded"
+	}
+	return call.consumes[0]
+}
+
+func (call *Call) Consumes() []string {
+	return call.consumes
 }
 
 type Response struct {
@@ -137,6 +152,31 @@ type Field struct {
 	tag      string
 	required bool
 	inBody   bool
+}
+
+func canonicalConsumesList(iter *openapi.MIMETypeListIterator) ([]string, error) {
+	consumesSeen := map[string]struct{}{}
+
+	var consumesList []string
+	for iter.Next() {
+		mt := iter.Item()
+		if _, ok := consumesSeen[mt]; ok {
+			continue
+		}
+		consumesList = append(consumesList, mt)
+		consumesSeen[mt] = struct{}{}
+	}
+
+	// Make sure the consumes list is valid
+	for i, v := range consumesList {
+		mt, _, err := mime.ParseMediaType(v)
+		if err != nil {
+			return nil, errors.Wrapf(err, `failed to parse "consumes" value %s`, v)
+		}
+		// Use the canonical mime type (the parsed one)
+		consumesList[i] = mt
+	}
+	return consumesList, nil
 }
 
 func Generate(spec openapi.Swagger, options ...Option) error {
@@ -196,6 +236,13 @@ func Generate(spec openapi.Swagger, options ...Option) error {
 		client:             &Client{services: make(map[string]*Service), types: make(map[string]Type)},
 		types:              make(map[string]Type),
 	}
+
+	consumes, err := canonicalConsumesList(spec.Consumes())
+	if err != nil {
+		return errors.Wrap(err, `failed to parse global "consumes" list`)
+	}
+	ctx.consumes = consumes
+
 	if err := compileClient(&ctx); err != nil {
 		return errors.Wrap(err, `failed to compile restclient`)
 	}
@@ -625,10 +672,19 @@ func compileCall(ctx *genCtx, oper openapi.Operation) error {
 
 	// The OpenAPI spec allows you to specify multiple "consumes"
 	// clause, but we only support JSON or appliation/x-www-form-urlencoded
-	for mimetypeiter := oper.Consumes(); mimetypeiter.Next(); {
-		mimetype := mimetypeiter.Item()
-		call.requestContentTypes = append(call.requestContentTypes, mimetype)
+	// by default
+
+
+	consumesList, err := canonicalConsumesList(oper.Consumes())
+	if err != nil {
+		return errors.Wrapf(err, `failed to parse consumes list for %s:%s`, oper.PathItem().Path(), oper.Verb())
 	}
+
+	if len(consumesList) == 0 {
+		// Use the default consumes list if not provided
+		consumesList = append(consumesList, ctx.consumes...)
+	}
+	call.consumes = consumesList
 
 	for respiter := oper.Responses().Responses(); respiter.Next(); {
 		_, resp := respiter.Item()
@@ -773,8 +829,8 @@ func compileCall(ctx *genCtx, oper openapi.Operation) error {
 		}
 		call.formType = formType
 
-		if len(call.requestContentTypes) == 0 {
-			call.requestContentTypes = append(call.requestContentTypes, "application/x-www-form-urlencoded")
+		if len(call.consumes) == 0 {
+			call.consumes = append(call.consumes, "application/x-www-form-urlencoded")
 		}
 	}
 
@@ -917,6 +973,10 @@ func formatService(ctx *genCtx, dst io.Writer, svc *Service) error {
 	fmt.Fprintf(dst, "\nserver string")
 	fmt.Fprintf(dst, "\n}")
 
+	sort.Slice(svc.calls, func(i, j int) bool {
+		return svc.calls[i].name < svc.calls[j].name
+	})
+
 	for _, call := range svc.calls {
 		if err := formatCall(dst, svc.name, call); err != nil {
 			return errors.Wrap(err, `failed to format call`)
@@ -1029,14 +1089,7 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 	fmt.Fprintf(dst, "\nconst basepath = %s", strconv.Quote(call.path))
 
 	if call.bodyType != nil || call.formType != nil {
-		// default to "application/x-www-form-urlencoded"
-		var defaultCt string
-		if len(call.requestContentTypes) == 0 {
-			defaultCt = "application/x-www-form-urlencoded"
-		} else {
-			defaultCt = call.requestContentTypes[0]
-		}
-		fmt.Fprintf(dst, "\n\ncontentType := %#v", defaultCt)
+		fmt.Fprintf(dst, "\n\ncontentType := %#v", call.DefaultConsumes())
 		fmt.Fprintf(dst, "\nfor _, option := range options {")
 		fmt.Fprintf(dst, "\nswitch option.Name() {")
 		fmt.Fprintf(dst, "\ncase optkeyRequestContentType:")
