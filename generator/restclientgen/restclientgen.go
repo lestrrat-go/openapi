@@ -510,12 +510,69 @@ func compileStruct(ctx *genCtx, schema openapi.Schema) (Type, error) {
 	return &obj, nil
 }
 
+// To solve json references properly, we need to check if the refered
+// object matches what we are expecting. to do this, we need to
+// marshal/unmarshal and see if it's successful
+func encodeDecodeJSON(src interface{}, decodeFunc func([]byte) error) error {
+	var encoded bytes.Buffer
+	if err := json.NewEncoder(&encoded).Encode(src); err != nil {
+		return errors.Wrap(err, `failed to encode temporary structure to JSON`)
+	}
+
+	if err := decodeFunc(encoded.Bytes()); err != nil {
+		return errors.Wrap(err, `failed to decode temporary structure from JSON`)
+	}
+	return nil
+}
+
+func resolveReference(ctx *genCtx, ref string, decodeFunc func([]byte) error) error {
+	if _, ok := ctx.compiling[ref]; ok {
+		return errors.Errorf(`circular dep on %s`, ref)
+	}
+
+	ctx.compiling[ref] = struct{}{}
+	defer func() {
+		delete(ctx.compiling, ref)
+	}()
+
+	var thing interface{}
+	if cached, ok := ctx.types[ref]; ok {
+		thing = cached
+	} else {
+
+		// this better be resolvable via Definitions
+		resolved, err := ctx.resolver.Resolve(ref)
+		if err != nil {
+			return errors.Wrapf(err, `failed to resolve %s`, ref)
+		}
+		thing = resolved
+	}
+
+	// The only way to truly make sure that this resolved thingy
+	// is a "Schema", is by encoding it to JSON, and decoding
+	// it back
+
+	if err := encodeDecodeJSON(thing, decodeFunc); err != nil {
+		return errors.Wrapf(err, `failed to extract schema out of %s`, ref)
+	}
+	return nil
+}
+
+func compileItems(ctx *genCtx, items openapi.Items) (t Type, err error) {
+	return compileSchemaLike(ctx, items)
+}
+
 func compileSchema(ctx *genCtx, schema openapi.Schema) (t Type, err error) {
 	if ref := schema.Reference(); ref != "" {
-		if _, ok := ctx.compiling[ref]; ok {
-			return nil, errors.Errorf(`circular dep on %s`, ref)
+		var news openapi.Schema
+		fun := func(buf []byte) error {
+			return openapi.SchemaFromJSON(buf, &news)
 		}
 
+		if err := resolveReference(ctx, ref, fun); err != nil {
+			return nil, errors.Wrapf(err, `failed to resolve reference %s`, ref)
+		}
+		schema = news
 		defer func() {
 			if strings.HasPrefix(ref, "#/definitions/") {
 				n := codegen.ExportedName(strings.TrimPrefix(ref, "#/definitions/"))
@@ -524,50 +581,29 @@ func compileSchema(ctx *genCtx, schema openapi.Schema) (t Type, err error) {
 			registerType(ctx, ref, t, ref)
 		}()
 
-		ctx.compiling[ref] = struct{}{}
-		defer func() {
-			delete(ctx.compiling, ref)
-		}()
-
-		if cached, ok := ctx.types[ref]; ok {
-			return cached.Type, nil
-		}
-
-		// this better be resolvable via Definitions
-		thing, err := ctx.resolver.Resolve(ref)
-		if err != nil {
-			return nil, errors.Wrapf(err, `failed to resolve %s`, ref)
-		}
-
-		// If this is a valid reference, just take the name after #/definitions
-		// as the name
-
-		// The only way to truly make sure that this resolved thingy
-		// is a "Schema", is by encoding it to JSON, and decoding
-		// it back
-		var encoded bytes.Buffer
-		if err := json.NewEncoder(&encoded).Encode(thing); err != nil {
-			return nil, errors.Wrap(err, `failed to encode temporary structure to JSON`)
-		}
-
-		var news openapi.Schema
-		if err := openapi.SchemaFromJSON(encoded.Bytes(), &news); err != nil {
-			return nil, errors.Wrap(err, `failed to decode temporary structure from JSON`)
-		}
-		schema = news
 	}
 
+	return compileSchemaLike(ctx, schema)
+}
+
+type openapiItemser interface {
+	Items() openapi.Items
+}
+
+func compileSchemaLike(ctx *genCtx, schema openapiTypeFormater) (Type, error) {
 	switch schema.Type() {
 	case openapi.String, openapi.Integer, openapi.Boolean:
 		return compileBuiltin(ctx, schema)
 	case openapi.Array:
-		subtyp, err := compileSchema(ctx, schema.Items())
-		if err != nil {
-			return nil, errors.Wrap(err, `failed to compile array schema`)
-		}
-		return &Array{elem: subtyp.Name()}, nil
+		return compileArray(ctx, schema)
 	default:
-		object, err := compileStruct(ctx, schema)
+		// In order for this to work, schema must be a full-blown openapi.Schema,
+		// not a openapi.Items
+		fullSchema, ok := schema.(openapi.Schema)
+		if !ok {
+			return nil, errors.Errorf(`target must be an openapi.Schema (was %T)`, fullSchema)
+		}
+		object, err := compileStruct(ctx, fullSchema)
 		if err != nil {
 			return nil, errors.Wrap(err, `failed to compile object schema`)
 		}
@@ -577,7 +613,20 @@ func compileSchema(ctx *genCtx, schema openapi.Schema) (t Type, err error) {
 	return nil, errors.New(`unreachable`)
 }
 
-func compileBuiltin(ctx *genCtx, schema openapi.Schema) (Type, error) {
+type openapiTyper interface {
+	Type() openapi.PrimitiveType
+}
+
+type openapiFormater interface {
+	Format() string
+}
+
+type openapiTypeFormater interface {
+	openapiTyper
+	openapiFormater
+}
+
+func compileBuiltin(ctx *genCtx, schema openapiTypeFormater) (Type, error) {
 	switch schema.Type() {
 	case openapi.Boolean:
 		return Builtin("bool"), nil
@@ -695,7 +744,7 @@ func compileParameterType(ctx *genCtx, param openapi.Parameter) (Type, error) {
 
 			return typ, nil
 		case openapi.String:
-			return compileBuiltin(ctx,schema)
+			return compileBuiltin(ctx, schema)
 		default:
 			return nil, errors.Errorf(`unhandled parameter type %s`, strconv.Quote(string(schema.Type())))
 		}
@@ -704,9 +753,28 @@ func compileParameterType(ctx *genCtx, param openapi.Parameter) (Type, error) {
 	switch param.Type() {
 	case openapi.Number:
 		return compileNumeric(param.Format()), nil
+	case openapi.Array:
+		return compileArray(ctx, param)
 	}
 
 	return Builtin(param.Type()), nil
+}
+
+func compileArray(ctx *genCtx, schema interface{}) (Type, error) {
+	var subtyp Type
+	var err error
+	if s, ok := schema.(openapi.Schema); ok {
+		subtyp, err = compileSchema(ctx, s.Items())
+	} else if i, ok := schema.(openapi.Parameter); ok {
+		subtyp, err = compileItems(ctx, i.Items())
+	} else {
+		return nil, errors.Wrapf(err, `cannot compile array element %T`, schema)
+	}
+
+	if err != nil {
+		return nil, errors.Wrap(err, `failed to compile array schema`)
+	}
+	return &Array{elem: subtyp.Name()}, nil
 }
 
 func compileCall(ctx *genCtx, oper openapi.Operation) error {
@@ -942,7 +1010,7 @@ func formatClient(ctx *genCtx, dst io.Writer, cl *Client) error {
 
 	fmt.Fprintf(dst, "\n\nfunc encodeCallPayload(marshalers map[string]Marshaler, mtype string, payload interface{}) (io.Reader, error) {")
 	fmt.Fprintf(dst, "\nmarshaler, ok := marshalers[mtype]")
-  fmt.Fprintf(dst, "\nif !ok {")
+	fmt.Fprintf(dst, "\nif !ok {")
 	fmt.Fprintf(dst, "\nreturn nil, errors.Errorf(`missing marshaler for request content type %s`, mtype)")
 	fmt.Fprintf(dst, "\n}")
 	fmt.Fprintf(dst, "\n\nencoded, err := marshaler.Marshal(payload)")
@@ -1047,7 +1115,7 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 			continue
 		}
 
-		fmt.Fprintf(dst, "\n%s %s", field.name, field.typ)
+		fmt.Fprintf(dst, "\n%s %s", field.goName, field.typ)
 	}
 	fmt.Fprintf(dst, "\n}")
 
@@ -1151,14 +1219,21 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 	if len(call.queryparams) > 0 {
 		fmt.Fprintf(dst, "\nv := url.Values{}")
 		for _, queryparam := range call.queryparams {
-			fmt.Fprintf(dst, "\nv.Add(%s, ", strconv.Quote(queryparam.name))
-			switch queryparam.typ {
-			case "int64":
-				fmt.Fprintf(dst, "strconv.FormatInt(call.%s, 10)", queryparam.name)
-			default:
-				fmt.Fprintf(dst, "call.%s", queryparam.name)
+			// XXX This needs to be more robust
+			if queryparam.typ == "[]string" {
+				fmt.Fprintf(dst, "\nfor _, param := range call.%s {", queryparam.goName)
+				fmt.Fprintf(dst, "\nv.Add(%s, param)", strconv.Quote(queryparam.name))
+				fmt.Fprintf(dst, "\n}")
+			} else {
+				fmt.Fprintf(dst, "\nv.Add(%s, ", strconv.Quote(queryparam.name))
+				switch queryparam.typ {
+				case "int64":
+					fmt.Fprintf(dst, "strconv.FormatInt(call.%s, 10)", queryparam.name)
+				default:
+					fmt.Fprintf(dst, "call.%s", queryparam.goName)
+				}
+				fmt.Fprintf(dst, ")")
 			}
-			fmt.Fprintf(dst, ")")
 		}
 
 		fmt.Fprintf(dst, "\npath = call.server + path + `?` + v.Encode()")
@@ -1174,9 +1249,9 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 		fmt.Fprintf(dst, "\n}")
 
 		if call.bodyType != nil {
-		fmt.Fprintf(dst, "\n\nbody, err := encodeCallPayload(call.marshalers, mtype, call.body)")
+			fmt.Fprintf(dst, "\n\nbody, err := encodeCallPayload(call.marshalers, mtype, call.body)")
 		} else if call.formType != nil {
-		fmt.Fprintf(dst, "\n\nbody, err := encodeCallPayload(call.marshalers, mtype, call.form)")
+			fmt.Fprintf(dst, "\n\nbody, err := encodeCallPayload(call.marshalers, mtype, call.form)")
 		} else {
 			return errors.New(`can't proceed when call.bodyType == nil and call.formType == nil`)
 		}

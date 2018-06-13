@@ -1335,7 +1335,9 @@ func generateContainer(c interface{}) error {
 			fmt.Fprintf(dst, "\n}")
 		*/
 
-		fmt.Fprintf(dst, "\n\nfunc (v %s) QueryJSON(path string) (ret interface{}, ok bool) {", rv.Type().Name())
+		fmt.Fprintf(dst, "\n\n// QueryJSON is used to query an element within the document")
+		fmt.Fprintf(dst, "\n// Using jsonref")
+		fmt.Fprintf(dst, "\nfunc (v %s) QueryJSON(path string) (ret interface{}, ok bool) {", rv.Type().Name())
 		fmt.Fprintf(dst, "\nif path == `` {")
 		fmt.Fprintf(dst, "\nreturn v, true")
 		fmt.Fprintf(dst, "\n}")
@@ -1360,7 +1362,8 @@ func generateContainer(c interface{}) error {
 		fmt.Fprintf(dst, "\n}")
 
 		if rv.Type().Elem().Name() != "" && rv.Type().Elem().Kind() == reflect.Interface {
-			fmt.Fprintf(dst, "\n\nfunc (v *%s) UnmarshalJSON(data []byte) error {", typeName)
+			fmt.Fprintf(dst, "\n\n// UnmarshalJSON takes a JSON buffer and properly populates `v`")
+			fmt.Fprintf(dst, "\nfunc (v *%s) UnmarshalJSON(data []byte) error {", typeName)
 			fmt.Fprintf(dst, "\nvar proxy map[%s]*%s", typname(rv.Type().Key()), unexportedName(typname(rv.Type().Elem())))
 			fmt.Fprintf(dst, "\nif err := json.Unmarshal(data, &proxy); err != nil {")
 			fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to unmarshal`)")
