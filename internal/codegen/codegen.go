@@ -71,6 +71,7 @@ var importDummies = map[string]string{
 	"github.com/pkg/errors": "errors.Cause",
 	"encoding/json":         "json.Unmarshal",
 	"log":                   "log.Printf",
+	"net/url":               "url.Parse",
 	"sort":                  "sort.Strings",
 	"strconv":               "strconv.Quote",
 }
