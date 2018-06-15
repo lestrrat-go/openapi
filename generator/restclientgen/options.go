@@ -9,6 +9,7 @@ const (
 	optkeyDirectory = "directory"
 	optkeyExportNew = "exportNew"
 	optkeyPackageName = "packageName"
+	optkeyTarget = "target"
 )
 
 func WithDir(s string) Option {
@@ -25,4 +26,8 @@ func WithDefaultServiceName(s string) Option {
 
 func WithExportNew(v bool) Option {
 	return option.New(optkeyExportNew, v)
+}
+
+func WithTarget(s string) Option {
+	return option.New(optkeyTarget, s)
 }

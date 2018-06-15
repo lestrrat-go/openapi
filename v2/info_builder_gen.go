@@ -72,3 +72,10 @@ func (b *InfoBuilder) Reference(v string) *InfoBuilder {
 	b.target.reference = v
 	return b
 }
+
+// Extension sets an arbitrary element (an extension) to the
+// object Info. The extension name should start with a "x-"
+func (b *InfoBuilder) Extension(name string, value interface{}) *InfoBuilder {
+	b.target.extensions[name] = value
+	return b
+}

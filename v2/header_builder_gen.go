@@ -155,3 +155,10 @@ func (b *HeaderBuilder) Reference(v string) *HeaderBuilder {
 	b.target.reference = v
 	return b
 }
+
+// Extension sets an arbitrary element (an extension) to the
+// object Header. The extension name should start with a "x-"
+func (b *HeaderBuilder) Extension(name string, value interface{}) *HeaderBuilder {
+	b.target.extensions[name] = value
+	return b
+}

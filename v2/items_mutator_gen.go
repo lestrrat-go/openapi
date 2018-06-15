@@ -61,39 +61,75 @@ func (m *ItemsMutator) DefaultValue(v interface{}) *ItemsMutator {
 	return m
 }
 
-// Maximum sets the Maximum field for object Items.
+// ClearMaximum clears the maximum field
+func (m *ItemsMutator) ClearMaximum() *ItemsMutator {
+	m.proxy.maximum = nil
+	return m
+}
+
+// Maximum sets the maximum field.%!(EXTRA string=Items)
 func (m *ItemsMutator) Maximum(v float64) *ItemsMutator {
-	m.proxy.maximum = v
+	m.proxy.maximum = &v
 	return m
 }
 
-// ExclusiveMaximum sets the ExclusiveMaximum field for object Items.
+// ClearExclusiveMaximum clears the exclusiveMaximum field
+func (m *ItemsMutator) ClearExclusiveMaximum() *ItemsMutator {
+	m.proxy.exclusiveMaximum = nil
+	return m
+}
+
+// ExclusiveMaximum sets the exclusiveMaximum field.%!(EXTRA string=Items)
 func (m *ItemsMutator) ExclusiveMaximum(v float64) *ItemsMutator {
-	m.proxy.exclusiveMaximum = v
+	m.proxy.exclusiveMaximum = &v
 	return m
 }
 
-// Minimum sets the Minimum field for object Items.
+// ClearMinimum clears the minimum field
+func (m *ItemsMutator) ClearMinimum() *ItemsMutator {
+	m.proxy.minimum = nil
+	return m
+}
+
+// Minimum sets the minimum field.%!(EXTRA string=Items)
 func (m *ItemsMutator) Minimum(v float64) *ItemsMutator {
-	m.proxy.minimum = v
+	m.proxy.minimum = &v
 	return m
 }
 
-// ExclusiveMinimum sets the ExclusiveMinimum field for object Items.
+// ClearExclusiveMinimum clears the exclusiveMinimum field
+func (m *ItemsMutator) ClearExclusiveMinimum() *ItemsMutator {
+	m.proxy.exclusiveMinimum = nil
+	return m
+}
+
+// ExclusiveMinimum sets the exclusiveMinimum field.%!(EXTRA string=Items)
 func (m *ItemsMutator) ExclusiveMinimum(v float64) *ItemsMutator {
-	m.proxy.exclusiveMinimum = v
+	m.proxy.exclusiveMinimum = &v
 	return m
 }
 
-// MaxLength sets the MaxLength field for object Items.
+// ClearMaxLength clears the maxLength field
+func (m *ItemsMutator) ClearMaxLength() *ItemsMutator {
+	m.proxy.maxLength = nil
+	return m
+}
+
+// MaxLength sets the maxLength field.%!(EXTRA string=Items)
 func (m *ItemsMutator) MaxLength(v int) *ItemsMutator {
-	m.proxy.maxLength = v
+	m.proxy.maxLength = &v
 	return m
 }
 
-// MinLength sets the MinLength field for object Items.
+// ClearMinLength clears the minLength field
+func (m *ItemsMutator) ClearMinLength() *ItemsMutator {
+	m.proxy.minLength = nil
+	return m
+}
+
+// MinLength sets the minLength field.%!(EXTRA string=Items)
 func (m *ItemsMutator) MinLength(v int) *ItemsMutator {
-	m.proxy.minLength = v
+	m.proxy.minLength = &v
 	return m
 }
 
@@ -103,15 +139,27 @@ func (m *ItemsMutator) Pattern(v string) *ItemsMutator {
 	return m
 }
 
-// MaxItems sets the MaxItems field for object Items.
-func (m *ItemsMutator) MaxItems(v int) *ItemsMutator {
-	m.proxy.maxItems = v
+// ClearMaxItems clears the maxItems field
+func (m *ItemsMutator) ClearMaxItems() *ItemsMutator {
+	m.proxy.maxItems = nil
 	return m
 }
 
-// MinItems sets the MinItems field for object Items.
+// MaxItems sets the maxItems field.%!(EXTRA string=Items)
+func (m *ItemsMutator) MaxItems(v int) *ItemsMutator {
+	m.proxy.maxItems = &v
+	return m
+}
+
+// ClearMinItems clears the minItems field
+func (m *ItemsMutator) ClearMinItems() *ItemsMutator {
+	m.proxy.minItems = nil
+	return m
+}
+
+// MinItems sets the minItems field.%!(EXTRA string=Items)
 func (m *ItemsMutator) MinItems(v int) *ItemsMutator {
-	m.proxy.minItems = v
+	m.proxy.minItems = &v
 	return m
 }
 
@@ -131,9 +179,15 @@ func (m *ItemsMutator) Enum(value interface{}) *ItemsMutator {
 	return m
 }
 
-// MultipleOf sets the MultipleOf field for object Items.
+// ClearMultipleOf clears the multipleOf field
+func (m *ItemsMutator) ClearMultipleOf() *ItemsMutator {
+	m.proxy.multipleOf = nil
+	return m
+}
+
+// MultipleOf sets the multipleOf field.%!(EXTRA string=Items)
 func (m *ItemsMutator) MultipleOf(v float64) *ItemsMutator {
-	m.proxy.multipleOf = v
+	m.proxy.multipleOf = &v
 	return m
 }
 func (b *ItemsMutator) Extension(name string, value interface{}) *ItemsMutator {

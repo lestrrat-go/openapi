@@ -17,7 +17,7 @@ import (
 
 	"github.com/iancoleman/strcase"
 	"github.com/jinzhu/inflection"
-	"github.com/lestrrat-go/openapi/internal/codegen"
+	codegen "github.com/lestrrat-go/openapi/internal/codegen/golang"
 	"github.com/pkg/errors"
 )
 
@@ -631,6 +631,13 @@ func generateBuilderFromEntity(e interface{}) error {
 	fmt.Fprintf(dst, "\n\n// Reference sets the $ref (reference) field for object %s.", ifacename)
 	fmt.Fprintf(dst, "\nfunc (b *%sBuilder) Reference(v string) *%sBuilder {", ifacename, ifacename)
 	fmt.Fprintf(dst, "\nb.target.reference = v")
+	fmt.Fprintf(dst, "\nreturn b")
+	fmt.Fprintf(dst, "\n}")
+
+	fmt.Fprintf(dst, "\n\n// Extension sets an arbitrary element (an extension) to the")
+	fmt.Fprintf(dst, "\n// object %s. The extension name should start with a \"x-\"", ifacename)
+	fmt.Fprintf(dst, "\nfunc (b *%[1]sBuilder) Extension(name string, value interface{}) *%[1]sBuilder {", ifacename)
+	fmt.Fprintf(dst, "\nb.target.extensions[name] = value")
 	fmt.Fprintf(dst, "\nreturn b")
 	fmt.Fprintf(dst, "\n}")
 

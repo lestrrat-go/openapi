@@ -51,3 +51,10 @@ func (b *SecurityRequirementBuilder) Reference(v string) *SecurityRequirementBui
 	b.target.reference = v
 	return b
 }
+
+// Extension sets an arbitrary element (an extension) to the
+// object SecurityRequirement. The extension name should start with a "x-"
+func (b *SecurityRequirementBuilder) Extension(name string, value interface{}) *SecurityRequirementBuilder {
+	b.target.extensions[name] = value
+	return b
+}

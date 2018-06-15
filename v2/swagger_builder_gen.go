@@ -121,3 +121,10 @@ func (b *SwaggerBuilder) Reference(v string) *SwaggerBuilder {
 	b.target.reference = v
 	return b
 }
+
+// Extension sets an arbitrary element (an extension) to the
+// object Swagger. The extension name should start with a "x-"
+func (b *SwaggerBuilder) Extension(name string, value interface{}) *SwaggerBuilder {
+	b.target.extensions[name] = value
+	return b
+}

@@ -20,6 +20,8 @@ func (v *StringMap) Validate(recurse bool) error {
 	return nil
 }
 
+// QueryJSON is used to query an element within the document
+// Using jsonref
 func (v StringMap) QueryJSON(path string) (ret interface{}, ok bool) {
 	if path == `` {
 		return v, true

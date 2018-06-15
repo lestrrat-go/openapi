@@ -59,3 +59,10 @@ func (b *TagBuilder) Reference(v string) *TagBuilder {
 	b.target.reference = v
 	return b
 }
+
+// Extension sets an arbitrary element (an extension) to the
+// object Tag. The extension name should start with a "x-"
+func (b *TagBuilder) Extension(name string, value interface{}) *TagBuilder {
+	b.target.extensions[name] = value
+	return b
+}

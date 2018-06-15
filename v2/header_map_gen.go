@@ -27,6 +27,8 @@ func (v *HeaderMap) Validate(recurse bool) error {
 	return nil
 }
 
+// QueryJSON is used to query an element within the document
+// Using jsonref
 func (v HeaderMap) QueryJSON(path string) (ret interface{}, ok bool) {
 	if path == `` {
 		return v, true
@@ -49,6 +51,7 @@ func (v HeaderMap) QueryJSON(path string) (ret interface{}, ok bool) {
 	return nil, false
 }
 
+// UnmarshalJSON takes a JSON buffer and properly populates `v`
 func (v *HeaderMap) UnmarshalJSON(data []byte) error {
 	var proxy map[string]*header
 	if err := json.Unmarshal(data, &proxy); err != nil {

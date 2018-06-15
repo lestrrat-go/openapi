@@ -27,6 +27,8 @@ func (v *PathItemMap) Validate(recurse bool) error {
 	return nil
 }
 
+// QueryJSON is used to query an element within the document
+// Using jsonref
 func (v PathItemMap) QueryJSON(path string) (ret interface{}, ok bool) {
 	if path == `` {
 		return v, true
@@ -49,6 +51,7 @@ func (v PathItemMap) QueryJSON(path string) (ret interface{}, ok bool) {
 	return nil, false
 }
 
+// UnmarshalJSON takes a JSON buffer and properly populates `v`
 func (v *PathItemMap) UnmarshalJSON(data []byte) error {
 	var proxy map[string]*pathItem
 	if err := json.Unmarshal(data, &proxy); err != nil {

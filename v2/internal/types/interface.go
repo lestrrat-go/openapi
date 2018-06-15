@@ -175,6 +175,7 @@ type externalDocumentation struct {
 }
 
 type Parameter interface {
+	ConvertToSchema() (Schema, error)
 }
 
 type parameter struct {
@@ -207,6 +208,7 @@ type parameter struct {
 }
 
 type Items interface {
+	ConvertToSchema() (Schema, error)
 }
 
 type items struct {
@@ -215,18 +217,18 @@ type items struct {
 	items            Items            `json:"items,omitempty"`
 	collectionFormat CollectionFormat `json:"collectionFormat,omitempty"`
 	defaultValue     interface{}      `json:"default,omitempty"`
-	maximum          float64          `json:"maximum,omitempty"`
-	exclusiveMaximum float64          `json:"exclusiveMaximum,omitempty"`
-	minimum          float64          `json:"minimum,omitempty"`
-	exclusiveMinimum float64          `json:"exclusiveMinimum,omitempty"`
-	maxLength        int              `json:"maxLength,omitempty"`
-	minLength        int              `json:"minLength,omitempty"`
+	maximum          *float64         `json:"maximum,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
+	exclusiveMaximum *float64         `json:"exclusiveMaximum,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
+	minimum          *float64         `json:"minimum,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
+	exclusiveMinimum *float64         `json:"exclusiveMinimum,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
+	maxLength        *int             `json:"maxLength,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
+	minLength        *int             `json:"minLength,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
 	pattern          string           `json:"pattern,omitempty"`
-	maxItems         int              `json:"maxItems,omitempty"`
-	minItems         int              `json:"minItems,omitempty"`
+	maxItems         *int             `json:"maxItems,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
+	minItems         *int             `json:"minItems,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
 	uniqueItems      bool             `json:"uniqueItems,omitempty"`
 	enum             InterfaceList    `json:"enum,omitempty"`
-	multipleOf       float64          `json:"multipleOf,omitempty"`
+	multipleOf       *float64         `json:"multipleOf,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
 }
 
 type Responses interface {

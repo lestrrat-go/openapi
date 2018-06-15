@@ -63,3 +63,10 @@ func (b *ContactBuilder) Reference(v string) *ContactBuilder {
 	b.target.reference = v
 	return b
 }
+
+// Extension sets an arbitrary element (an extension) to the
+// object Contact. The extension name should start with a "x-"
+func (b *ContactBuilder) Extension(name string, value interface{}) *ContactBuilder {
+	b.target.extensions[name] = value
+	return b
+}

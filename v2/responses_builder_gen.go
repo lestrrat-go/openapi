@@ -57,3 +57,10 @@ func (b *ResponsesBuilder) Reference(v string) *ResponsesBuilder {
 	b.target.reference = v
 	return b
 }
+
+// Extension sets an arbitrary element (an extension) to the
+// object Responses. The extension name should start with a "x-"
+func (b *ResponsesBuilder) Extension(name string, value interface{}) *ResponsesBuilder {
+	b.target.extensions[name] = value
+	return b
+}

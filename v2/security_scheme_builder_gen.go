@@ -89,3 +89,10 @@ func (b *SecuritySchemeBuilder) Reference(v string) *SecuritySchemeBuilder {
 	b.target.reference = v
 	return b
 }
+
+// Extension sets an arbitrary element (an extension) to the
+// object SecurityScheme. The extension name should start with a "x-"
+func (b *SecuritySchemeBuilder) Extension(name string, value interface{}) *SecuritySchemeBuilder {
+	b.target.extensions[name] = value
+	return b
+}

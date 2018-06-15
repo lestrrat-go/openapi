@@ -27,6 +27,8 @@ func (v *ExampleMap) Validate(recurse bool) error {
 	return nil
 }
 
+// QueryJSON is used to query an element within the document
+// Using jsonref
 func (v ExampleMap) QueryJSON(path string) (ret interface{}, ok bool) {
 	if path == `` {
 		return v, true

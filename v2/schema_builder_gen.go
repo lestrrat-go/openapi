@@ -213,3 +213,10 @@ func (b *SchemaBuilder) Reference(v string) *SchemaBuilder {
 	b.target.reference = v
 	return b
 }
+
+// Extension sets an arbitrary element (an extension) to the
+// object Schema. The extension name should start with a "x-"
+func (b *SchemaBuilder) Extension(name string, value interface{}) *SchemaBuilder {
+	b.target.extensions[name] = value
+	return b
+}

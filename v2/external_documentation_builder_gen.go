@@ -53,3 +53,10 @@ func (b *ExternalDocumentationBuilder) Reference(v string) *ExternalDocumentatio
 	b.target.reference = v
 	return b
 }
+
+// Extension sets an arbitrary element (an extension) to the
+// object ExternalDocumentation. The extension name should start with a "x-"
+func (b *ExternalDocumentationBuilder) Extension(name string, value interface{}) *ExternalDocumentationBuilder {
+	b.target.extensions[name] = value
+	return b
+}

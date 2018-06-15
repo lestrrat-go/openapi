@@ -53,3 +53,10 @@ func (b *LicenseBuilder) Reference(v string) *LicenseBuilder {
 	b.target.reference = v
 	return b
 }
+
+// Extension sets an arbitrary element (an extension) to the
+// object License. The extension name should start with a "x-"
+func (b *LicenseBuilder) Extension(name string, value interface{}) *LicenseBuilder {
+	b.target.extensions[name] = value
+	return b
+}

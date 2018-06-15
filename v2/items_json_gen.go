@@ -25,18 +25,18 @@ type itemsMarshalProxy struct {
 	Items            Items            `json:"items,omitempty"`
 	CollectionFormat CollectionFormat `json:"collectionFormat,omitempty"`
 	DefaultValue     interface{}      `json:"default,omitempty"`
-	Maximum          float64          `json:"maximum,omitempty"`
-	ExclusiveMaximum float64          `json:"exclusiveMaximum,omitempty"`
-	Minimum          float64          `json:"minimum,omitempty"`
-	ExclusiveMinimum float64          `json:"exclusiveMinimum,omitempty"`
-	MaxLength        int              `json:"maxLength,omitempty"`
-	MinLength        int              `json:"minLength,omitempty"`
+	Maximum          *float64         `json:"maximum,omitempty"`
+	ExclusiveMaximum *float64         `json:"exclusiveMaximum,omitempty"`
+	Minimum          *float64         `json:"minimum,omitempty"`
+	ExclusiveMinimum *float64         `json:"exclusiveMinimum,omitempty"`
+	MaxLength        *int             `json:"maxLength,omitempty"`
+	MinLength        *int             `json:"minLength,omitempty"`
 	Pattern          string           `json:"pattern,omitempty"`
-	MaxItems         int              `json:"maxItems,omitempty"`
-	MinItems         int              `json:"minItems,omitempty"`
+	MaxItems         *int             `json:"maxItems,omitempty"`
+	MinItems         *int             `json:"minItems,omitempty"`
 	UniqueItems      bool             `json:"uniqueItems,omitempty"`
 	Enum             InterfaceList    `json:"enum,omitempty"`
-	MultipleOf       float64          `json:"multipleOf,omitempty"`
+	MultipleOf       *float64         `json:"multipleOf,omitempty"`
 }
 
 func (v *items) MarshalJSON() ([]byte, error) {

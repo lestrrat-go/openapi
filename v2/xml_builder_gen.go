@@ -75,3 +75,10 @@ func (b *XMLBuilder) Reference(v string) *XMLBuilder {
 	b.target.reference = v
 	return b
 }
+
+// Extension sets an arbitrary element (an extension) to the
+// object XML. The extension name should start with a "x-"
+func (b *XMLBuilder) Extension(name string, value interface{}) *XMLBuilder {
+	b.target.extensions[name] = value
+	return b
+}

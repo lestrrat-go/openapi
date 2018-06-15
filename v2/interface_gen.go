@@ -351,6 +351,7 @@ type Parameter interface {
 	MarshalJSON() ([]byte, error)
 	Reference() string
 	Validator
+	ConvertToSchema() (Schema, error)
 }
 
 type parameter struct {
@@ -391,17 +392,26 @@ type Items interface {
 	Items() Items
 	CollectionFormat() CollectionFormat
 	Default() interface{}
+	HasMaximum() bool
 	Maximum() float64
+	HasExclusiveMaximum() bool
 	ExclusiveMaximum() float64
+	HasMinimum() bool
 	Minimum() float64
+	HasExclusiveMinimum() bool
 	ExclusiveMinimum() float64
+	HasMaxLength() bool
 	MaxLength() int
+	HasMinLength() bool
 	MinLength() int
 	Pattern() string
+	HasMaxItems() bool
 	MaxItems() int
+	HasMinItems() bool
 	MinItems() int
 	UniqueItems() bool
 	Enum() *InterfaceListIterator
+	HasMultipleOf() bool
 	MultipleOf() float64
 	Extension(string) (interface{}, bool)
 	Extensions() *ExtensionsIterator
@@ -410,6 +420,7 @@ type Items interface {
 	MarshalJSON() ([]byte, error)
 	Reference() string
 	Validator
+	ConvertToSchema() (Schema, error)
 }
 
 type items struct {
@@ -421,18 +432,18 @@ type items struct {
 	items            Items            `json:"items,omitempty"`
 	collectionFormat CollectionFormat `json:"collectionFormat,omitempty"`
 	defaultValue     interface{}      `json:"default,omitempty"`
-	maximum          float64          `json:"maximum,omitempty"`
-	exclusiveMaximum float64          `json:"exclusiveMaximum,omitempty"`
-	minimum          float64          `json:"minimum,omitempty"`
-	exclusiveMinimum float64          `json:"exclusiveMinimum,omitempty"`
-	maxLength        int              `json:"maxLength,omitempty"`
-	minLength        int              `json:"minLength,omitempty"`
+	maximum          *float64         `json:"maximum,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
+	exclusiveMaximum *float64         `json:"exclusiveMaximum,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
+	minimum          *float64         `json:"minimum,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
+	exclusiveMinimum *float64         `json:"exclusiveMinimum,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
+	maxLength        *int             `json:"maxLength,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
+	minLength        *int             `json:"minLength,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
 	pattern          string           `json:"pattern,omitempty"`
-	maxItems         int              `json:"maxItems,omitempty"`
-	minItems         int              `json:"minItems,omitempty"`
+	maxItems         *int             `json:"maxItems,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
+	minItems         *int             `json:"minItems,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
 	uniqueItems      bool             `json:"uniqueItems,omitempty"`
 	enum             InterfaceList    `json:"enum,omitempty"`
-	multipleOf       float64          `json:"multipleOf,omitempty"`
+	multipleOf       *float64         `json:"multipleOf,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
 }
 
 type Responses interface {

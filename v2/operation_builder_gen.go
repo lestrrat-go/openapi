@@ -113,3 +113,10 @@ func (b *OperationBuilder) Reference(v string) *OperationBuilder {
 	b.target.reference = v
 	return b
 }
+
+// Extension sets an arbitrary element (an extension) to the
+// object Operation. The extension name should start with a "x-"
+func (b *OperationBuilder) Extension(name string, value interface{}) *OperationBuilder {
+	b.target.extensions[name] = value
+	return b
+}

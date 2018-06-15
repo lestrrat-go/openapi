@@ -51,3 +51,10 @@ func (b *PathItemBuilder) Reference(v string) *PathItemBuilder {
 	b.target.reference = v
 	return b
 }
+
+// Extension sets an arbitrary element (an extension) to the
+// object PathItem. The extension name should start with a "x-"
+func (b *PathItemBuilder) Extension(name string, value interface{}) *PathItemBuilder {
+	b.target.extensions[name] = value
+	return b
+}

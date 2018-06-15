@@ -180,3 +180,10 @@ func (b *ParameterBuilder) Reference(v string) *ParameterBuilder {
 	b.target.reference = v
 	return b
 }
+
+// Extension sets an arbitrary element (an extension) to the
+// object Parameter. The extension name should start with a "x-"
+func (b *ParameterBuilder) Extension(name string, value interface{}) *ParameterBuilder {
+	b.target.extensions[name] = value
+	return b
+}

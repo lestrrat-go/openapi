@@ -72,37 +72,37 @@ func (b *ItemsBuilder) Default(v interface{}) *ItemsBuilder {
 
 // Maximum sets the maximum field for object Items.
 func (b *ItemsBuilder) Maximum(v float64) *ItemsBuilder {
-	b.target.maximum = v
+	b.target.maximum = &v
 	return b
 }
 
 // ExclusiveMaximum sets the exclusiveMaximum field for object Items.
 func (b *ItemsBuilder) ExclusiveMaximum(v float64) *ItemsBuilder {
-	b.target.exclusiveMaximum = v
+	b.target.exclusiveMaximum = &v
 	return b
 }
 
 // Minimum sets the minimum field for object Items.
 func (b *ItemsBuilder) Minimum(v float64) *ItemsBuilder {
-	b.target.minimum = v
+	b.target.minimum = &v
 	return b
 }
 
 // ExclusiveMinimum sets the exclusiveMinimum field for object Items.
 func (b *ItemsBuilder) ExclusiveMinimum(v float64) *ItemsBuilder {
-	b.target.exclusiveMinimum = v
+	b.target.exclusiveMinimum = &v
 	return b
 }
 
 // MaxLength sets the maxLength field for object Items.
 func (b *ItemsBuilder) MaxLength(v int) *ItemsBuilder {
-	b.target.maxLength = v
+	b.target.maxLength = &v
 	return b
 }
 
 // MinLength sets the minLength field for object Items.
 func (b *ItemsBuilder) MinLength(v int) *ItemsBuilder {
-	b.target.minLength = v
+	b.target.minLength = &v
 	return b
 }
 
@@ -114,13 +114,13 @@ func (b *ItemsBuilder) Pattern(v string) *ItemsBuilder {
 
 // MaxItems sets the maxItems field for object Items.
 func (b *ItemsBuilder) MaxItems(v int) *ItemsBuilder {
-	b.target.maxItems = v
+	b.target.maxItems = &v
 	return b
 }
 
 // MinItems sets the minItems field for object Items.
 func (b *ItemsBuilder) MinItems(v int) *ItemsBuilder {
-	b.target.minItems = v
+	b.target.minItems = &v
 	return b
 }
 
@@ -138,12 +138,19 @@ func (b *ItemsBuilder) Enum(v ...interface{}) *ItemsBuilder {
 
 // MultipleOf sets the multipleOf field for object Items.
 func (b *ItemsBuilder) MultipleOf(v float64) *ItemsBuilder {
-	b.target.multipleOf = v
+	b.target.multipleOf = &v
 	return b
 }
 
 // Reference sets the $ref (reference) field for object Items.
 func (b *ItemsBuilder) Reference(v string) *ItemsBuilder {
 	b.target.reference = v
+	return b
+}
+
+// Extension sets an arbitrary element (an extension) to the
+// object Items. The extension name should start with a "x-"
+func (b *ItemsBuilder) Extension(name string, value interface{}) *ItemsBuilder {
+	b.target.extensions[name] = value
 	return b
 }
