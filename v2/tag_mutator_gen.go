@@ -18,8 +18,8 @@ type TagMutator struct {
 }
 
 // Do finalizes the matuation process for Tag and returns the result
-func (b *TagMutator) Do() error {
-	*b.target = *b.proxy
+func (m *TagMutator) Do() error {
+	*m.target = *m.proxy
 	return nil
 }
 
@@ -48,10 +48,12 @@ func (m *TagMutator) ExternalDocs(v ExternalDocumentation) *TagMutator {
 	m.proxy.externalDocs = v
 	return m
 }
-func (b *TagMutator) Extension(name string, value interface{}) *TagMutator {
-	if b.proxy.extensions == nil {
-		b.proxy.extensions = Extensions{}
+
+// Extension sets an arbitrary extension field in Tag
+func (m *TagMutator) Extension(name string, value interface{}) *TagMutator {
+	if m.proxy.extensions == nil {
+		m.proxy.extensions = Extensions{}
 	}
-	b.proxy.extensions[name] = value
-	return b
+	m.proxy.extensions[name] = value
+	return m
 }

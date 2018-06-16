@@ -18,8 +18,8 @@ type LicenseMutator struct {
 }
 
 // Do finalizes the matuation process for License and returns the result
-func (b *LicenseMutator) Do() error {
-	*b.target = *b.proxy
+func (m *LicenseMutator) Do() error {
+	*m.target = *m.proxy
 	return nil
 }
 
@@ -42,10 +42,12 @@ func (m *LicenseMutator) URL(v string) *LicenseMutator {
 	m.proxy.url = v
 	return m
 }
-func (b *LicenseMutator) Extension(name string, value interface{}) *LicenseMutator {
-	if b.proxy.extensions == nil {
-		b.proxy.extensions = Extensions{}
+
+// Extension sets an arbitrary extension field in License
+func (m *LicenseMutator) Extension(name string, value interface{}) *LicenseMutator {
+	if m.proxy.extensions == nil {
+		m.proxy.extensions = Extensions{}
 	}
-	b.proxy.extensions[name] = value
-	return b
+	m.proxy.extensions[name] = value
+	return m
 }

@@ -57,6 +57,7 @@ func (v *pathItem) MarshalJSON() ([]byte, error) {
 	return buf, nil
 }
 
+// UnmarshalJSON defines how pathItem is deserialized from JSON
 func (v *pathItem) UnmarshalJSON(data []byte) error {
 	var proxy map[string]json.RawMessage
 	if err := json.Unmarshal(data, &proxy); err != nil {
@@ -71,77 +72,92 @@ func (v *pathItem) UnmarshalJSON(data []byte) error {
 
 	mutator := MutatePathItem(v)
 
-	if raw, ok := proxy["get"]; ok {
+	const getMapKey = "get"
+
+	if raw, ok := proxy[getMapKey]; ok {
 		var decoded operation
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Get`)
 		}
 
 		mutator.Get(&decoded)
-		delete(proxy, "get")
+		delete(proxy, getMapKey)
 	}
 
-	if raw, ok := proxy["put"]; ok {
+	const putMapKey = "put"
+
+	if raw, ok := proxy[putMapKey]; ok {
 		var decoded operation
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Put`)
 		}
 
 		mutator.Put(&decoded)
-		delete(proxy, "put")
+		delete(proxy, putMapKey)
 	}
 
-	if raw, ok := proxy["post"]; ok {
+	const postMapKey = "post"
+
+	if raw, ok := proxy[postMapKey]; ok {
 		var decoded operation
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Post`)
 		}
 
 		mutator.Post(&decoded)
-		delete(proxy, "post")
+		delete(proxy, postMapKey)
 	}
 
-	if raw, ok := proxy["delete"]; ok {
+	const deleteMapKey = "delete"
+
+	if raw, ok := proxy[deleteMapKey]; ok {
 		var decoded operation
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Delete`)
 		}
 
 		mutator.Delete(&decoded)
-		delete(proxy, "delete")
+		delete(proxy, deleteMapKey)
 	}
 
-	if raw, ok := proxy["options"]; ok {
+	const optionsMapKey = "options"
+
+	if raw, ok := proxy[optionsMapKey]; ok {
 		var decoded operation
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Options`)
 		}
 
 		mutator.Options(&decoded)
-		delete(proxy, "options")
+		delete(proxy, optionsMapKey)
 	}
 
-	if raw, ok := proxy["head"]; ok {
+	const headMapKey = "head"
+
+	if raw, ok := proxy[headMapKey]; ok {
 		var decoded operation
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Head`)
 		}
 
 		mutator.Head(&decoded)
-		delete(proxy, "head")
+		delete(proxy, headMapKey)
 	}
 
-	if raw, ok := proxy["patch"]; ok {
+	const patchMapKey = "patch"
+
+	if raw, ok := proxy[patchMapKey]; ok {
 		var decoded operation
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Patch`)
 		}
 
 		mutator.Patch(&decoded)
-		delete(proxy, "patch")
+		delete(proxy, patchMapKey)
 	}
 
-	if raw, ok := proxy["parameters"]; ok {
+	const parametersMapKey = "parameters"
+	if raw, ok := proxy[parametersMapKey]; ok {
 		var decoded ParameterList
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Parameters`)
@@ -149,7 +165,7 @@ func (v *pathItem) UnmarshalJSON(data []byte) error {
 		for _, elem := range decoded {
 			mutator.Parameter(elem)
 		}
-		delete(proxy, "parameters")
+		delete(proxy, parametersMapKey)
 	}
 
 	for name, raw := range proxy {
@@ -215,6 +231,7 @@ func (v *pathItem) QueryJSON(path string) (ret interface{}, ok bool) {
 	return nil, false
 }
 
+// PathItemFromJSON constructs a PathItem from JSON buffer
 func PathItemFromJSON(buf []byte, v *PathItem) error {
 	var tmp pathItem
 	if err := json.Unmarshal(buf, &tmp); err != nil {

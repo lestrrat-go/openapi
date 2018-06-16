@@ -45,6 +45,7 @@ func (v *license) MarshalJSON() ([]byte, error) {
 	return buf, nil
 }
 
+// UnmarshalJSON defines how license is deserialized from JSON
 func (v *license) UnmarshalJSON(data []byte) error {
 	var proxy map[string]json.RawMessage
 	if err := json.Unmarshal(data, &proxy); err != nil {
@@ -59,22 +60,26 @@ func (v *license) UnmarshalJSON(data []byte) error {
 
 	mutator := MutateLicense(v)
 
-	if raw, ok := proxy["name"]; ok {
+	const nameMapKey = "name"
+
+	if raw, ok := proxy[nameMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field name`)
 		}
 		mutator.Name(decoded)
-		delete(proxy, "name")
+		delete(proxy, nameMapKey)
 	}
 
-	if raw, ok := proxy["url"]; ok {
+	const urlMapKey = "url"
+
+	if raw, ok := proxy[urlMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field url`)
 		}
 		mutator.URL(decoded)
-		delete(proxy, "url")
+		delete(proxy, urlMapKey)
 	}
 
 	for name, raw := range proxy {
@@ -128,6 +133,7 @@ func (v *license) QueryJSON(path string) (ret interface{}, ok bool) {
 	return nil, false
 }
 
+// LicenseFromJSON constructs a License from JSON buffer
 func LicenseFromJSON(buf []byte, v *License) error {
 	var tmp license
 	if err := json.Unmarshal(buf, &tmp); err != nil {

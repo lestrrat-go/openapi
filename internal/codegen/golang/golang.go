@@ -14,20 +14,8 @@ import (
 
 	"github.com/lestrrat-go/openapi/internal/codegen/common"
 	"github.com/lestrrat-go/openapi/internal/stringutil"
-	openapi "github.com/lestrrat-go/openapi/v2"
 	"github.com/pkg/errors"
 )
-
-func CallObjectName(oper openapi.Operation) string {
-	return ExportedName(common.CallObjectName(oper))
-}
-
-func CallMethodName(oper openapi.Operation) string {
-	if name := common.CallMethodName(oper); name != "" {
-		return ExportedName(name)
-	}
-	return ""
-}
 
 func DumpCode(dst io.Writer, src io.Reader) {
 	common.DumpCode(dst, src)

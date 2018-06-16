@@ -11,11 +11,13 @@ import (
 var _ = json.Unmarshal
 var _ = errors.Cause
 
+// Clear removes all elements from ExampleMap
 func (v *ExampleMap) Clear() error {
 	*v = make(ExampleMap)
 	return nil
 }
 
+// Validate checks the correctness of values in ExampleMap
 func (v *ExampleMap) Validate(recurse bool) error {
 	for name, elem := range *v {
 		if validator, ok := elem.(Validator); ok {

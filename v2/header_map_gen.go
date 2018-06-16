@@ -11,11 +11,13 @@ import (
 var _ = json.Unmarshal
 var _ = errors.Cause
 
+// Clear removes all elements from HeaderMap
 func (v *HeaderMap) Clear() error {
 	*v = make(HeaderMap)
 	return nil
 }
 
+// Validate checks the correctness of values in HeaderMap
 func (v *HeaderMap) Validate(recurse bool) error {
 	for name, elem := range *v {
 		if validator, ok := elem.(Validator); ok {

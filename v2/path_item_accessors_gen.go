@@ -57,6 +57,7 @@ func (v *pathItem) Parameters() *ParameterListIterator {
 	return &iter
 }
 
+// Reference returns the value of `$ref` field
 func (v *pathItem) Reference() string {
 	return v.reference
 }
@@ -65,11 +66,13 @@ func (v *pathItem) IsUnresolved() bool {
 	return v.reference != "" && !v.resolved
 }
 
+// Extension returns the value of an arbitrary extension
 func (v *pathItem) Extension(key string) (interface{}, bool) {
 	e, ok := v.extensions[key]
 	return e, ok
 }
 
+// Extensions return an iterator to iterate over all extensions
 func (v *pathItem) Extensions() *ExtensionsIterator {
 	var items []interface{}
 	for key, item := range v.extensions {

@@ -19,6 +19,7 @@ func (v *license) URL() string {
 	return v.url
 }
 
+// Reference returns the value of `$ref` field
 func (v *license) Reference() string {
 	return v.reference
 }
@@ -27,11 +28,13 @@ func (v *license) IsUnresolved() bool {
 	return v.reference != "" && !v.resolved
 }
 
+// Extension returns the value of an arbitrary extension
 func (v *license) Extension(key string) (interface{}, bool) {
 	e, ok := v.extensions[key]
 	return e, ok
 }
 
+// Extensions return an iterator to iterate over all extensions
 func (v *license) Extensions() *ExtensionsIterator {
 	var items []interface{}
 	for key, item := range v.extensions {
@@ -50,6 +53,5 @@ func (v *license) Validate(recurse bool) error {
 }
 
 func (v *license) recurseValidate() error {
-	return nil
 	return nil
 }

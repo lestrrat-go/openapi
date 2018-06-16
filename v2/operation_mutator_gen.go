@@ -18,8 +18,8 @@ type OperationMutator struct {
 }
 
 // Do finalizes the matuation process for Operation and returns the result
-func (b *OperationMutator) Do() error {
-	*b.target = *b.proxy
+func (m *OperationMutator) Do() error {
+	*m.target = *m.proxy
 	return nil
 }
 
@@ -31,11 +31,13 @@ func MutateOperation(v Operation) *OperationMutator {
 	}
 }
 
+// ClearTags clears all elements in tags
 func (m *OperationMutator) ClearTags() *OperationMutator {
-	m.proxy.tags.Clear()
+	_ = m.proxy.tags.Clear()
 	return m
 }
 
+// Tag appends a value to tags
 func (m *OperationMutator) Tag(value string) *OperationMutator {
 	m.proxy.tags = append(m.proxy.tags, value)
 	return m
@@ -65,31 +67,37 @@ func (m *OperationMutator) OperationID(v string) *OperationMutator {
 	return m
 }
 
+// ClearConsumes clears all elements in consumes
 func (m *OperationMutator) ClearConsumes() *OperationMutator {
-	m.proxy.consumes.Clear()
+	_ = m.proxy.consumes.Clear()
 	return m
 }
 
+// Consume appends a value to consumes
 func (m *OperationMutator) Consume(value string) *OperationMutator {
 	m.proxy.consumes = append(m.proxy.consumes, value)
 	return m
 }
 
+// ClearProduces clears all elements in produces
 func (m *OperationMutator) ClearProduces() *OperationMutator {
-	m.proxy.produces.Clear()
+	_ = m.proxy.produces.Clear()
 	return m
 }
 
+// Produce appends a value to produces
 func (m *OperationMutator) Produce(value string) *OperationMutator {
 	m.proxy.produces = append(m.proxy.produces, value)
 	return m
 }
 
+// ClearParameters clears all elements in parameters
 func (m *OperationMutator) ClearParameters() *OperationMutator {
-	m.proxy.parameters.Clear()
+	_ = m.proxy.parameters.Clear()
 	return m
 }
 
+// Parameter appends a value to parameters
 func (m *OperationMutator) Parameter(value Parameter) *OperationMutator {
 	m.proxy.parameters = append(m.proxy.parameters, value)
 	return m
@@ -101,11 +109,13 @@ func (m *OperationMutator) Responses(v Responses) *OperationMutator {
 	return m
 }
 
+// ClearSchemes clears all elements in schemes
 func (m *OperationMutator) ClearSchemes() *OperationMutator {
-	m.proxy.schemes.Clear()
+	_ = m.proxy.schemes.Clear()
 	return m
 }
 
+// Scheme appends a value to schemes
 func (m *OperationMutator) Scheme(value string) *OperationMutator {
 	m.proxy.schemes = append(m.proxy.schemes, value)
 	return m
@@ -117,19 +127,23 @@ func (m *OperationMutator) Deprecated(v bool) *OperationMutator {
 	return m
 }
 
+// ClearSecurity clears all elements in security
 func (m *OperationMutator) ClearSecurity() *OperationMutator {
-	m.proxy.security.Clear()
+	_ = m.proxy.security.Clear()
 	return m
 }
 
+// Security appends a value to security
 func (m *OperationMutator) Security(value SecurityRequirement) *OperationMutator {
 	m.proxy.security = append(m.proxy.security, value)
 	return m
 }
-func (b *OperationMutator) Extension(name string, value interface{}) *OperationMutator {
-	if b.proxy.extensions == nil {
-		b.proxy.extensions = Extensions{}
+
+// Extension sets an arbitrary extension field in Operation
+func (m *OperationMutator) Extension(name string, value interface{}) *OperationMutator {
+	if m.proxy.extensions == nil {
+		m.proxy.extensions = Extensions{}
 	}
-	b.proxy.extensions[name] = value
-	return b
+	m.proxy.extensions[name] = value
+	return m
 }

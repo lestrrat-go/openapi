@@ -1,13 +1,25 @@
 package types
 
+// SchemaConverter is available for those types which resemble
+// a Schema object, such as Parameter and Items. The resulting
+// Schema will not be 100% compatible as the original object as
+// available fields differ slightly, but should be close enough
+// to be used interchangeably.
+type SchemaConverter interface {
+	ConvertToSchema() (Schema, error)
+}
+
+// Validator objects can validate themselves.
 type Validator interface {
 	Validate(bool) error
 }
 
+// ResolveError is returned when Resolver fails to resolve a reference (`$ref`)
 type ResolveError interface {
 	Fatal() bool
 }
 
+// Resolver resolves JSON references (`$ref`)
 type Resolver interface {
 	// Resolves a JSON reference. In very rare occasions where
 	// you do not want to actually resolve the value but allow
@@ -175,7 +187,7 @@ type externalDocumentation struct {
 }
 
 type Parameter interface {
-	ConvertToSchema() (Schema, error)
+	SchemaConverter
 }
 
 type parameter struct {
@@ -208,7 +220,7 @@ type parameter struct {
 }
 
 type Items interface {
-	ConvertToSchema() (Schema, error)
+	SchemaConverter
 }
 
 type items struct {

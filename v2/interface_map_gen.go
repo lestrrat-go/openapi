@@ -11,11 +11,13 @@ import (
 var _ = json.Unmarshal
 var _ = errors.Cause
 
+// Clear removes all elements from InterfaceMap
 func (v *InterfaceMap) Clear() error {
 	*v = make(InterfaceMap)
 	return nil
 }
 
+// Validate checks the correctness of values in InterfaceMap
 func (v *InterfaceMap) Validate(recurse bool) error {
 	for name, elem := range *v {
 		if validator, ok := elem.(Validator); ok {

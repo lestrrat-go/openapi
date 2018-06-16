@@ -11,11 +11,13 @@ import (
 var _ = json.Unmarshal
 var _ = errors.Cause
 
+// Clear removes all elements from StringMap
 func (v *StringMap) Clear() error {
 	*v = make(StringMap)
 	return nil
 }
 
+// Validate checks the correctness of values in StringMap
 func (v *StringMap) Validate(recurse bool) error {
 	return nil
 }

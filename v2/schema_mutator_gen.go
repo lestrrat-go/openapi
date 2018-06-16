@@ -18,8 +18,8 @@ type SchemaMutator struct {
 }
 
 // Do finalizes the matuation process for Schema and returns the result
-func (b *SchemaMutator) Do() error {
-	*b.target = *b.proxy
+func (m *SchemaMutator) Do() error {
+	*m.target = *m.proxy
 	return nil
 }
 
@@ -199,31 +199,37 @@ func (m *SchemaMutator) MinProperties(v int) *SchemaMutator {
 	return m
 }
 
+// ClearRequired clears all elements in required
 func (m *SchemaMutator) ClearRequired() *SchemaMutator {
-	m.proxy.required.Clear()
+	_ = m.proxy.required.Clear()
 	return m
 }
 
+// Required appends a value to required
 func (m *SchemaMutator) Required(value string) *SchemaMutator {
 	m.proxy.required = append(m.proxy.required, value)
 	return m
 }
 
+// ClearEnum clears all elements in enum
 func (m *SchemaMutator) ClearEnum() *SchemaMutator {
-	m.proxy.enum.Clear()
+	_ = m.proxy.enum.Clear()
 	return m
 }
 
+// Enum appends a value to enum
 func (m *SchemaMutator) Enum(value interface{}) *SchemaMutator {
 	m.proxy.enum = append(m.proxy.enum, value)
 	return m
 }
 
+// ClearAllOf clears all elements in allOf
 func (m *SchemaMutator) ClearAllOf() *SchemaMutator {
-	m.proxy.allOf.Clear()
+	_ = m.proxy.allOf.Clear()
 	return m
 }
 
+// AllOf appends a value to allOf
 func (m *SchemaMutator) AllOf(value Schema) *SchemaMutator {
 	m.proxy.allOf = append(m.proxy.allOf, value)
 	return m
@@ -235,11 +241,13 @@ func (m *SchemaMutator) Items(v Schema) *SchemaMutator {
 	return m
 }
 
+// ClearProperties removes all values in properties field
 func (m *SchemaMutator) ClearProperties() *SchemaMutator {
-	m.proxy.properties.Clear()
+	_ = m.proxy.properties.Clear()
 	return m
 }
 
+// Property sets the value of properties
 func (m *SchemaMutator) Property(key SchemaMapKey, value Schema) *SchemaMutator {
 	if m.proxy.properties == nil {
 		m.proxy.properties = SchemaMap{}
@@ -249,11 +257,13 @@ func (m *SchemaMutator) Property(key SchemaMapKey, value Schema) *SchemaMutator 
 	return m
 }
 
+// ClearAdditionaProperties removes all values in additionaProperties field
 func (m *SchemaMutator) ClearAdditionaProperties() *SchemaMutator {
-	m.proxy.additionaProperties.Clear()
+	_ = m.proxy.additionaProperties.Clear()
 	return m
 }
 
+// AdditionaProperty sets the value of additionaProperties
 func (m *SchemaMutator) AdditionaProperty(key SchemaMapKey, value Schema) *SchemaMutator {
 	if m.proxy.additionaProperties == nil {
 		m.proxy.additionaProperties = SchemaMap{}
@@ -304,10 +314,12 @@ func (m *SchemaMutator) XML(v XML) *SchemaMutator {
 	m.proxy.xml = v
 	return m
 }
-func (b *SchemaMutator) Extension(name string, value interface{}) *SchemaMutator {
-	if b.proxy.extensions == nil {
-		b.proxy.extensions = Extensions{}
+
+// Extension sets an arbitrary extension field in Schema
+func (m *SchemaMutator) Extension(name string, value interface{}) *SchemaMutator {
+	if m.proxy.extensions == nil {
+		m.proxy.extensions = Extensions{}
 	}
-	b.proxy.extensions[name] = value
-	return b
+	m.proxy.extensions[name] = value
+	return m
 }

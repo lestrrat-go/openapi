@@ -11,11 +11,13 @@ import (
 var _ = json.Unmarshal
 var _ = errors.Cause
 
+// Clear removes all elements from PathItemMap
 func (v *PathItemMap) Clear() error {
 	*v = make(PathItemMap)
 	return nil
 }
 
+// Validate checks the correctness of values in PathItemMap
 func (v *PathItemMap) Validate(recurse bool) error {
 	for name, elem := range *v {
 		if validator, ok := elem.(Validator); ok {

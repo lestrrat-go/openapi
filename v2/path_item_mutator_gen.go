@@ -18,8 +18,8 @@ type PathItemMutator struct {
 }
 
 // Do finalizes the matuation process for PathItem and returns the result
-func (b *PathItemMutator) Do() error {
-	*b.target = *b.proxy
+func (m *PathItemMutator) Do() error {
+	*m.target = *m.proxy
 	return nil
 }
 
@@ -31,19 +31,23 @@ func MutatePathItem(v PathItem) *PathItemMutator {
 	}
 }
 
+// ClearParameters clears all elements in parameters
 func (m *PathItemMutator) ClearParameters() *PathItemMutator {
-	m.proxy.parameters.Clear()
+	_ = m.proxy.parameters.Clear()
 	return m
 }
 
+// Parameter appends a value to parameters
 func (m *PathItemMutator) Parameter(value Parameter) *PathItemMutator {
 	m.proxy.parameters = append(m.proxy.parameters, value)
 	return m
 }
-func (b *PathItemMutator) Extension(name string, value interface{}) *PathItemMutator {
-	if b.proxy.extensions == nil {
-		b.proxy.extensions = Extensions{}
+
+// Extension sets an arbitrary extension field in PathItem
+func (m *PathItemMutator) Extension(name string, value interface{}) *PathItemMutator {
+	if m.proxy.extensions == nil {
+		m.proxy.extensions = Extensions{}
 	}
-	b.proxy.extensions[name] = value
-	return b
+	m.proxy.extensions[name] = value
+	return m
 }

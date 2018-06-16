@@ -49,6 +49,7 @@ func (v *paths) QueryJSON(path string) (ret interface{}, ok bool) {
 	return nil, false
 }
 
+// PathsFromJSON constructs a Paths from JSON buffer
 func PathsFromJSON(buf []byte, v *Paths) error {
 	var tmp paths
 	if err := json.Unmarshal(buf, &tmp); err != nil {

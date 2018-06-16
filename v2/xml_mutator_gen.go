@@ -18,8 +18,8 @@ type XMLMutator struct {
 }
 
 // Do finalizes the matuation process for XML and returns the result
-func (b *XMLMutator) Do() error {
-	*b.target = *b.proxy
+func (m *XMLMutator) Do() error {
+	*m.target = *m.proxy
 	return nil
 }
 
@@ -60,10 +60,12 @@ func (m *XMLMutator) Wrapped(v bool) *XMLMutator {
 	m.proxy.wrapped = v
 	return m
 }
-func (b *XMLMutator) Extension(name string, value interface{}) *XMLMutator {
-	if b.proxy.extensions == nil {
-		b.proxy.extensions = Extensions{}
+
+// Extension sets an arbitrary extension field in XML
+func (m *XMLMutator) Extension(name string, value interface{}) *XMLMutator {
+	if m.proxy.extensions == nil {
+		m.proxy.extensions = Extensions{}
 	}
-	b.proxy.extensions[name] = value
-	return b
+	m.proxy.extensions[name] = value
+	return m
 }

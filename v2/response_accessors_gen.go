@@ -59,6 +59,7 @@ func (v *response) Examples() *ExampleMapIterator {
 	return &iter
 }
 
+// Reference returns the value of `$ref` field
 func (v *response) Reference() string {
 	return v.reference
 }
@@ -67,11 +68,13 @@ func (v *response) IsUnresolved() bool {
 	return v.reference != "" && !v.resolved
 }
 
+// Extension returns the value of an arbitrary extension
 func (v *response) Extension(key string) (interface{}, bool) {
 	e, ok := v.extensions[key]
 	return e, ok
 }
 
+// Extensions return an iterator to iterate over all extensions
 func (v *response) Extensions() *ExtensionsIterator {
 	var items []interface{}
 	for key, item := range v.extensions {

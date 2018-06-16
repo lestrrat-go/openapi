@@ -18,8 +18,8 @@ type InfoMutator struct {
 }
 
 // Do finalizes the matuation process for Info and returns the result
-func (b *InfoMutator) Do() error {
-	*b.target = *b.proxy
+func (m *InfoMutator) Do() error {
+	*m.target = *m.proxy
 	return nil
 }
 
@@ -66,10 +66,12 @@ func (m *InfoMutator) License(v License) *InfoMutator {
 	m.proxy.license = v
 	return m
 }
-func (b *InfoMutator) Extension(name string, value interface{}) *InfoMutator {
-	if b.proxy.extensions == nil {
-		b.proxy.extensions = Extensions{}
+
+// Extension sets an arbitrary extension field in Info
+func (m *InfoMutator) Extension(name string, value interface{}) *InfoMutator {
+	if m.proxy.extensions == nil {
+		m.proxy.extensions = Extensions{}
 	}
-	b.proxy.extensions[name] = value
-	return b
+	m.proxy.extensions[name] = value
+	return m
 }

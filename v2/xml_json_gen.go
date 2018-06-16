@@ -51,6 +51,7 @@ func (v *xml) MarshalJSON() ([]byte, error) {
 	return buf, nil
 }
 
+// UnmarshalJSON defines how xml is deserialized from JSON
 func (v *xml) UnmarshalJSON(data []byte) error {
 	var proxy map[string]json.RawMessage
 	if err := json.Unmarshal(data, &proxy); err != nil {
@@ -65,49 +66,59 @@ func (v *xml) UnmarshalJSON(data []byte) error {
 
 	mutator := MutateXML(v)
 
-	if raw, ok := proxy["name"]; ok {
+	const nameMapKey = "name"
+
+	if raw, ok := proxy[nameMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field name`)
 		}
 		mutator.Name(decoded)
-		delete(proxy, "name")
+		delete(proxy, nameMapKey)
 	}
 
-	if raw, ok := proxy["namespace"]; ok {
+	const namespaceMapKey = "namespace"
+
+	if raw, ok := proxy[namespaceMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field namespace`)
 		}
 		mutator.Namespace(decoded)
-		delete(proxy, "namespace")
+		delete(proxy, namespaceMapKey)
 	}
 
-	if raw, ok := proxy["prefix"]; ok {
+	const prefixMapKey = "prefix"
+
+	if raw, ok := proxy[prefixMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field prefix`)
 		}
 		mutator.Prefix(decoded)
-		delete(proxy, "prefix")
+		delete(proxy, prefixMapKey)
 	}
 
-	if raw, ok := proxy["attribute"]; ok {
+	const attributeMapKey = "attribute"
+
+	if raw, ok := proxy[attributeMapKey]; ok {
 		var decoded bool
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field attribute`)
 		}
 		mutator.Attribute(decoded)
-		delete(proxy, "attribute")
+		delete(proxy, attributeMapKey)
 	}
 
-	if raw, ok := proxy["wrapped"]; ok {
+	const wrappedMapKey = "wrapped"
+
+	if raw, ok := proxy[wrappedMapKey]; ok {
 		var decoded bool
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field wrapped`)
 		}
 		mutator.Wrapped(decoded)
-		delete(proxy, "wrapped")
+		delete(proxy, wrappedMapKey)
 	}
 
 	for name, raw := range proxy {
@@ -167,6 +178,7 @@ func (v *xml) QueryJSON(path string) (ret interface{}, ok bool) {
 	return nil, false
 }
 
+// XMLFromJSON constructs a XML from JSON buffer
 func XMLFromJSON(buf []byte, v *XML) error {
 	var tmp xml
 	if err := json.Unmarshal(buf, &tmp); err != nil {

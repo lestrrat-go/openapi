@@ -11,11 +11,13 @@ import (
 var _ = json.Unmarshal
 var _ = errors.Cause
 
+// Clear removes all elements from ResponseMap
 func (v *ResponseMap) Clear() error {
 	*v = make(ResponseMap)
 	return nil
 }
 
+// Validate checks the correctness of values in ResponseMap
 func (v *ResponseMap) Validate(recurse bool) error {
 	for name, elem := range *v {
 		if validator, ok := elem.(Validator); ok {

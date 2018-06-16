@@ -18,8 +18,8 @@ type ParameterMutator struct {
 }
 
 // Do finalizes the matuation process for Parameter and returns the result
-func (b *ParameterMutator) Do() error {
-	*b.target = *b.proxy
+func (m *ParameterMutator) Do() error {
+	*m.target = *m.proxy
 	return nil
 }
 
@@ -211,11 +211,13 @@ func (m *ParameterMutator) UniqueItems(v bool) *ParameterMutator {
 	return m
 }
 
+// ClearEnum clears all elements in enum
 func (m *ParameterMutator) ClearEnum() *ParameterMutator {
-	m.proxy.enum.Clear()
+	_ = m.proxy.enum.Clear()
 	return m
 }
 
+// Enum appends a value to enum
 func (m *ParameterMutator) Enum(value interface{}) *ParameterMutator {
 	m.proxy.enum = append(m.proxy.enum, value)
 	return m
@@ -232,10 +234,12 @@ func (m *ParameterMutator) MultipleOf(v float64) *ParameterMutator {
 	m.proxy.multipleOf = &v
 	return m
 }
-func (b *ParameterMutator) Extension(name string, value interface{}) *ParameterMutator {
-	if b.proxy.extensions == nil {
-		b.proxy.extensions = Extensions{}
+
+// Extension sets an arbitrary extension field in Parameter
+func (m *ParameterMutator) Extension(name string, value interface{}) *ParameterMutator {
+	if m.proxy.extensions == nil {
+		m.proxy.extensions = Extensions{}
 	}
-	b.proxy.extensions[name] = value
-	return b
+	m.proxy.extensions[name] = value
+	return m
 }

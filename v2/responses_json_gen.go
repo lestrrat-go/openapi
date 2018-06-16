@@ -51,6 +51,7 @@ func (v *responses) QueryJSON(path string) (ret interface{}, ok bool) {
 	return nil, false
 }
 
+// ResponsesFromJSON constructs a Responses from JSON buffer
 func ResponsesFromJSON(buf []byte, v *Responses) error {
 	var tmp responses
 	if err := json.Unmarshal(buf, &tmp); err != nil {

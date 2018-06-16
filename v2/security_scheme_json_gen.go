@@ -57,6 +57,7 @@ func (v *securityScheme) MarshalJSON() ([]byte, error) {
 	return buf, nil
 }
 
+// UnmarshalJSON defines how securityScheme is deserialized from JSON
 func (v *securityScheme) UnmarshalJSON(data []byte) error {
 	var proxy map[string]json.RawMessage
 	if err := json.Unmarshal(data, &proxy); err != nil {
@@ -71,70 +72,85 @@ func (v *securityScheme) UnmarshalJSON(data []byte) error {
 
 	mutator := MutateSecurityScheme(v)
 
-	if raw, ok := proxy["type"]; ok {
+	const typMapKey = "type"
+
+	if raw, ok := proxy[typMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field type`)
 		}
 		mutator.Type(decoded)
-		delete(proxy, "type")
+		delete(proxy, typMapKey)
 	}
 
-	if raw, ok := proxy["description"]; ok {
+	const descriptionMapKey = "description"
+
+	if raw, ok := proxy[descriptionMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field description`)
 		}
 		mutator.Description(decoded)
-		delete(proxy, "description")
+		delete(proxy, descriptionMapKey)
 	}
 
-	if raw, ok := proxy["name"]; ok {
+	const nameMapKey = "name"
+
+	if raw, ok := proxy[nameMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field name`)
 		}
 		mutator.Name(decoded)
-		delete(proxy, "name")
+		delete(proxy, nameMapKey)
 	}
 
-	if raw, ok := proxy["in"]; ok {
+	const inMapKey = "in"
+
+	if raw, ok := proxy[inMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field in`)
 		}
 		mutator.In(decoded)
-		delete(proxy, "in")
+		delete(proxy, inMapKey)
 	}
 
-	if raw, ok := proxy["flow"]; ok {
+	const flowMapKey = "flow"
+
+	if raw, ok := proxy[flowMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field flow`)
 		}
 		mutator.Flow(decoded)
-		delete(proxy, "flow")
+		delete(proxy, flowMapKey)
 	}
 
-	if raw, ok := proxy["authorizationUrl"]; ok {
+	const authorizationURLMapKey = "authorizationUrl"
+
+	if raw, ok := proxy[authorizationURLMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field authorizationUrl`)
 		}
 		mutator.AuthorizationURL(decoded)
-		delete(proxy, "authorizationUrl")
+		delete(proxy, authorizationURLMapKey)
 	}
 
-	if raw, ok := proxy["tokenUrl"]; ok {
+	const tokenURLMapKey = "tokenUrl"
+
+	if raw, ok := proxy[tokenURLMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field tokenUrl`)
 		}
 		mutator.TokenURL(decoded)
-		delete(proxy, "tokenUrl")
+		delete(proxy, tokenURLMapKey)
 	}
 
-	if raw, ok := proxy["scopes"]; ok {
+	const scopesMapKey = "scopes"
+	if raw, ok := proxy[scopesMapKey]; ok {
 		var decoded StringMap
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Scopes`)
@@ -142,7 +158,7 @@ func (v *securityScheme) UnmarshalJSON(data []byte) error {
 		for key, elem := range decoded {
 			mutator.Scope(key, elem)
 		}
-		delete(proxy, "scopes")
+		delete(proxy, scopesMapKey)
 	}
 
 	for name, raw := range proxy {
@@ -208,6 +224,7 @@ func (v *securityScheme) QueryJSON(path string) (ret interface{}, ok bool) {
 	return nil, false
 }
 
+// SecuritySchemeFromJSON constructs a SecurityScheme from JSON buffer
 func SecuritySchemeFromJSON(buf []byte, v *SecurityScheme) error {
 	var tmp securityScheme
 	if err := json.Unmarshal(buf, &tmp); err != nil {

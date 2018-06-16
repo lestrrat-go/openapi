@@ -18,8 +18,8 @@ type ItemsMutator struct {
 }
 
 // Do finalizes the matuation process for Items and returns the result
-func (b *ItemsMutator) Do() error {
-	*b.target = *b.proxy
+func (m *ItemsMutator) Do() error {
+	*m.target = *m.proxy
 	return nil
 }
 
@@ -169,11 +169,13 @@ func (m *ItemsMutator) UniqueItems(v bool) *ItemsMutator {
 	return m
 }
 
+// ClearEnum clears all elements in enum
 func (m *ItemsMutator) ClearEnum() *ItemsMutator {
-	m.proxy.enum.Clear()
+	_ = m.proxy.enum.Clear()
 	return m
 }
 
+// Enum appends a value to enum
 func (m *ItemsMutator) Enum(value interface{}) *ItemsMutator {
 	m.proxy.enum = append(m.proxy.enum, value)
 	return m
@@ -190,10 +192,12 @@ func (m *ItemsMutator) MultipleOf(v float64) *ItemsMutator {
 	m.proxy.multipleOf = &v
 	return m
 }
-func (b *ItemsMutator) Extension(name string, value interface{}) *ItemsMutator {
-	if b.proxy.extensions == nil {
-		b.proxy.extensions = Extensions{}
+
+// Extension sets an arbitrary extension field in Items
+func (m *ItemsMutator) Extension(name string, value interface{}) *ItemsMutator {
+	if m.proxy.extensions == nil {
+		m.proxy.extensions = Extensions{}
 	}
-	b.proxy.extensions[name] = value
-	return b
+	m.proxy.extensions[name] = value
+	return m
 }

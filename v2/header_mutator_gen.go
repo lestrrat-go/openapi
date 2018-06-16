@@ -18,8 +18,8 @@ type HeaderMutator struct {
 }
 
 // Do finalizes the matuation process for Header and returns the result
-func (b *HeaderMutator) Do() error {
-	*b.target = *b.proxy
+func (m *HeaderMutator) Do() error {
+	*m.target = *m.proxy
 	return nil
 }
 
@@ -133,11 +133,13 @@ func (m *HeaderMutator) UniqueItems(v bool) *HeaderMutator {
 	return m
 }
 
+// ClearEnum clears all elements in enum
 func (m *HeaderMutator) ClearEnum() *HeaderMutator {
-	m.proxy.enum.Clear()
+	_ = m.proxy.enum.Clear()
 	return m
 }
 
+// Enum appends a value to enum
 func (m *HeaderMutator) Enum(value interface{}) *HeaderMutator {
 	m.proxy.enum = append(m.proxy.enum, value)
 	return m
@@ -148,10 +150,12 @@ func (m *HeaderMutator) MultipleOf(v float64) *HeaderMutator {
 	m.proxy.multipleOf = v
 	return m
 }
-func (b *HeaderMutator) Extension(name string, value interface{}) *HeaderMutator {
-	if b.proxy.extensions == nil {
-		b.proxy.extensions = Extensions{}
+
+// Extension sets an arbitrary extension field in Header
+func (m *HeaderMutator) Extension(name string, value interface{}) *HeaderMutator {
+	if m.proxy.extensions == nil {
+		m.proxy.extensions = Extensions{}
 	}
-	b.proxy.extensions[name] = value
-	return b
+	m.proxy.extensions[name] = value
+	return m
 }

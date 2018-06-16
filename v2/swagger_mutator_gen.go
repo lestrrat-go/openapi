@@ -18,8 +18,8 @@ type SwaggerMutator struct {
 }
 
 // Do finalizes the matuation process for Swagger and returns the result
-func (b *SwaggerMutator) Do() error {
-	*b.target = *b.proxy
+func (m *SwaggerMutator) Do() error {
+	*m.target = *m.proxy
 	return nil
 }
 
@@ -55,31 +55,37 @@ func (m *SwaggerMutator) BasePath(v string) *SwaggerMutator {
 	return m
 }
 
+// ClearSchemes clears all elements in schemes
 func (m *SwaggerMutator) ClearSchemes() *SwaggerMutator {
-	m.proxy.schemes.Clear()
+	_ = m.proxy.schemes.Clear()
 	return m
 }
 
+// Scheme appends a value to schemes
 func (m *SwaggerMutator) Scheme(value string) *SwaggerMutator {
 	m.proxy.schemes = append(m.proxy.schemes, value)
 	return m
 }
 
+// ClearConsumes clears all elements in consumes
 func (m *SwaggerMutator) ClearConsumes() *SwaggerMutator {
-	m.proxy.consumes.Clear()
+	_ = m.proxy.consumes.Clear()
 	return m
 }
 
+// Consume appends a value to consumes
 func (m *SwaggerMutator) Consume(value string) *SwaggerMutator {
 	m.proxy.consumes = append(m.proxy.consumes, value)
 	return m
 }
 
+// ClearProduces clears all elements in produces
 func (m *SwaggerMutator) ClearProduces() *SwaggerMutator {
-	m.proxy.produces.Clear()
+	_ = m.proxy.produces.Clear()
 	return m
 }
 
+// Produce appends a value to produces
 func (m *SwaggerMutator) Produce(value string) *SwaggerMutator {
 	m.proxy.produces = append(m.proxy.produces, value)
 	return m
@@ -91,11 +97,13 @@ func (m *SwaggerMutator) Paths(v Paths) *SwaggerMutator {
 	return m
 }
 
+// ClearDefinitions removes all values in definitions field
 func (m *SwaggerMutator) ClearDefinitions() *SwaggerMutator {
-	m.proxy.definitions.Clear()
+	_ = m.proxy.definitions.Clear()
 	return m
 }
 
+// Definition sets the value of definitions
 func (m *SwaggerMutator) Definition(key InterfaceMapKey, value interface{}) *SwaggerMutator {
 	if m.proxy.definitions == nil {
 		m.proxy.definitions = InterfaceMap{}
@@ -105,11 +113,13 @@ func (m *SwaggerMutator) Definition(key InterfaceMapKey, value interface{}) *Swa
 	return m
 }
 
+// ClearParameters removes all values in parameters field
 func (m *SwaggerMutator) ClearParameters() *SwaggerMutator {
-	m.proxy.parameters.Clear()
+	_ = m.proxy.parameters.Clear()
 	return m
 }
 
+// Parameter sets the value of parameters
 func (m *SwaggerMutator) Parameter(key ParameterMapKey, value Parameter) *SwaggerMutator {
 	if m.proxy.parameters == nil {
 		m.proxy.parameters = ParameterMap{}
@@ -119,11 +129,13 @@ func (m *SwaggerMutator) Parameter(key ParameterMapKey, value Parameter) *Swagge
 	return m
 }
 
+// ClearResponses removes all values in responses field
 func (m *SwaggerMutator) ClearResponses() *SwaggerMutator {
-	m.proxy.responses.Clear()
+	_ = m.proxy.responses.Clear()
 	return m
 }
 
+// Response sets the value of responses
 func (m *SwaggerMutator) Response(key ResponseMapKey, value Response) *SwaggerMutator {
 	if m.proxy.responses == nil {
 		m.proxy.responses = ResponseMap{}
@@ -133,11 +145,13 @@ func (m *SwaggerMutator) Response(key ResponseMapKey, value Response) *SwaggerMu
 	return m
 }
 
+// ClearSecurityDefinitions removes all values in securityDefinitions field
 func (m *SwaggerMutator) ClearSecurityDefinitions() *SwaggerMutator {
-	m.proxy.securityDefinitions.Clear()
+	_ = m.proxy.securityDefinitions.Clear()
 	return m
 }
 
+// SecurityDefinition sets the value of securityDefinitions
 func (m *SwaggerMutator) SecurityDefinition(key SecuritySchemeMapKey, value SecurityScheme) *SwaggerMutator {
 	if m.proxy.securityDefinitions == nil {
 		m.proxy.securityDefinitions = SecuritySchemeMap{}
@@ -147,21 +161,25 @@ func (m *SwaggerMutator) SecurityDefinition(key SecuritySchemeMapKey, value Secu
 	return m
 }
 
+// ClearSecurity clears all elements in security
 func (m *SwaggerMutator) ClearSecurity() *SwaggerMutator {
-	m.proxy.security.Clear()
+	_ = m.proxy.security.Clear()
 	return m
 }
 
+// Security appends a value to security
 func (m *SwaggerMutator) Security(value SecurityRequirement) *SwaggerMutator {
 	m.proxy.security = append(m.proxy.security, value)
 	return m
 }
 
+// ClearTags clears all elements in tags
 func (m *SwaggerMutator) ClearTags() *SwaggerMutator {
-	m.proxy.tags.Clear()
+	_ = m.proxy.tags.Clear()
 	return m
 }
 
+// Tag appends a value to tags
 func (m *SwaggerMutator) Tag(value Tag) *SwaggerMutator {
 	m.proxy.tags = append(m.proxy.tags, value)
 	return m
@@ -172,10 +190,12 @@ func (m *SwaggerMutator) ExternalDocs(v ExternalDocumentation) *SwaggerMutator {
 	m.proxy.externalDocs = v
 	return m
 }
-func (b *SwaggerMutator) Extension(name string, value interface{}) *SwaggerMutator {
-	if b.proxy.extensions == nil {
-		b.proxy.extensions = Extensions{}
+
+// Extension sets an arbitrary extension field in Swagger
+func (m *SwaggerMutator) Extension(name string, value interface{}) *SwaggerMutator {
+	if m.proxy.extensions == nil {
+		m.proxy.extensions = Extensions{}
 	}
-	b.proxy.extensions[name] = value
-	return b
+	m.proxy.extensions[name] = value
+	return m
 }

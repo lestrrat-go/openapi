@@ -103,6 +103,7 @@ func (v *operation) Security() *SecurityRequirementListIterator {
 	return &iter
 }
 
+// Reference returns the value of `$ref` field
 func (v *operation) Reference() string {
 	return v.reference
 }
@@ -111,11 +112,13 @@ func (v *operation) IsUnresolved() bool {
 	return v.reference != "" && !v.resolved
 }
 
+// Extension returns the value of an arbitrary extension
 func (v *operation) Extension(key string) (interface{}, bool) {
 	e, ok := v.extensions[key]
 	return e, ok
 }
 
+// Extensions return an iterator to iterate over all extensions
 func (v *operation) Extensions() *ExtensionsIterator {
 	var items []interface{}
 	for key, item := range v.extensions {

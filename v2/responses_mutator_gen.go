@@ -18,8 +18,8 @@ type ResponsesMutator struct {
 }
 
 // Do finalizes the matuation process for Responses and returns the result
-func (b *ResponsesMutator) Do() error {
-	*b.target = *b.proxy
+func (m *ResponsesMutator) Do() error {
+	*m.target = *m.proxy
 	return nil
 }
 
@@ -36,10 +36,12 @@ func (m *ResponsesMutator) DefaultValue(v Response) *ResponsesMutator {
 	m.proxy.defaultValue = v
 	return m
 }
-func (b *ResponsesMutator) Extension(name string, value interface{}) *ResponsesMutator {
-	if b.proxy.extensions == nil {
-		b.proxy.extensions = Extensions{}
+
+// Extension sets an arbitrary extension field in Responses
+func (m *ResponsesMutator) Extension(name string, value interface{}) *ResponsesMutator {
+	if m.proxy.extensions == nil {
+		m.proxy.extensions = Extensions{}
 	}
-	b.proxy.extensions[name] = value
-	return b
+	m.proxy.extensions[name] = value
+	return m
 }

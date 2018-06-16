@@ -45,6 +45,7 @@ func (v *externalDocumentation) MarshalJSON() ([]byte, error) {
 	return buf, nil
 }
 
+// UnmarshalJSON defines how externalDocumentation is deserialized from JSON
 func (v *externalDocumentation) UnmarshalJSON(data []byte) error {
 	var proxy map[string]json.RawMessage
 	if err := json.Unmarshal(data, &proxy); err != nil {
@@ -59,22 +60,26 @@ func (v *externalDocumentation) UnmarshalJSON(data []byte) error {
 
 	mutator := MutateExternalDocumentation(v)
 
-	if raw, ok := proxy["url"]; ok {
+	const urlMapKey = "url"
+
+	if raw, ok := proxy[urlMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field url`)
 		}
 		mutator.URL(decoded)
-		delete(proxy, "url")
+		delete(proxy, urlMapKey)
 	}
 
-	if raw, ok := proxy["description"]; ok {
+	const descriptionMapKey = "description"
+
+	if raw, ok := proxy[descriptionMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field description`)
 		}
 		mutator.Description(decoded)
-		delete(proxy, "description")
+		delete(proxy, descriptionMapKey)
 	}
 
 	for name, raw := range proxy {
@@ -128,6 +133,7 @@ func (v *externalDocumentation) QueryJSON(path string) (ret interface{}, ok bool
 	return nil, false
 }
 
+// ExternalDocumentationFromJSON constructs a ExternalDocumentation from JSON buffer
 func ExternalDocumentationFromJSON(buf []byte, v *ExternalDocumentation) error {
 	var tmp externalDocumentation
 	if err := json.Unmarshal(buf, &tmp); err != nil {

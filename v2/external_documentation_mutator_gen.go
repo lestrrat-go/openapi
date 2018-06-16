@@ -18,8 +18,8 @@ type ExternalDocumentationMutator struct {
 }
 
 // Do finalizes the matuation process for ExternalDocumentation and returns the result
-func (b *ExternalDocumentationMutator) Do() error {
-	*b.target = *b.proxy
+func (m *ExternalDocumentationMutator) Do() error {
+	*m.target = *m.proxy
 	return nil
 }
 
@@ -42,10 +42,12 @@ func (m *ExternalDocumentationMutator) Description(v string) *ExternalDocumentat
 	m.proxy.description = v
 	return m
 }
-func (b *ExternalDocumentationMutator) Extension(name string, value interface{}) *ExternalDocumentationMutator {
-	if b.proxy.extensions == nil {
-		b.proxy.extensions = Extensions{}
+
+// Extension sets an arbitrary extension field in ExternalDocumentation
+func (m *ExternalDocumentationMutator) Extension(name string, value interface{}) *ExternalDocumentationMutator {
+	if m.proxy.extensions == nil {
+		m.proxy.extensions = Extensions{}
 	}
-	b.proxy.extensions[name] = value
-	return b
+	m.proxy.extensions[name] = value
+	return m
 }

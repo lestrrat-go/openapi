@@ -14,6 +14,7 @@ import (
 
 	"github.com/iancoleman/strcase"
 	codegen "github.com/lestrrat-go/openapi/internal/codegen/golang"
+	restclient "github.com/lestrrat-go/openapi/internal/codegen/restclient/golang"
 	"github.com/lestrrat-go/openapi/internal/stringutil"
 	openapi "github.com/lestrrat-go/openapi/v2"
 	"github.com/pkg/errors"
@@ -656,8 +657,8 @@ func compileCall(ctx *Context, oper openapi.Operation) error {
 	// the default service, which is named after the package
 	// is used.
 
-	callName := codegen.CallObjectName(oper)
-	methodName := codegen.CallMethodName(oper)
+	callName := restclient.CallObjectName(oper)
+	methodName := restclient.CallMethodName(oper)
 	if methodName == "" {
 		methodName = strings.TrimSuffix(callName, "Call")
 	}

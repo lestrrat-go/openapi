@@ -18,8 +18,8 @@ type PathsMutator struct {
 }
 
 // Do finalizes the matuation process for Paths and returns the result
-func (b *PathsMutator) Do() error {
-	*b.target = *b.proxy
+func (m *PathsMutator) Do() error {
+	*m.target = *m.proxy
 	return nil
 }
 
@@ -30,10 +30,12 @@ func MutatePaths(v Paths) *PathsMutator {
 		proxy:  v.Clone().(*paths),
 	}
 }
-func (b *PathsMutator) Extension(name string, value interface{}) *PathsMutator {
-	if b.proxy.extensions == nil {
-		b.proxy.extensions = Extensions{}
+
+// Extension sets an arbitrary extension field in Paths
+func (m *PathsMutator) Extension(name string, value interface{}) *PathsMutator {
+	if m.proxy.extensions == nil {
+		m.proxy.extensions = Extensions{}
 	}
-	b.proxy.extensions[name] = value
-	return b
+	m.proxy.extensions[name] = value
+	return m
 }

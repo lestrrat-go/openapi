@@ -18,8 +18,8 @@ type SecurityRequirementMutator struct {
 }
 
 // Do finalizes the matuation process for SecurityRequirement and returns the result
-func (b *SecurityRequirementMutator) Do() error {
-	*b.target = *b.proxy
+func (m *SecurityRequirementMutator) Do() error {
+	*m.target = *m.proxy
 	return nil
 }
 
@@ -36,10 +36,12 @@ func (m *SecurityRequirementMutator) Data(v map[string][]string) *SecurityRequir
 	m.proxy.data = v
 	return m
 }
-func (b *SecurityRequirementMutator) Extension(name string, value interface{}) *SecurityRequirementMutator {
-	if b.proxy.extensions == nil {
-		b.proxy.extensions = Extensions{}
+
+// Extension sets an arbitrary extension field in SecurityRequirement
+func (m *SecurityRequirementMutator) Extension(name string, value interface{}) *SecurityRequirementMutator {
+	if m.proxy.extensions == nil {
+		m.proxy.extensions = Extensions{}
 	}
-	b.proxy.extensions[name] = value
-	return b
+	m.proxy.extensions[name] = value
+	return m
 }

@@ -49,6 +49,7 @@ func (v *response) MarshalJSON() ([]byte, error) {
 	return buf, nil
 }
 
+// UnmarshalJSON defines how response is deserialized from JSON
 func (v *response) UnmarshalJSON(data []byte) error {
 	var proxy map[string]json.RawMessage
 	if err := json.Unmarshal(data, &proxy); err != nil {
@@ -63,26 +64,31 @@ func (v *response) UnmarshalJSON(data []byte) error {
 
 	mutator := MutateResponse(v)
 
-	if raw, ok := proxy["description"]; ok {
+	const descriptionMapKey = "description"
+
+	if raw, ok := proxy[descriptionMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field description`)
 		}
 		mutator.Description(decoded)
-		delete(proxy, "description")
+		delete(proxy, descriptionMapKey)
 	}
 
-	if raw, ok := proxy["schema"]; ok {
+	const schemaMapKey = "schema"
+
+	if raw, ok := proxy[schemaMapKey]; ok {
 		var decoded schema
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Schema`)
 		}
 
 		mutator.Schema(&decoded)
-		delete(proxy, "schema")
+		delete(proxy, schemaMapKey)
 	}
 
-	if raw, ok := proxy["headers"]; ok {
+	const headersMapKey = "headers"
+	if raw, ok := proxy[headersMapKey]; ok {
 		var decoded HeaderMap
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Headers`)
@@ -90,10 +96,11 @@ func (v *response) UnmarshalJSON(data []byte) error {
 		for key, elem := range decoded {
 			mutator.Header(key, elem)
 		}
-		delete(proxy, "headers")
+		delete(proxy, headersMapKey)
 	}
 
-	if raw, ok := proxy["example"]; ok {
+	const examplesMapKey = "example"
+	if raw, ok := proxy[examplesMapKey]; ok {
 		var decoded ExampleMap
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Examples`)
@@ -101,7 +108,7 @@ func (v *response) UnmarshalJSON(data []byte) error {
 		for key, elem := range decoded {
 			mutator.Example(key, elem)
 		}
-		delete(proxy, "example")
+		delete(proxy, examplesMapKey)
 	}
 
 	for name, raw := range proxy {
@@ -159,6 +166,7 @@ func (v *response) QueryJSON(path string) (ret interface{}, ok bool) {
 	return nil, false
 }
 
+// ResponseFromJSON constructs a Response from JSON buffer
 func ResponseFromJSON(buf []byte, v *Response) error {
 	var tmp response
 	if err := json.Unmarshal(buf, &tmp); err != nil {

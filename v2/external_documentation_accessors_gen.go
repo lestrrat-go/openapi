@@ -19,6 +19,7 @@ func (v *externalDocumentation) Description() string {
 	return v.description
 }
 
+// Reference returns the value of `$ref` field
 func (v *externalDocumentation) Reference() string {
 	return v.reference
 }
@@ -27,11 +28,13 @@ func (v *externalDocumentation) IsUnresolved() bool {
 	return v.reference != "" && !v.resolved
 }
 
+// Extension returns the value of an arbitrary extension
 func (v *externalDocumentation) Extension(key string) (interface{}, bool) {
 	e, ok := v.extensions[key]
 	return e, ok
 }
 
+// Extensions return an iterator to iterate over all extensions
 func (v *externalDocumentation) Extensions() *ExtensionsIterator {
 	var items []interface{}
 	for key, item := range v.extensions {
@@ -50,6 +53,5 @@ func (v *externalDocumentation) Validate(recurse bool) error {
 }
 
 func (v *externalDocumentation) recurseValidate() error {
-	return nil
 	return nil
 }

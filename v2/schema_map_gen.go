@@ -11,11 +11,13 @@ import (
 var _ = json.Unmarshal
 var _ = errors.Cause
 
+// Clear removes all elements from SchemaMap
 func (v *SchemaMap) Clear() error {
 	*v = make(SchemaMap)
 	return nil
 }
 
+// Validate checks the correctness of values in SchemaMap
 func (v *SchemaMap) Validate(recurse bool) error {
 	for name, elem := range *v {
 		if validator, ok := elem.(Validator); ok {

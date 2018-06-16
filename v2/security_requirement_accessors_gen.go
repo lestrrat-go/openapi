@@ -15,6 +15,7 @@ func (v *securityRequirement) Data() map[string][]string {
 	return v.data
 }
 
+// Reference returns the value of `$ref` field
 func (v *securityRequirement) Reference() string {
 	return v.reference
 }
@@ -23,11 +24,13 @@ func (v *securityRequirement) IsUnresolved() bool {
 	return v.reference != "" && !v.resolved
 }
 
+// Extension returns the value of an arbitrary extension
 func (v *securityRequirement) Extension(key string) (interface{}, bool) {
 	e, ok := v.extensions[key]
 	return e, ok
 }
 
+// Extensions return an iterator to iterate over all extensions
 func (v *securityRequirement) Extensions() *ExtensionsIterator {
 	var items []interface{}
 	for key, item := range v.extensions {
@@ -46,6 +49,5 @@ func (v *securityRequirement) Validate(recurse bool) error {
 }
 
 func (v *securityRequirement) recurseValidate() error {
-	return nil
 	return nil
 }

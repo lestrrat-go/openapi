@@ -53,6 +53,7 @@ func (v *info) MarshalJSON() ([]byte, error) {
 	return buf, nil
 }
 
+// UnmarshalJSON defines how info is deserialized from JSON
 func (v *info) UnmarshalJSON(data []byte) error {
 	var proxy map[string]json.RawMessage
 	if err := json.Unmarshal(data, &proxy); err != nil {
@@ -67,60 +68,72 @@ func (v *info) UnmarshalJSON(data []byte) error {
 
 	mutator := MutateInfo(v)
 
-	if raw, ok := proxy["title"]; ok {
+	const titleMapKey = "title"
+
+	if raw, ok := proxy[titleMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field title`)
 		}
 		mutator.Title(decoded)
-		delete(proxy, "title")
+		delete(proxy, titleMapKey)
 	}
 
-	if raw, ok := proxy["version"]; ok {
+	const versionMapKey = "version"
+
+	if raw, ok := proxy[versionMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field version`)
 		}
 		mutator.Version(decoded)
-		delete(proxy, "version")
+		delete(proxy, versionMapKey)
 	}
 
-	if raw, ok := proxy["description"]; ok {
+	const descriptionMapKey = "description"
+
+	if raw, ok := proxy[descriptionMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field description`)
 		}
 		mutator.Description(decoded)
-		delete(proxy, "description")
+		delete(proxy, descriptionMapKey)
 	}
 
-	if raw, ok := proxy["termsOfService"]; ok {
+	const termsOfServiceMapKey = "termsOfService"
+
+	if raw, ok := proxy[termsOfServiceMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field termsOfService`)
 		}
 		mutator.TermsOfService(decoded)
-		delete(proxy, "termsOfService")
+		delete(proxy, termsOfServiceMapKey)
 	}
 
-	if raw, ok := proxy["contact"]; ok {
+	const contactMapKey = "contact"
+
+	if raw, ok := proxy[contactMapKey]; ok {
 		var decoded contact
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Contact`)
 		}
 
 		mutator.Contact(&decoded)
-		delete(proxy, "contact")
+		delete(proxy, contactMapKey)
 	}
 
-	if raw, ok := proxy["license"]; ok {
+	const licenseMapKey = "license"
+
+	if raw, ok := proxy[licenseMapKey]; ok {
 		var decoded license
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field License`)
 		}
 
 		mutator.License(&decoded)
-		delete(proxy, "license")
+		delete(proxy, licenseMapKey)
 	}
 
 	for name, raw := range proxy {
@@ -182,6 +195,7 @@ func (v *info) QueryJSON(path string) (ret interface{}, ok bool) {
 	return nil, false
 }
 
+// InfoFromJSON constructs a Info from JSON buffer
 func InfoFromJSON(buf []byte, v *Info) error {
 	var tmp info
 	if err := json.Unmarshal(buf, &tmp); err != nil {

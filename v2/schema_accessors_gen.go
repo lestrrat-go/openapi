@@ -294,6 +294,7 @@ func (v *schema) XML() XML {
 	return v.xml
 }
 
+// Reference returns the value of `$ref` field
 func (v *schema) Reference() string {
 	return v.reference
 }
@@ -302,11 +303,13 @@ func (v *schema) IsUnresolved() bool {
 	return v.reference != "" && !v.resolved
 }
 
+// Extension returns the value of an arbitrary extension
 func (v *schema) Extension(key string) (interface{}, bool) {
 	e, ok := v.extensions[key]
 	return e, ok
 }
 
+// Extensions return an iterator to iterate over all extensions
 func (v *schema) Extensions() *ExtensionsIterator {
 	var items []interface{}
 	for key, item := range v.extensions {

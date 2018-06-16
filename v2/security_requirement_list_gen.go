@@ -11,11 +11,14 @@ import (
 var _ = json.Unmarshal
 var _ = errors.Cause
 
+// Clear removes all values from SecurityRequirementList
 func (v *SecurityRequirementList) Clear() error {
 	*v = SecurityRequirementList(nil)
 	return nil
 }
 
+// Validate checks for the values for correctness. If `recurse`
+// is specified, child elements are also validated
 func (v *SecurityRequirementList) Validate(recurse bool) error {
 	for i, elem := range *v {
 		if validator, ok := elem.(Validator); ok {
@@ -27,6 +30,7 @@ func (v *SecurityRequirementList) Validate(recurse bool) error {
 	return nil
 }
 
+// UnmarshalJSON defines how SecurityRequirementList is deserialized from JSON
 func (v *SecurityRequirementList) UnmarshalJSON(data []byte) error {
 	var proxy []*securityRequirement
 	if err := json.Unmarshal(data, &proxy); err != nil {

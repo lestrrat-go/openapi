@@ -47,6 +47,7 @@ func (v *tag) MarshalJSON() ([]byte, error) {
 	return buf, nil
 }
 
+// UnmarshalJSON defines how tag is deserialized from JSON
 func (v *tag) UnmarshalJSON(data []byte) error {
 	var proxy map[string]json.RawMessage
 	if err := json.Unmarshal(data, &proxy); err != nil {
@@ -61,32 +62,38 @@ func (v *tag) UnmarshalJSON(data []byte) error {
 
 	mutator := MutateTag(v)
 
-	if raw, ok := proxy["name"]; ok {
+	const nameMapKey = "name"
+
+	if raw, ok := proxy[nameMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field name`)
 		}
 		mutator.Name(decoded)
-		delete(proxy, "name")
+		delete(proxy, nameMapKey)
 	}
 
-	if raw, ok := proxy["description"]; ok {
+	const descriptionMapKey = "description"
+
+	if raw, ok := proxy[descriptionMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field description`)
 		}
 		mutator.Description(decoded)
-		delete(proxy, "description")
+		delete(proxy, descriptionMapKey)
 	}
 
-	if raw, ok := proxy["externalDocs"]; ok {
+	const externalDocsMapKey = "externalDocs"
+
+	if raw, ok := proxy[externalDocsMapKey]; ok {
 		var decoded externalDocumentation
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field ExternalDocs`)
 		}
 
 		mutator.ExternalDocs(&decoded)
-		delete(proxy, "externalDocs")
+		delete(proxy, externalDocsMapKey)
 	}
 
 	for name, raw := range proxy {
@@ -142,6 +149,7 @@ func (v *tag) QueryJSON(path string) (ret interface{}, ok bool) {
 	return nil, false
 }
 
+// TagFromJSON constructs a Tag from JSON buffer
 func TagFromJSON(buf []byte, v *Tag) error {
 	var tmp tag
 	if err := json.Unmarshal(buf, &tmp); err != nil {

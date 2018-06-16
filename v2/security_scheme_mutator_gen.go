@@ -18,8 +18,8 @@ type SecuritySchemeMutator struct {
 }
 
 // Do finalizes the matuation process for SecurityScheme and returns the result
-func (b *SecuritySchemeMutator) Do() error {
-	*b.target = *b.proxy
+func (m *SecuritySchemeMutator) Do() error {
+	*m.target = *m.proxy
 	return nil
 }
 
@@ -73,11 +73,13 @@ func (m *SecuritySchemeMutator) TokenURL(v string) *SecuritySchemeMutator {
 	return m
 }
 
+// ClearScopes removes all values in scopes field
 func (m *SecuritySchemeMutator) ClearScopes() *SecuritySchemeMutator {
-	m.proxy.scopes.Clear()
+	_ = m.proxy.scopes.Clear()
 	return m
 }
 
+// Scope sets the value of scopes
 func (m *SecuritySchemeMutator) Scope(key StringMapKey, value string) *SecuritySchemeMutator {
 	if m.proxy.scopes == nil {
 		m.proxy.scopes = StringMap{}
@@ -86,10 +88,12 @@ func (m *SecuritySchemeMutator) Scope(key StringMapKey, value string) *SecurityS
 	m.proxy.scopes[key] = value
 	return m
 }
-func (b *SecuritySchemeMutator) Extension(name string, value interface{}) *SecuritySchemeMutator {
-	if b.proxy.extensions == nil {
-		b.proxy.extensions = Extensions{}
+
+// Extension sets an arbitrary extension field in SecurityScheme
+func (m *SecuritySchemeMutator) Extension(name string, value interface{}) *SecuritySchemeMutator {
+	if m.proxy.extensions == nil {
+		m.proxy.extensions = Extensions{}
 	}
-	b.proxy.extensions[name] = value
-	return b
+	m.proxy.extensions[name] = value
+	return m
 }

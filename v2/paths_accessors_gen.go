@@ -27,6 +27,7 @@ func (v *paths) Paths() *PathItemMapIterator {
 	return &iter
 }
 
+// Reference returns the value of `$ref` field
 func (v *paths) Reference() string {
 	return v.reference
 }
@@ -35,11 +36,13 @@ func (v *paths) IsUnresolved() bool {
 	return v.reference != "" && !v.resolved
 }
 
+// Extension returns the value of an arbitrary extension
 func (v *paths) Extension(key string) (interface{}, bool) {
 	e, ok := v.extensions[key]
 	return e, ok
 }
 
+// Extensions return an iterator to iterate over all extensions
 func (v *paths) Extensions() *ExtensionsIterator {
 	var items []interface{}
 	for key, item := range v.extensions {
@@ -51,6 +54,5 @@ func (v *paths) Extensions() *ExtensionsIterator {
 }
 
 func (v *paths) recurseValidate() error {
-	return nil
 	return nil
 }

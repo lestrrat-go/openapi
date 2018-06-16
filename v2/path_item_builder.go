@@ -26,32 +26,32 @@ func (b *PathItemBuilder) Get(oper Operation) *PathItemBuilder {
 	return b
 }
 
-func (m *PathItemBuilder) Put(v Operation) *PathItemBuilder {
-	m.target.acceptOperation(http.MethodPut, v)
-	return m
+func (b *PathItemBuilder) Put(v Operation) *PathItemBuilder {
+	b.target.acceptOperation(http.MethodPut, v)
+	return b
 }
 
-func (m *PathItemBuilder) Post(v Operation) *PathItemBuilder {
-	m.target.acceptOperation(http.MethodPost, v)
-	return m
+func (b *PathItemBuilder) Post(v Operation) *PathItemBuilder {
+	b.target.acceptOperation(http.MethodPost, v)
+	return b
 }
 
-func (m *PathItemBuilder) Delete(v Operation) *PathItemBuilder {
-	m.target.acceptOperation(http.MethodDelete, v)
-	return m
+func (b *PathItemBuilder) Delete(v Operation) *PathItemBuilder {
+	b.target.acceptOperation(http.MethodDelete, v)
+	return b
 }
 
-func (m *PathItemBuilder) Options(v Operation) *PathItemBuilder {
-	m.target.acceptOperation(http.MethodOptions, v)
-	return m
+func (b *PathItemBuilder) Options(v Operation) *PathItemBuilder {
+	b.target.acceptOperation(http.MethodOptions, v)
+	return b
 }
 
-func (m *PathItemBuilder) Head(v Operation) *PathItemBuilder {
-	m.target.acceptOperation(http.MethodHead, v)
-	return m
+func (b *PathItemBuilder) Head(v Operation) *PathItemBuilder {
+	b.target.acceptOperation(http.MethodHead, v)
+	return b
 }
 
-func (m *PathItemBuilder) Patch(v Operation) *PathItemBuilder {
-	m.target.acceptOperation(http.MethodPatch, v)
-	return m
+func (b *PathItemBuilder) Patch(v Operation) *PathItemBuilder {
+	b.target.acceptOperation(http.MethodPatch, v)
+	return b
 }

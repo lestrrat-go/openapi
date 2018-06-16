@@ -93,6 +93,7 @@ func (v *header) MultipleOf() float64 {
 	return v.multipleOf
 }
 
+// Reference returns the value of `$ref` field
 func (v *header) Reference() string {
 	return v.reference
 }
@@ -101,11 +102,13 @@ func (v *header) IsUnresolved() bool {
 	return v.reference != "" && !v.resolved
 }
 
+// Extension returns the value of an arbitrary extension
 func (v *header) Extension(key string) (interface{}, bool) {
 	e, ok := v.extensions[key]
 	return e, ok
 }
 
+// Extensions return an iterator to iterate over all extensions
 func (v *header) Extensions() *ExtensionsIterator {
 	var items []interface{}
 	for key, item := range v.extensions {

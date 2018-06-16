@@ -11,11 +11,14 @@ import (
 var _ = json.Unmarshal
 var _ = errors.Cause
 
+// Clear removes all values from SchemaList
 func (v *SchemaList) Clear() error {
 	*v = SchemaList(nil)
 	return nil
 }
 
+// Validate checks for the values for correctness. If `recurse`
+// is specified, child elements are also validated
 func (v *SchemaList) Validate(recurse bool) error {
 	for i, elem := range *v {
 		if validator, ok := elem.(Validator); ok {
@@ -27,6 +30,7 @@ func (v *SchemaList) Validate(recurse bool) error {
 	return nil
 }
 
+// UnmarshalJSON defines how SchemaList is deserialized from JSON
 func (v *SchemaList) UnmarshalJSON(data []byte) error {
 	var proxy []*schema
 	if err := json.Unmarshal(data, &proxy); err != nil {

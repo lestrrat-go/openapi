@@ -18,8 +18,8 @@ type ContactMutator struct {
 }
 
 // Do finalizes the matuation process for Contact and returns the result
-func (b *ContactMutator) Do() error {
-	*b.target = *b.proxy
+func (m *ContactMutator) Do() error {
+	*m.target = *m.proxy
 	return nil
 }
 
@@ -48,10 +48,12 @@ func (m *ContactMutator) Email(v string) *ContactMutator {
 	m.proxy.email = v
 	return m
 }
-func (b *ContactMutator) Extension(name string, value interface{}) *ContactMutator {
-	if b.proxy.extensions == nil {
-		b.proxy.extensions = Extensions{}
+
+// Extension sets an arbitrary extension field in Contact
+func (m *ContactMutator) Extension(name string, value interface{}) *ContactMutator {
+	if m.proxy.extensions == nil {
+		m.proxy.extensions = Extensions{}
 	}
-	b.proxy.extensions[name] = value
-	return b
+	m.proxy.extensions[name] = value
+	return m
 }

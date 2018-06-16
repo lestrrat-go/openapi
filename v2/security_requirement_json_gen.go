@@ -43,6 +43,7 @@ func (v *securityRequirement) MarshalJSON() ([]byte, error) {
 	return buf, nil
 }
 
+// UnmarshalJSON defines how securityRequirement is deserialized from JSON
 func (v *securityRequirement) UnmarshalJSON(data []byte) error {
 	var proxy map[string]json.RawMessage
 	if err := json.Unmarshal(data, &proxy); err != nil {
@@ -57,13 +58,15 @@ func (v *securityRequirement) UnmarshalJSON(data []byte) error {
 
 	mutator := MutateSecurityRequirement(v)
 
-	if raw, ok := proxy[""]; ok {
+	const dataMapKey = ""
+
+	if raw, ok := proxy[dataMapKey]; ok {
 		var decoded map[string][]string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field `)
 		}
 		mutator.Data(decoded)
-		delete(proxy, "")
+		delete(proxy, dataMapKey)
 	}
 
 	for name, raw := range proxy {
@@ -115,6 +118,7 @@ func (v *securityRequirement) QueryJSON(path string) (ret interface{}, ok bool) 
 	return nil, false
 }
 
+// SecurityRequirementFromJSON constructs a SecurityRequirement from JSON buffer
 func SecurityRequirementFromJSON(buf []byte, v *SecurityRequirement) error {
 	var tmp securityRequirement
 	if err := json.Unmarshal(buf, &tmp); err != nil {

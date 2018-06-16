@@ -18,8 +18,8 @@ type ResponseMutator struct {
 }
 
 // Do finalizes the matuation process for Response and returns the result
-func (b *ResponseMutator) Do() error {
-	*b.target = *b.proxy
+func (m *ResponseMutator) Do() error {
+	*m.target = *m.proxy
 	return nil
 }
 
@@ -55,11 +55,13 @@ func (m *ResponseMutator) Schema(v Schema) *ResponseMutator {
 	return m
 }
 
+// ClearHeaders removes all values in headers field
 func (m *ResponseMutator) ClearHeaders() *ResponseMutator {
-	m.proxy.headers.Clear()
+	_ = m.proxy.headers.Clear()
 	return m
 }
 
+// Header sets the value of headers
 func (m *ResponseMutator) Header(key HeaderMapKey, value Header) *ResponseMutator {
 	if m.proxy.headers == nil {
 		m.proxy.headers = HeaderMap{}
@@ -69,11 +71,13 @@ func (m *ResponseMutator) Header(key HeaderMapKey, value Header) *ResponseMutato
 	return m
 }
 
+// ClearExamples removes all values in examples field
 func (m *ResponseMutator) ClearExamples() *ResponseMutator {
-	m.proxy.examples.Clear()
+	_ = m.proxy.examples.Clear()
 	return m
 }
 
+// Example sets the value of examples
 func (m *ResponseMutator) Example(key ExampleMapKey, value interface{}) *ResponseMutator {
 	if m.proxy.examples == nil {
 		m.proxy.examples = ExampleMap{}
@@ -82,10 +86,12 @@ func (m *ResponseMutator) Example(key ExampleMapKey, value interface{}) *Respons
 	m.proxy.examples[key] = value
 	return m
 }
-func (b *ResponseMutator) Extension(name string, value interface{}) *ResponseMutator {
-	if b.proxy.extensions == nil {
-		b.proxy.extensions = Extensions{}
+
+// Extension sets an arbitrary extension field in Response
+func (m *ResponseMutator) Extension(name string, value interface{}) *ResponseMutator {
+	if m.proxy.extensions == nil {
+		m.proxy.extensions = Extensions{}
 	}
-	b.proxy.extensions[name] = value
-	return b
+	m.proxy.extensions[name] = value
+	return m
 }

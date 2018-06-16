@@ -89,6 +89,7 @@ func (v *parameter) MarshalJSON() ([]byte, error) {
 	return buf, nil
 }
 
+// UnmarshalJSON defines how parameter is deserialized from JSON
 func (v *parameter) UnmarshalJSON(data []byte) error {
 	var proxy map[string]json.RawMessage
 	if err := json.Unmarshal(data, &proxy); err != nil {
@@ -103,207 +104,252 @@ func (v *parameter) UnmarshalJSON(data []byte) error {
 
 	mutator := MutateParameter(v)
 
-	if raw, ok := proxy["name"]; ok {
+	const nameMapKey = "name"
+
+	if raw, ok := proxy[nameMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field name`)
 		}
 		mutator.Name(decoded)
-		delete(proxy, "name")
+		delete(proxy, nameMapKey)
 	}
 
-	if raw, ok := proxy["description"]; ok {
+	const descriptionMapKey = "description"
+
+	if raw, ok := proxy[descriptionMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field description`)
 		}
 		mutator.Description(decoded)
-		delete(proxy, "description")
+		delete(proxy, descriptionMapKey)
 	}
 
-	if raw, ok := proxy["required"]; ok {
+	const requiredMapKey = "required"
+
+	if raw, ok := proxy[requiredMapKey]; ok {
 		var decoded bool
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field required`)
 		}
 		mutator.Required(decoded)
-		delete(proxy, "required")
+		delete(proxy, requiredMapKey)
 	}
 
-	if raw, ok := proxy["in"]; ok {
+	const inMapKey = "in"
+
+	if raw, ok := proxy[inMapKey]; ok {
 		var decoded Location
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field in`)
 		}
 		mutator.In(decoded)
-		delete(proxy, "in")
+		delete(proxy, inMapKey)
 	}
 
-	if raw, ok := proxy["schema"]; ok {
+	const schemaMapKey = "schema"
+
+	if raw, ok := proxy[schemaMapKey]; ok {
 		var decoded schema
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Schema`)
 		}
 
 		mutator.Schema(&decoded)
-		delete(proxy, "schema")
+		delete(proxy, schemaMapKey)
 	}
 
-	if raw, ok := proxy["type"]; ok {
+	const typMapKey = "type"
+
+	if raw, ok := proxy[typMapKey]; ok {
 		var decoded PrimitiveType
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field type`)
 		}
 		mutator.Type(decoded)
-		delete(proxy, "type")
+		delete(proxy, typMapKey)
 	}
 
-	if raw, ok := proxy["format"]; ok {
+	const formatMapKey = "format"
+
+	if raw, ok := proxy[formatMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field format`)
 		}
 		mutator.Format(decoded)
-		delete(proxy, "format")
+		delete(proxy, formatMapKey)
 	}
 
-	if raw, ok := proxy["title"]; ok {
+	const titleMapKey = "title"
+
+	if raw, ok := proxy[titleMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field title`)
 		}
 		mutator.Title(decoded)
-		delete(proxy, "title")
+		delete(proxy, titleMapKey)
 	}
 
-	if raw, ok := proxy["allowEmptyValue"]; ok {
+	const allowEmptyValueMapKey = "allowEmptyValue"
+
+	if raw, ok := proxy[allowEmptyValueMapKey]; ok {
 		var decoded bool
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field allowEmptyValue`)
 		}
 		mutator.AllowEmptyValue(decoded)
-		delete(proxy, "allowEmptyValue")
+		delete(proxy, allowEmptyValueMapKey)
 	}
 
-	if raw, ok := proxy["items"]; ok {
+	const itemsMapKey = "items"
+
+	if raw, ok := proxy[itemsMapKey]; ok {
 		var decoded items
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Items`)
 		}
 
 		mutator.Items(&decoded)
-		delete(proxy, "items")
+		delete(proxy, itemsMapKey)
 	}
 
-	if raw, ok := proxy["collectionFormat"]; ok {
+	const collectionFormatMapKey = "collectionFormat"
+
+	if raw, ok := proxy[collectionFormatMapKey]; ok {
 		var decoded CollectionFormat
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field collectionFormat`)
 		}
 		mutator.CollectionFormat(decoded)
-		delete(proxy, "collectionFormat")
+		delete(proxy, collectionFormatMapKey)
 	}
 
-	if raw, ok := proxy["default"]; ok {
+	const defaultValueMapKey = "default"
+
+	if raw, ok := proxy[defaultValueMapKey]; ok {
 		var decoded interface{}
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field default`)
 		}
 		mutator.DefaultValue(decoded)
-		delete(proxy, "default")
+		delete(proxy, defaultValueMapKey)
 	}
 
-	if raw, ok := proxy["maximum"]; ok {
+	const maximumMapKey = "maximum"
+
+	if raw, ok := proxy[maximumMapKey]; ok {
 		var decoded float64
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field maximum`)
 		}
 		mutator.Maximum(decoded)
-		delete(proxy, "maximum")
+		delete(proxy, maximumMapKey)
 	}
 
-	if raw, ok := proxy["exclusiveMaximum"]; ok {
+	const exclusiveMaximumMapKey = "exclusiveMaximum"
+
+	if raw, ok := proxy[exclusiveMaximumMapKey]; ok {
 		var decoded float64
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field exclusiveMaximum`)
 		}
 		mutator.ExclusiveMaximum(decoded)
-		delete(proxy, "exclusiveMaximum")
+		delete(proxy, exclusiveMaximumMapKey)
 	}
 
-	if raw, ok := proxy["minimum"]; ok {
+	const minimumMapKey = "minimum"
+
+	if raw, ok := proxy[minimumMapKey]; ok {
 		var decoded float64
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field minimum`)
 		}
 		mutator.Minimum(decoded)
-		delete(proxy, "minimum")
+		delete(proxy, minimumMapKey)
 	}
 
-	if raw, ok := proxy["exclusiveMinimum"]; ok {
+	const exclusiveMinimumMapKey = "exclusiveMinimum"
+
+	if raw, ok := proxy[exclusiveMinimumMapKey]; ok {
 		var decoded float64
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field exclusiveMinimum`)
 		}
 		mutator.ExclusiveMinimum(decoded)
-		delete(proxy, "exclusiveMinimum")
+		delete(proxy, exclusiveMinimumMapKey)
 	}
 
-	if raw, ok := proxy["maxLength"]; ok {
+	const maxLengthMapKey = "maxLength"
+
+	if raw, ok := proxy[maxLengthMapKey]; ok {
 		var decoded int
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field maxLength`)
 		}
 		mutator.MaxLength(decoded)
-		delete(proxy, "maxLength")
+		delete(proxy, maxLengthMapKey)
 	}
 
-	if raw, ok := proxy["minLength"]; ok {
+	const minLengthMapKey = "minLength"
+
+	if raw, ok := proxy[minLengthMapKey]; ok {
 		var decoded int
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field minLength`)
 		}
 		mutator.MinLength(decoded)
-		delete(proxy, "minLength")
+		delete(proxy, minLengthMapKey)
 	}
 
-	if raw, ok := proxy["pattern"]; ok {
+	const patternMapKey = "pattern"
+
+	if raw, ok := proxy[patternMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field pattern`)
 		}
 		mutator.Pattern(decoded)
-		delete(proxy, "pattern")
+		delete(proxy, patternMapKey)
 	}
 
-	if raw, ok := proxy["maxItems"]; ok {
+	const maxItemsMapKey = "maxItems"
+
+	if raw, ok := proxy[maxItemsMapKey]; ok {
 		var decoded int
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field maxItems`)
 		}
 		mutator.MaxItems(decoded)
-		delete(proxy, "maxItems")
+		delete(proxy, maxItemsMapKey)
 	}
 
-	if raw, ok := proxy["minItems"]; ok {
+	const minItemsMapKey = "minItems"
+
+	if raw, ok := proxy[minItemsMapKey]; ok {
 		var decoded int
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field minItems`)
 		}
 		mutator.MinItems(decoded)
-		delete(proxy, "minItems")
+		delete(proxy, minItemsMapKey)
 	}
 
-	if raw, ok := proxy["uniqueItems"]; ok {
+	const uniqueItemsMapKey = "uniqueItems"
+
+	if raw, ok := proxy[uniqueItemsMapKey]; ok {
 		var decoded bool
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field uniqueItems`)
 		}
 		mutator.UniqueItems(decoded)
-		delete(proxy, "uniqueItems")
+		delete(proxy, uniqueItemsMapKey)
 	}
 
-	if raw, ok := proxy["enum"]; ok {
+	const enumMapKey = "enum"
+	if raw, ok := proxy[enumMapKey]; ok {
 		var decoded InterfaceList
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Enum`)
@@ -311,16 +357,18 @@ func (v *parameter) UnmarshalJSON(data []byte) error {
 		for _, elem := range decoded {
 			mutator.Enum(elem)
 		}
-		delete(proxy, "enum")
+		delete(proxy, enumMapKey)
 	}
 
-	if raw, ok := proxy["multipleOf"]; ok {
+	const multipleOfMapKey = "multipleOf"
+
+	if raw, ok := proxy[multipleOfMapKey]; ok {
 		var decoded float64
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field multipleOf`)
 		}
 		mutator.MultipleOf(decoded)
-		delete(proxy, "multipleOf")
+		delete(proxy, multipleOfMapKey)
 	}
 
 	for name, raw := range proxy {
@@ -418,6 +466,7 @@ func (v *parameter) QueryJSON(path string) (ret interface{}, ok bool) {
 	return nil, false
 }
 
+// ParameterFromJSON constructs a Parameter from JSON buffer
 func ParameterFromJSON(buf []byte, v *Parameter) error {
 	var tmp parameter
 	if err := json.Unmarshal(buf, &tmp); err != nil {
