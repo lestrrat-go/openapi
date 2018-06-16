@@ -1,4 +1,4 @@
-package es6
+package es6flow
 
 import (
 	"bytes"
