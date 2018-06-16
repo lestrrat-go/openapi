@@ -36,6 +36,7 @@ func ExportedName(s string) string {
 	s = stringutil.Camel(stringutil.Snake(s))
 	s = strings.Replace(s, "Id", "ID", -1)
 	s = strings.Replace(s, "Url", "URL", -1)
+	s = strings.Replace(s, "MimeType", "MIMEType", -1)
 	return s
 }
 
