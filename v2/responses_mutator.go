@@ -1,7 +1,7 @@
 package openapi
 
-func (b *ResponsesMutator) Response(key ResponseMapKey, value Response) *ResponsesMutator {
-	b.proxy.setResponse(key, value)
-	return b
+func (m *ResponsesMutator) Response(key ResponseMapKey, value Response) *ResponsesMutator {
+	m.proxy.setResponse(key, value)
+	return m
 }
 
