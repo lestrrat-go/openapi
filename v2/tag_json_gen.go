@@ -63,7 +63,6 @@ func (v *tag) UnmarshalJSON(data []byte) error {
 	mutator := MutateTag(v)
 
 	const nameMapKey = "name"
-
 	if raw, ok := proxy[nameMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -74,7 +73,6 @@ func (v *tag) UnmarshalJSON(data []byte) error {
 	}
 
 	const descriptionMapKey = "description"
-
 	if raw, ok := proxy[descriptionMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -85,7 +83,6 @@ func (v *tag) UnmarshalJSON(data []byte) error {
 	}
 
 	const externalDocsMapKey = "externalDocs"
-
 	if raw, ok := proxy[externalDocsMapKey]; ok {
 		var decoded externalDocumentation
 		if err := json.Unmarshal(raw, &decoded); err != nil {

@@ -1063,16 +1063,7 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 	fmt.Fprintf(dst, "\nreturn v, true")
 	fmt.Fprintf(dst, "\n}")
 
-	fmt.Fprintf(dst, "\n\nvar frag string")
-	fmt.Fprintf(dst, "\nif i := strings.Index(path, \"/\"); i > -1 {")
-	fmt.Fprintf(dst, "\nfrag = path[:i]")
-	fmt.Fprintf(dst, "\npath = path[i+1:]")
-	fmt.Fprintf(dst, "\n} else {")
-	fmt.Fprintf(dst, "\nfrag = path")
-	fmt.Fprintf(dst, "\npath = \"\"")
-	fmt.Fprintf(dst, "\n}")
-	fmt.Fprintf(dst, "\n\nvar target interface{}")
-	fmt.Fprintf(dst, "\n\nswitch frag {")
+	var fragFields []reflect.StructField
 	for i := 0; i < rv.NumField(); i++ {
 		fv := rv.Type().Field(i)
 		if fv.Name == "reference" {
@@ -1082,27 +1073,51 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 		if jsname == "-" {
 			continue
 		}
-		if i := strings.Index(jsname, ","); i > -1 {
-			jsname = jsname[:i]
-		}
-
-		if jsname == "" {
-			jsname = fv.Name
-		}
-
-		fmt.Fprintf(dst, "\ncase %s:", strconv.Quote(jsname))
-		fmt.Fprintf(dst, "\ntarget = v.%s", fv.Name)
+		fragFields = append(fragFields, fv)
 	}
-	fmt.Fprintf(dst, "\ndefault:")
-	fmt.Fprintf(dst, "\nreturn nil, false")
-	fmt.Fprintf(dst, "\n}")
 
-	fmt.Fprintf(dst, "\n\nif qj, ok := target.(QueryJSONer); ok {")
-	fmt.Fprintf(dst, "\nreturn qj.QueryJSON(path)")
-	fmt.Fprintf(dst, "\n}")
-	fmt.Fprintf(dst, "\nif path == \"\" {")
-	fmt.Fprintf(dst, "\nreturn target, true")
-	fmt.Fprintf(dst, "\n}")
+	if len(fragFields) > 0 {
+		fmt.Fprintf(dst, "\n\nvar frag string")
+		fmt.Fprintf(dst, "\nif i := strings.Index(path, \"/\"); i > -1 {")
+		fmt.Fprintf(dst, "\nfrag = path[:i]")
+		fmt.Fprintf(dst, "\npath = path[i+1:]")
+		fmt.Fprintf(dst, "\n} else {")
+		fmt.Fprintf(dst, "\nfrag = path")
+		fmt.Fprintf(dst, "\npath = \"\"")
+		fmt.Fprintf(dst, "\n}")
+		fmt.Fprintf(dst, "\n\nvar target interface{}")
+		fmt.Fprintf(dst, "\n\nswitch frag {")
+		for i := 0; i < rv.NumField(); i++ {
+			fv := rv.Type().Field(i)
+			if fv.Name == "reference" {
+				continue
+			}
+			jsname := fv.Tag.Get("json")
+			if jsname == "-" {
+				continue
+			}
+			if i := strings.Index(jsname, ","); i > -1 {
+				jsname = jsname[:i]
+			}
+
+			if jsname == "" {
+				jsname = fv.Name
+			}
+
+			fmt.Fprintf(dst, "\ncase %s:", strconv.Quote(jsname))
+			fmt.Fprintf(dst, "\ntarget = v.%s", fv.Name)
+		}
+		fmt.Fprintf(dst, "\ndefault:")
+		fmt.Fprintf(dst, "\nreturn nil, false")
+		fmt.Fprintf(dst, "\n}")
+
+		fmt.Fprintf(dst, "\n\nif qj, ok := target.(QueryJSONer); ok {")
+		fmt.Fprintf(dst, "\nreturn qj.QueryJSON(path)")
+		fmt.Fprintf(dst, "\n}")
+		fmt.Fprintf(dst, "\nif path == \"\" {")
+		fmt.Fprintf(dst, "\nreturn target, true")
+		fmt.Fprintf(dst, "\n}")
+	}
 	fmt.Fprintf(dst, "\nreturn nil, false")
 	fmt.Fprintf(dst, "\n}")
 

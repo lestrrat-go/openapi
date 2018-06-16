@@ -87,7 +87,6 @@ func (v *swagger) UnmarshalJSON(data []byte) error {
 	mutator := MutateSwagger(v)
 
 	const versionMapKey = "swagger"
-
 	if raw, ok := proxy[versionMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -98,7 +97,6 @@ func (v *swagger) UnmarshalJSON(data []byte) error {
 	}
 
 	const infoMapKey = "info"
-
 	if raw, ok := proxy[infoMapKey]; ok {
 		var decoded info
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -110,7 +108,6 @@ func (v *swagger) UnmarshalJSON(data []byte) error {
 	}
 
 	const hostMapKey = "host"
-
 	if raw, ok := proxy[hostMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -121,7 +118,6 @@ func (v *swagger) UnmarshalJSON(data []byte) error {
 	}
 
 	const basePathMapKey = "basePath"
-
 	if raw, ok := proxy[basePathMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -168,7 +164,6 @@ func (v *swagger) UnmarshalJSON(data []byte) error {
 	}
 
 	const pathsMapKey = "paths"
-
 	if raw, ok := proxy[pathsMapKey]; ok {
 		var decoded paths
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -252,7 +247,6 @@ func (v *swagger) UnmarshalJSON(data []byte) error {
 	}
 
 	const externalDocsMapKey = "externalDocs"
-
 	if raw, ok := proxy[externalDocsMapKey]; ok {
 		var decoded externalDocumentation
 		if err := json.Unmarshal(raw, &decoded); err != nil {

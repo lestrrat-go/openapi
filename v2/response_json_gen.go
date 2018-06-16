@@ -65,7 +65,6 @@ func (v *response) UnmarshalJSON(data []byte) error {
 	mutator := MutateResponse(v)
 
 	const descriptionMapKey = "description"
-
 	if raw, ok := proxy[descriptionMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -76,7 +75,6 @@ func (v *response) UnmarshalJSON(data []byte) error {
 	}
 
 	const schemaMapKey = "schema"
-
 	if raw, ok := proxy[schemaMapKey]; ok {
 		var decoded schema
 		if err := json.Unmarshal(raw, &decoded); err != nil {

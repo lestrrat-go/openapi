@@ -59,7 +59,6 @@ func (v *securityRequirement) UnmarshalJSON(data []byte) error {
 	mutator := MutateSecurityRequirement(v)
 
 	const dataMapKey = ""
-
 	if raw, ok := proxy[dataMapKey]; ok {
 		var decoded map[string][]string
 		if err := json.Unmarshal(raw, &decoded); err != nil {

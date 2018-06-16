@@ -23,29 +23,6 @@ func (v *paths) QueryJSON(path string) (ret interface{}, ok bool) {
 	if path == "" {
 		return v, true
 	}
-
-	var frag string
-	if i := strings.Index(path, "/"); i > -1 {
-		frag = path[:i]
-		path = path[i+1:]
-	} else {
-		frag = path
-		path = ""
-	}
-
-	var target interface{}
-
-	switch frag {
-	default:
-		return nil, false
-	}
-
-	if qj, ok := target.(QueryJSONer); ok {
-		return qj.QueryJSON(path)
-	}
-	if path == "" {
-		return target, true
-	}
 	return nil, false
 }
 

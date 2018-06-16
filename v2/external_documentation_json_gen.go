@@ -61,7 +61,6 @@ func (v *externalDocumentation) UnmarshalJSON(data []byte) error {
 	mutator := MutateExternalDocumentation(v)
 
 	const urlMapKey = "url"
-
 	if raw, ok := proxy[urlMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -72,7 +71,6 @@ func (v *externalDocumentation) UnmarshalJSON(data []byte) error {
 	}
 
 	const descriptionMapKey = "description"
-
 	if raw, ok := proxy[descriptionMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {

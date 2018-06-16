@@ -61,7 +61,6 @@ func (v *license) UnmarshalJSON(data []byte) error {
 	mutator := MutateLicense(v)
 
 	const nameMapKey = "name"
-
 	if raw, ok := proxy[nameMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -72,7 +71,6 @@ func (v *license) UnmarshalJSON(data []byte) error {
 	}
 
 	const urlMapKey = "url"
-
 	if raw, ok := proxy[urlMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {

@@ -63,7 +63,6 @@ func (v *contact) UnmarshalJSON(data []byte) error {
 	mutator := MutateContact(v)
 
 	const nameMapKey = "name"
-
 	if raw, ok := proxy[nameMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -74,7 +73,6 @@ func (v *contact) UnmarshalJSON(data []byte) error {
 	}
 
 	const urlMapKey = "url"
-
 	if raw, ok := proxy[urlMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -85,7 +83,6 @@ func (v *contact) UnmarshalJSON(data []byte) error {
 	}
 
 	const emailMapKey = "email"
-
 	if raw, ok := proxy[emailMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {

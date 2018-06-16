@@ -69,7 +69,6 @@ func (v *info) UnmarshalJSON(data []byte) error {
 	mutator := MutateInfo(v)
 
 	const titleMapKey = "title"
-
 	if raw, ok := proxy[titleMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -80,7 +79,6 @@ func (v *info) UnmarshalJSON(data []byte) error {
 	}
 
 	const versionMapKey = "version"
-
 	if raw, ok := proxy[versionMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -91,7 +89,6 @@ func (v *info) UnmarshalJSON(data []byte) error {
 	}
 
 	const descriptionMapKey = "description"
-
 	if raw, ok := proxy[descriptionMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -102,7 +99,6 @@ func (v *info) UnmarshalJSON(data []byte) error {
 	}
 
 	const termsOfServiceMapKey = "termsOfService"
-
 	if raw, ok := proxy[termsOfServiceMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -113,7 +109,6 @@ func (v *info) UnmarshalJSON(data []byte) error {
 	}
 
 	const contactMapKey = "contact"
-
 	if raw, ok := proxy[contactMapKey]; ok {
 		var decoded contact
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -125,7 +120,6 @@ func (v *info) UnmarshalJSON(data []byte) error {
 	}
 
 	const licenseMapKey = "license"
-
 	if raw, ok := proxy[licenseMapKey]; ok {
 		var decoded license
 		if err := json.Unmarshal(raw, &decoded); err != nil {

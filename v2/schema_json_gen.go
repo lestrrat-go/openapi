@@ -115,7 +115,6 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 	mutator := MutateSchema(v)
 
 	const typMapKey = "type"
-
 	if raw, ok := proxy[typMapKey]; ok {
 		var decoded PrimitiveType
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -126,7 +125,6 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 	}
 
 	const formatMapKey = "format"
-
 	if raw, ok := proxy[formatMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -137,7 +135,6 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 	}
 
 	const titleMapKey = "title"
-
 	if raw, ok := proxy[titleMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -148,7 +145,6 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 	}
 
 	const multipleOfMapKey = "multipleOf"
-
 	if raw, ok := proxy[multipleOfMapKey]; ok {
 		var decoded float64
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -159,7 +155,6 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 	}
 
 	const maximumMapKey = "maximum"
-
 	if raw, ok := proxy[maximumMapKey]; ok {
 		var decoded float64
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -170,7 +165,6 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 	}
 
 	const exclusiveMaximumMapKey = "exclusiveMaximum"
-
 	if raw, ok := proxy[exclusiveMaximumMapKey]; ok {
 		var decoded float64
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -181,7 +175,6 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 	}
 
 	const minimumMapKey = "minimum"
-
 	if raw, ok := proxy[minimumMapKey]; ok {
 		var decoded float64
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -192,7 +185,6 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 	}
 
 	const exclusiveMinimumMapKey = "exclusiveMinimum"
-
 	if raw, ok := proxy[exclusiveMinimumMapKey]; ok {
 		var decoded float64
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -203,7 +195,6 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 	}
 
 	const maxLengthMapKey = "maxLength"
-
 	if raw, ok := proxy[maxLengthMapKey]; ok {
 		var decoded int
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -214,7 +205,6 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 	}
 
 	const minLengthMapKey = "minLength"
-
 	if raw, ok := proxy[minLengthMapKey]; ok {
 		var decoded int
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -225,7 +215,6 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 	}
 
 	const patternMapKey = "pattern"
-
 	if raw, ok := proxy[patternMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -236,7 +225,6 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 	}
 
 	const maxItemsMapKey = "maxItems"
-
 	if raw, ok := proxy[maxItemsMapKey]; ok {
 		var decoded int
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -247,7 +235,6 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 	}
 
 	const minItemsMapKey = "minItems"
-
 	if raw, ok := proxy[minItemsMapKey]; ok {
 		var decoded int
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -258,7 +245,6 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 	}
 
 	const uniqueItemsMapKey = "uniqueItems"
-
 	if raw, ok := proxy[uniqueItemsMapKey]; ok {
 		var decoded bool
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -269,7 +255,6 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 	}
 
 	const maxPropertiesMapKey = "maxProperties"
-
 	if raw, ok := proxy[maxPropertiesMapKey]; ok {
 		var decoded int
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -280,7 +265,6 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 	}
 
 	const minPropertiesMapKey = "minProperties"
-
 	if raw, ok := proxy[minPropertiesMapKey]; ok {
 		var decoded int
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -327,7 +311,6 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 	}
 
 	const itemsMapKey = "items"
-
 	if raw, ok := proxy[itemsMapKey]; ok {
 		var decoded schema
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -363,7 +346,6 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 	}
 
 	const defaultValueMapKey = "default"
-
 	if raw, ok := proxy[defaultValueMapKey]; ok {
 		var decoded interface{}
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -374,7 +356,6 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 	}
 
 	const discriminatorMapKey = "discriminator"
-
 	if raw, ok := proxy[discriminatorMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -385,7 +366,6 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 	}
 
 	const readOnlyMapKey = "readOnly"
-
 	if raw, ok := proxy[readOnlyMapKey]; ok {
 		var decoded bool
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -396,7 +376,6 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 	}
 
 	const externalDocsMapKey = "externalDocs"
-
 	if raw, ok := proxy[externalDocsMapKey]; ok {
 		var decoded externalDocumentation
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -408,7 +387,6 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 	}
 
 	const exampleMapKey = "example"
-
 	if raw, ok := proxy[exampleMapKey]; ok {
 		var decoded interface{}
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -419,7 +397,6 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 	}
 
 	const deprecatedMapKey = "deprecated"
-
 	if raw, ok := proxy[deprecatedMapKey]; ok {
 		var decoded bool
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -430,7 +407,6 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 	}
 
 	const xmlMapKey = "xml"
-
 	if raw, ok := proxy[xmlMapKey]; ok {
 		var decoded xml
 		if err := json.Unmarshal(raw, &decoded); err != nil {

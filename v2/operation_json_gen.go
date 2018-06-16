@@ -93,7 +93,6 @@ func (v *operation) UnmarshalJSON(data []byte) error {
 	}
 
 	const summaryMapKey = "summary"
-
 	if raw, ok := proxy[summaryMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -104,7 +103,6 @@ func (v *operation) UnmarshalJSON(data []byte) error {
 	}
 
 	const descriptionMapKey = "description"
-
 	if raw, ok := proxy[descriptionMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -115,7 +113,6 @@ func (v *operation) UnmarshalJSON(data []byte) error {
 	}
 
 	const externalDocsMapKey = "externalDocs"
-
 	if raw, ok := proxy[externalDocsMapKey]; ok {
 		var decoded externalDocumentation
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -127,7 +124,6 @@ func (v *operation) UnmarshalJSON(data []byte) error {
 	}
 
 	const operationIDMapKey = "operationId"
-
 	if raw, ok := proxy[operationIDMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -174,7 +170,6 @@ func (v *operation) UnmarshalJSON(data []byte) error {
 	}
 
 	const responsesMapKey = "responses"
-
 	if raw, ok := proxy[responsesMapKey]; ok {
 		var decoded responses
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -198,7 +193,6 @@ func (v *operation) UnmarshalJSON(data []byte) error {
 	}
 
 	const deprecatedMapKey = "deprecated"
-
 	if raw, ok := proxy[deprecatedMapKey]; ok {
 		var decoded bool
 		if err := json.Unmarshal(raw, &decoded); err != nil {

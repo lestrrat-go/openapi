@@ -73,7 +73,6 @@ func (v *securityScheme) UnmarshalJSON(data []byte) error {
 	mutator := MutateSecurityScheme(v)
 
 	const typMapKey = "type"
-
 	if raw, ok := proxy[typMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -84,7 +83,6 @@ func (v *securityScheme) UnmarshalJSON(data []byte) error {
 	}
 
 	const descriptionMapKey = "description"
-
 	if raw, ok := proxy[descriptionMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -95,7 +93,6 @@ func (v *securityScheme) UnmarshalJSON(data []byte) error {
 	}
 
 	const nameMapKey = "name"
-
 	if raw, ok := proxy[nameMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -106,7 +103,6 @@ func (v *securityScheme) UnmarshalJSON(data []byte) error {
 	}
 
 	const inMapKey = "in"
-
 	if raw, ok := proxy[inMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -117,7 +113,6 @@ func (v *securityScheme) UnmarshalJSON(data []byte) error {
 	}
 
 	const flowMapKey = "flow"
-
 	if raw, ok := proxy[flowMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -128,7 +123,6 @@ func (v *securityScheme) UnmarshalJSON(data []byte) error {
 	}
 
 	const authorizationURLMapKey = "authorizationUrl"
-
 	if raw, ok := proxy[authorizationURLMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -139,7 +133,6 @@ func (v *securityScheme) UnmarshalJSON(data []byte) error {
 	}
 
 	const tokenURLMapKey = "tokenUrl"
-
 	if raw, ok := proxy[tokenURLMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {

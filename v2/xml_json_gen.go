@@ -67,7 +67,6 @@ func (v *xml) UnmarshalJSON(data []byte) error {
 	mutator := MutateXML(v)
 
 	const nameMapKey = "name"
-
 	if raw, ok := proxy[nameMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -78,7 +77,6 @@ func (v *xml) UnmarshalJSON(data []byte) error {
 	}
 
 	const namespaceMapKey = "namespace"
-
 	if raw, ok := proxy[namespaceMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -89,7 +87,6 @@ func (v *xml) UnmarshalJSON(data []byte) error {
 	}
 
 	const prefixMapKey = "prefix"
-
 	if raw, ok := proxy[prefixMapKey]; ok {
 		var decoded string
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -100,7 +97,6 @@ func (v *xml) UnmarshalJSON(data []byte) error {
 	}
 
 	const attributeMapKey = "attribute"
-
 	if raw, ok := proxy[attributeMapKey]; ok {
 		var decoded bool
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -111,7 +107,6 @@ func (v *xml) UnmarshalJSON(data []byte) error {
 	}
 
 	const wrappedMapKey = "wrapped"
-
 	if raw, ok := proxy[wrappedMapKey]; ok {
 		var decoded bool
 		if err := json.Unmarshal(raw, &decoded); err != nil {

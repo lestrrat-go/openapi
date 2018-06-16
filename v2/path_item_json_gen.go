@@ -73,7 +73,6 @@ func (v *pathItem) UnmarshalJSON(data []byte) error {
 	mutator := MutatePathItem(v)
 
 	const getMapKey = "get"
-
 	if raw, ok := proxy[getMapKey]; ok {
 		var decoded operation
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -85,7 +84,6 @@ func (v *pathItem) UnmarshalJSON(data []byte) error {
 	}
 
 	const putMapKey = "put"
-
 	if raw, ok := proxy[putMapKey]; ok {
 		var decoded operation
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -97,7 +95,6 @@ func (v *pathItem) UnmarshalJSON(data []byte) error {
 	}
 
 	const postMapKey = "post"
-
 	if raw, ok := proxy[postMapKey]; ok {
 		var decoded operation
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -109,7 +106,6 @@ func (v *pathItem) UnmarshalJSON(data []byte) error {
 	}
 
 	const deleteMapKey = "delete"
-
 	if raw, ok := proxy[deleteMapKey]; ok {
 		var decoded operation
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -121,7 +117,6 @@ func (v *pathItem) UnmarshalJSON(data []byte) error {
 	}
 
 	const optionsMapKey = "options"
-
 	if raw, ok := proxy[optionsMapKey]; ok {
 		var decoded operation
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -133,7 +128,6 @@ func (v *pathItem) UnmarshalJSON(data []byte) error {
 	}
 
 	const headMapKey = "head"
-
 	if raw, ok := proxy[headMapKey]; ok {
 		var decoded operation
 		if err := json.Unmarshal(raw, &decoded); err != nil {
@@ -145,7 +139,6 @@ func (v *pathItem) UnmarshalJSON(data []byte) error {
 	}
 
 	const patchMapKey = "patch"
-
 	if raw, ok := proxy[patchMapKey]; ok {
 		var decoded operation
 		if err := json.Unmarshal(raw, &decoded); err != nil {
