@@ -25,7 +25,7 @@ type headerMarshalProxy struct {
 	Format           string           `json:"format,omitempty"`
 	Items            Items            `json:"items,omitempty"`
 	CollectionFormat CollectionFormat `json:"collectionFormat,omitempty"`
-	DefaultValue     interface{}      `json:"default,omitempty"`
+	Default          interface{}      `json:"default,omitempty"`
 	Maximum          float64          `json:"maximum,omitempty"`
 	ExclusiveMaximum float64          `json:"exclusiveMaximum,omitempty"`
 	Minimum          float64          `json:"minimum,omitempty"`
@@ -50,7 +50,7 @@ func (v *header) MarshalJSON() ([]byte, error) {
 	proxy.Format = v.format
 	proxy.Items = v.items
 	proxy.CollectionFormat = v.collectionFormat
-	proxy.DefaultValue = v.defaultValue
+	proxy.Default = v.defaultValue
 	proxy.Maximum = v.maximum
 	proxy.ExclusiveMaximum = v.exclusiveMaximum
 	proxy.Minimum = v.minimum
@@ -149,7 +149,7 @@ func (v *header) UnmarshalJSON(data []byte) error {
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field default`)
 		}
-		mutator.DefaultValue(decoded)
+		mutator.Default(decoded)
 		delete(proxy, defaultValueMapKey)
 	}
 

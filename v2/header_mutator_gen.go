@@ -67,8 +67,8 @@ func (m *HeaderMutator) CollectionFormat(v CollectionFormat) *HeaderMutator {
 	return m
 }
 
-// DefaultValue sets the DefaultValue field for object Header.
-func (m *HeaderMutator) DefaultValue(v interface{}) *HeaderMutator {
+// Default sets the Default field for object Header.
+func (m *HeaderMutator) Default(v interface{}) *HeaderMutator {
 	m.proxy.defaultValue = v
 	return m
 }

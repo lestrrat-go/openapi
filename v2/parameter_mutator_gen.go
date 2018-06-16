@@ -97,8 +97,8 @@ func (m *ParameterMutator) CollectionFormat(v CollectionFormat) *ParameterMutato
 	return m
 }
 
-// DefaultValue sets the DefaultValue field for object Parameter.
-func (m *ParameterMutator) DefaultValue(v interface{}) *ParameterMutator {
+// Default sets the Default field for object Parameter.
+func (m *ParameterMutator) Default(v interface{}) *ParameterMutator {
 	m.proxy.defaultValue = v
 	return m
 }
@@ -109,7 +109,7 @@ func (m *ParameterMutator) ClearMaximum() *ParameterMutator {
 	return m
 }
 
-// Maximum sets the maximum field.%!(EXTRA string=Parameter)
+// Maximum sets the maximum field.
 func (m *ParameterMutator) Maximum(v float64) *ParameterMutator {
 	m.proxy.maximum = &v
 	return m
@@ -121,7 +121,7 @@ func (m *ParameterMutator) ClearExclusiveMaximum() *ParameterMutator {
 	return m
 }
 
-// ExclusiveMaximum sets the exclusiveMaximum field.%!(EXTRA string=Parameter)
+// ExclusiveMaximum sets the exclusiveMaximum field.
 func (m *ParameterMutator) ExclusiveMaximum(v float64) *ParameterMutator {
 	m.proxy.exclusiveMaximum = &v
 	return m
@@ -133,7 +133,7 @@ func (m *ParameterMutator) ClearMinimum() *ParameterMutator {
 	return m
 }
 
-// Minimum sets the minimum field.%!(EXTRA string=Parameter)
+// Minimum sets the minimum field.
 func (m *ParameterMutator) Minimum(v float64) *ParameterMutator {
 	m.proxy.minimum = &v
 	return m
@@ -145,7 +145,7 @@ func (m *ParameterMutator) ClearExclusiveMinimum() *ParameterMutator {
 	return m
 }
 
-// ExclusiveMinimum sets the exclusiveMinimum field.%!(EXTRA string=Parameter)
+// ExclusiveMinimum sets the exclusiveMinimum field.
 func (m *ParameterMutator) ExclusiveMinimum(v float64) *ParameterMutator {
 	m.proxy.exclusiveMinimum = &v
 	return m
@@ -157,7 +157,7 @@ func (m *ParameterMutator) ClearMaxLength() *ParameterMutator {
 	return m
 }
 
-// MaxLength sets the maxLength field.%!(EXTRA string=Parameter)
+// MaxLength sets the maxLength field.
 func (m *ParameterMutator) MaxLength(v int) *ParameterMutator {
 	m.proxy.maxLength = &v
 	return m
@@ -169,7 +169,7 @@ func (m *ParameterMutator) ClearMinLength() *ParameterMutator {
 	return m
 }
 
-// MinLength sets the minLength field.%!(EXTRA string=Parameter)
+// MinLength sets the minLength field.
 func (m *ParameterMutator) MinLength(v int) *ParameterMutator {
 	m.proxy.minLength = &v
 	return m
@@ -187,7 +187,7 @@ func (m *ParameterMutator) ClearMaxItems() *ParameterMutator {
 	return m
 }
 
-// MaxItems sets the maxItems field.%!(EXTRA string=Parameter)
+// MaxItems sets the maxItems field.
 func (m *ParameterMutator) MaxItems(v int) *ParameterMutator {
 	m.proxy.maxItems = &v
 	return m
@@ -199,7 +199,7 @@ func (m *ParameterMutator) ClearMinItems() *ParameterMutator {
 	return m
 }
 
-// MinItems sets the minItems field.%!(EXTRA string=Parameter)
+// MinItems sets the minItems field.
 func (m *ParameterMutator) MinItems(v int) *ParameterMutator {
 	m.proxy.minItems = &v
 	return m
@@ -229,7 +229,7 @@ func (m *ParameterMutator) ClearMultipleOf() *ParameterMutator {
 	return m
 }
 
-// MultipleOf sets the multipleOf field.%!(EXTRA string=Parameter)
+// MultipleOf sets the multipleOf field.
 func (m *ParameterMutator) MultipleOf(v float64) *ParameterMutator {
 	m.proxy.multipleOf = &v
 	return m

@@ -61,7 +61,7 @@ func (m *SchemaMutator) ClearMultipleOf() *SchemaMutator {
 	return m
 }
 
-// MultipleOf sets the multipleOf field.%!(EXTRA string=Schema)
+// MultipleOf sets the multipleOf field.
 func (m *SchemaMutator) MultipleOf(v float64) *SchemaMutator {
 	m.proxy.multipleOf = &v
 	return m
@@ -73,7 +73,7 @@ func (m *SchemaMutator) ClearMaximum() *SchemaMutator {
 	return m
 }
 
-// Maximum sets the maximum field.%!(EXTRA string=Schema)
+// Maximum sets the maximum field.
 func (m *SchemaMutator) Maximum(v float64) *SchemaMutator {
 	m.proxy.maximum = &v
 	return m
@@ -85,7 +85,7 @@ func (m *SchemaMutator) ClearExclusiveMaximum() *SchemaMutator {
 	return m
 }
 
-// ExclusiveMaximum sets the exclusiveMaximum field.%!(EXTRA string=Schema)
+// ExclusiveMaximum sets the exclusiveMaximum field.
 func (m *SchemaMutator) ExclusiveMaximum(v float64) *SchemaMutator {
 	m.proxy.exclusiveMaximum = &v
 	return m
@@ -97,7 +97,7 @@ func (m *SchemaMutator) ClearMinimum() *SchemaMutator {
 	return m
 }
 
-// Minimum sets the minimum field.%!(EXTRA string=Schema)
+// Minimum sets the minimum field.
 func (m *SchemaMutator) Minimum(v float64) *SchemaMutator {
 	m.proxy.minimum = &v
 	return m
@@ -109,7 +109,7 @@ func (m *SchemaMutator) ClearExclusiveMinimum() *SchemaMutator {
 	return m
 }
 
-// ExclusiveMinimum sets the exclusiveMinimum field.%!(EXTRA string=Schema)
+// ExclusiveMinimum sets the exclusiveMinimum field.
 func (m *SchemaMutator) ExclusiveMinimum(v float64) *SchemaMutator {
 	m.proxy.exclusiveMinimum = &v
 	return m
@@ -121,7 +121,7 @@ func (m *SchemaMutator) ClearMaxLength() *SchemaMutator {
 	return m
 }
 
-// MaxLength sets the maxLength field.%!(EXTRA string=Schema)
+// MaxLength sets the maxLength field.
 func (m *SchemaMutator) MaxLength(v int) *SchemaMutator {
 	m.proxy.maxLength = &v
 	return m
@@ -133,7 +133,7 @@ func (m *SchemaMutator) ClearMinLength() *SchemaMutator {
 	return m
 }
 
-// MinLength sets the minLength field.%!(EXTRA string=Schema)
+// MinLength sets the minLength field.
 func (m *SchemaMutator) MinLength(v int) *SchemaMutator {
 	m.proxy.minLength = &v
 	return m
@@ -151,7 +151,7 @@ func (m *SchemaMutator) ClearMaxItems() *SchemaMutator {
 	return m
 }
 
-// MaxItems sets the maxItems field.%!(EXTRA string=Schema)
+// MaxItems sets the maxItems field.
 func (m *SchemaMutator) MaxItems(v int) *SchemaMutator {
 	m.proxy.maxItems = &v
 	return m
@@ -163,7 +163,7 @@ func (m *SchemaMutator) ClearMinItems() *SchemaMutator {
 	return m
 }
 
-// MinItems sets the minItems field.%!(EXTRA string=Schema)
+// MinItems sets the minItems field.
 func (m *SchemaMutator) MinItems(v int) *SchemaMutator {
 	m.proxy.minItems = &v
 	return m
@@ -181,7 +181,7 @@ func (m *SchemaMutator) ClearMaxProperties() *SchemaMutator {
 	return m
 }
 
-// MaxProperties sets the maxProperties field.%!(EXTRA string=Schema)
+// MaxProperties sets the maxProperties field.
 func (m *SchemaMutator) MaxProperties(v int) *SchemaMutator {
 	m.proxy.maxProperties = &v
 	return m
@@ -193,7 +193,7 @@ func (m *SchemaMutator) ClearMinProperties() *SchemaMutator {
 	return m
 }
 
-// MinProperties sets the minProperties field.%!(EXTRA string=Schema)
+// MinProperties sets the minProperties field.
 func (m *SchemaMutator) MinProperties(v int) *SchemaMutator {
 	m.proxy.minProperties = &v
 	return m
@@ -273,8 +273,8 @@ func (m *SchemaMutator) AdditionaProperty(key SchemaMapKey, value Schema) *Schem
 	return m
 }
 
-// DefaultValue sets the DefaultValue field for object Schema.
-func (m *SchemaMutator) DefaultValue(v interface{}) *SchemaMutator {
+// Default sets the Default field for object Schema.
+func (m *SchemaMutator) Default(v interface{}) *SchemaMutator {
 	m.proxy.defaultValue = v
 	return m
 }

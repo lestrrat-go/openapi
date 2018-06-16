@@ -42,7 +42,7 @@ type schemaMarshalProxy struct {
 	Items               Schema                `json:"items,omitempty"`
 	Properties          SchemaMap             `json:"properties,omitempty"`
 	AdditionaProperties SchemaMap             `json:"additionalProperties,omitempty"`
-	DefaultValue        interface{}           `json:"default,omitempty"`
+	Default             interface{}           `json:"default,omitempty"`
 	Discriminator       string                `json:"discriminator,omitempty"`
 	ReadOnly            bool                  `json:"readOnly,omitempty"`
 	ExternalDocs        ExternalDocumentation `json:"externalDocs,omitempty"`
@@ -78,7 +78,7 @@ func (v *schema) MarshalJSON() ([]byte, error) {
 	proxy.Items = v.items
 	proxy.Properties = v.properties
 	proxy.AdditionaProperties = v.additionaProperties
-	proxy.DefaultValue = v.defaultValue
+	proxy.Default = v.defaultValue
 	proxy.Discriminator = v.discriminator
 	proxy.ReadOnly = v.readOnly
 	proxy.ExternalDocs = v.externalDocs
@@ -351,7 +351,7 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field default`)
 		}
-		mutator.DefaultValue(decoded)
+		mutator.Default(decoded)
 		delete(proxy, defaultValueMapKey)
 	}
 

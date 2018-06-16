@@ -59,6 +59,7 @@ Google-ish api (see https://google.golang.org/api)
 
 ```
 oagen restclient \
+    -target=go \ # or es6flow
     -directory=path/to/dir \
     -package=packageName
     ...

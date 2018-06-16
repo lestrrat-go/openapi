@@ -174,14 +174,14 @@ func (iter *InterfaceMapIterator) Item() (string, interface{}) {
 	return item.key.(string), item.item.(interface{})
 }
 
-type MIMETypeListIterator struct {
+type MimeTypeListIterator struct {
 	listIterator
 }
 
 // Item returns the next item in this iterator. Make sure to call Next()
 // before hand to check if the iterator has more items
-func (iter *MIMETypeListIterator) Item() MIMEType {
-	return iter.listIterator.Item().(MIMEType)
+func (iter *MimeTypeListIterator) Item() MimeType {
+	return iter.listIterator.Item().(MimeType)
 }
 
 type ParameterListIterator struct {

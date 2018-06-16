@@ -12,12 +12,11 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-	"unicode"
-	"unicode/utf8"
 
 	"github.com/iancoleman/strcase"
 	"github.com/jinzhu/inflection"
 	codegen "github.com/lestrrat-go/openapi/internal/codegen/golang"
+	"github.com/lestrrat-go/openapi/internal/stringutil"
 	"github.com/pkg/errors"
 )
 
@@ -198,46 +197,10 @@ func iteratorName(t reflect.Type) string {
 	return strcase.ToCamel(name + "Iterator")
 }
 
-func unexportedName(s string) string {
-	switch s {
-	case "URL":
-		return "url"
-	case "XML":
-		return "xml"
-	case "Type":
-		return "typ"
-	}
-	return lcfirst(s)
-}
-
-func exportedName(s string) string {
-	switch s {
-	case "url":
-		return "URL"
-	case "xml":
-		return "XML"
-	case "typ":
-		return "Type"
-	}
-	return strcase.ToCamel(s)
-}
-
-func lcfirst(s string) string {
-	if len(s) <= 0 {
-		return s
-	}
-
-	r, w := utf8.DecodeRuneInString(s)
-	var buf bytes.Buffer
-	buf.WriteRune(unicode.ToLower(r))
-	buf.WriteString(s[w:])
-	return buf.String()
-}
-
 func completeInterface(dst io.Writer, ifacename string) {
 	log.Printf(" * Completing interface for %s", ifacename)
 
-	e, ok := entityTypes[unexportedName(ifacename)]
+	e, ok := entityTypes[codegen.UnexportedName(ifacename)]
 	if !ok {
 		panic(fmt.Sprintf("Could not find value for %s", strcase.ToLowerCamel(ifacename)))
 	}
@@ -494,7 +457,7 @@ func generateIteratorsFromEntity(entities []interface{}) error {
 		if rv.Kind() == reflect.Map {
 			writeMapIterator(dst, rv.Type())
 		} else {
-			ifacename := strings.TrimSuffix(exportedName(rv.Type().Name()), "List")
+			ifacename := strings.TrimSuffix(codegen.ExportedName(rv.Type().Name()), "List")
 			writeListIterator(dst, ifacename, ifacename)
 		}
 	}
@@ -513,7 +476,7 @@ func generateBuilderFromEntity(e interface{}) error {
 	writePreamble(dst)
 	writeImports(dst, []string{"github.com/pkg/errors"})
 
-	ifacename := exportedName(rv.Type().Name())
+	ifacename := codegen.ExportedName(rv.Type().Name())
 	structname := rv.Type().Name()
 
 	fmt.Fprintf(dst, "\n\n// %sBuilder is used to build an instance of %s. The user must", ifacename, ifacename)
@@ -568,7 +531,7 @@ func generateBuilderFromEntity(e interface{}) error {
 	fmt.Fprintf(dst, "\n\n// New%s creates a new builder object for %s", ifacename, ifacename)
 	fmt.Fprintf(dst, "\nfunc New%s(", ifacename)
 	for i, fv := range requireds {
-		fmt.Fprintf(dst, "%s %s", unexportedName(fv.Name), typname(fv.Type))
+		fmt.Fprintf(dst, "%s %s", codegen.UnexportedName(fv.Name), typname(fv.Type))
 		if i < len(requireds)-1 {
 			fmt.Fprintf(dst, ", ")
 		}
@@ -583,7 +546,7 @@ func generateBuilderFromEntity(e interface{}) error {
 		fmt.Fprintf(dst, "\n%s: %s,", fv.Name, fv.Tag.Get("default"))
 	}
 	for _, fv := range requireds {
-		fmt.Fprintf(dst, "\n%s: %s,", fv.Name, unexportedName(fv.Name))
+		fmt.Fprintf(dst, "\n%s: %s,", fv.Name, codegen.UnexportedName(fv.Name))
 	}
 	fmt.Fprintf(dst, "\n},")
 	fmt.Fprintf(dst, "\n}")
@@ -612,7 +575,7 @@ func generateBuilderFromEntity(e interface{}) error {
 			argType = strings.TrimSuffix(argType, "List")
 			switch argType {
 			case "String":
-				argType = lcfirst(argType)
+				argType = stringutil.LcFirst(argType)
 			case "Interface":
 				argType = "interface{}"
 			}
@@ -658,7 +621,7 @@ func generateClonersFromEntity(entities []interface{}) error {
 
 	for _, e := range entities {
 		rv := reflect.ValueOf(e)
-		fmt.Fprintf(dst, "\n\nfunc (v *%s) Clone() %s {", rv.Type().Name(), exportedName(rv.Type().Name()))
+		fmt.Fprintf(dst, "\n\nfunc (v *%s) Clone() %s {", rv.Type().Name(), codegen.ExportedName(rv.Type().Name()))
 		fmt.Fprintf(dst, "\nvar dst %s", rv.Type().Name())
 		fmt.Fprintf(dst, "\ndst = *v")
 		fmt.Fprintf(dst, "\nreturn &dst")
@@ -821,7 +784,7 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 	var dst io.Writer = &buf
 	writePreamble(dst)
 
-	ifacename := exportedName(rv.Type().Name())
+	ifacename := codegen.ExportedName(rv.Type().Name())
 
 	writeImports(dst, []string{"encoding/json", "fmt", "log", "strings", "strconv", "github.com/pkg/errors"})
 	switch rv.Type().Name() {
@@ -842,7 +805,7 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 				fieldType = typname(fv.Type)
 			}
 
-			fmt.Fprintf(dst, "\n%s %s `json:\"%s\"`", exportedName(fv.Name), fieldType, fv.Tag.Get("json"))
+			fmt.Fprintf(dst, "\n%s %s `json:\"%s\"`", codegen.ExportedName(fv.Name), fieldType, fv.Tag.Get("json"))
 		}
 		fmt.Fprintf(dst, "\n}")
 
@@ -858,7 +821,7 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 			if fv.Name == "reference" || fv.Tag.Get("json") == "-" {
 				continue
 			}
-			fmt.Fprintf(dst, "\nproxy.%s = v.%s", exportedName(fv.Name), unexportedName(fv.Name))
+			fmt.Fprintf(dst, "\nproxy.%s = v.%s", codegen.ExportedName(fv.Name), codegen.UnexportedName(fv.Name))
 		}
 		fmt.Fprintf(dst, "\nbuf, err := json.Marshal(proxy)")
 		fmt.Fprintf(dst, "\nif err != nil {")
@@ -895,8 +858,8 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 				continue
 			}
 
-			// unexportedFieldName := unexportedName(fv.Name)
-			exportedFieldName := exportedName(fv.Name)
+			// unexportedFieldName := codegen.UnexportedName(fv.Name)
+			exportedFieldName := codegen.ExportedName(fv.Name)
 
 			// XXX assume that we always have a json field name specified
 			jsonName := fv.Tag.Get("json")
@@ -906,33 +869,33 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 
 			mapKey := codegen.UnexportedName(fv.Name) + "MapKey"
 			fmt.Fprintf(dst, "\n\nconst %s = %s", mapKey, strconv.Quote(jsonName))
-			if isList(exportedName(fv.Type.Name())) {
+			if isList(codegen.ExportedName(fv.Type.Name())) {
 				fmt.Fprintf(dst, "\nif raw, ok := proxy[%s]; ok {", mapKey)
 				fmt.Fprintf(dst, "\nvar decoded %s", typname(fv.Type))
 				fmt.Fprintf(dst, "\nif err := json.Unmarshal(raw, &decoded); err != nil {")
-				fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to unmarshal field %s`)", exportedName(fv.Name))
+				fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to unmarshal field %s`)", codegen.ExportedName(fv.Name))
 				fmt.Fprintf(dst, "\n}")
 				fmt.Fprintf(dst, "\nfor _, elem := range decoded {")
 				fmt.Fprintf(dst, "\nmutator.%s(elem)", inflection.Singular(exportedFieldName))
 				fmt.Fprintf(dst, "\n}")
 				fmt.Fprintf(dst, "\ndelete(proxy, %s)", mapKey)
 				fmt.Fprintf(dst, "\n}")
-			} else if isMap(exportedName(fv.Type.Name())) {
+			} else if isMap(codegen.ExportedName(fv.Type.Name())) {
 				fmt.Fprintf(dst, "\nif raw, ok := proxy[%s]; ok {", mapKey)
 				fmt.Fprintf(dst, "\nvar decoded %s", typname(fv.Type))
 				fmt.Fprintf(dst, "\nif err := json.Unmarshal(raw, &decoded); err != nil {")
-				fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to unmarshal field %s`)", exportedName(fv.Name))
+				fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to unmarshal field %s`)", codegen.ExportedName(fv.Name))
 				fmt.Fprintf(dst, "\n}")
 				fmt.Fprintf(dst, "\nfor key, elem := range decoded {")
 				fmt.Fprintf(dst, "\nmutator.%s(key, elem)", inflection.Singular(exportedFieldName))
 				fmt.Fprintf(dst, "\n}")
 				fmt.Fprintf(dst, "\ndelete(proxy, %s)", mapKey)
 				fmt.Fprintf(dst, "\n}")
-			} else if isEntity(unexportedName(fv.Type.Name())) {
+			} else if isEntity(codegen.UnexportedName(fv.Type.Name())) {
 				fmt.Fprintf(dst, "\nif raw, ok := proxy[%s]; ok {", mapKey)
-				fmt.Fprintf(dst, "\nvar decoded %s", unexportedName(typname(fv.Type)))
+				fmt.Fprintf(dst, "\nvar decoded %s", codegen.UnexportedName(typname(fv.Type)))
 				fmt.Fprintf(dst, "\nif err := json.Unmarshal(raw, &decoded); err != nil {")
-				fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to unmarshal field %s`)", exportedName(fv.Name))
+				fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to unmarshal field %s`)", codegen.ExportedName(fv.Name))
 				fmt.Fprintf(dst, "\n}")
 				fmt.Fprintf(dst, "\n\nmutator.%s(&decoded)", exportedFieldName)
 				fmt.Fprintf(dst, "\ndelete(proxy, %s)", mapKey)
@@ -989,9 +952,9 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 		fmt.Fprintf(dst, "\nif resolved != nil { // can happen if !re.Fatal()")
 		fmt.Fprintf(dst, "\nasserted, ok := resolved.(*%s)", rv.Type().Name())
 		fmt.Fprintf(dst, "\nif !ok {")
-		fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `expected resolved reference to be of type %s, but got %%T`, resolved)", exportedName(rv.Type().Name()))
+		fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `expected resolved reference to be of type %s, but got %%T`, resolved)", codegen.ExportedName(rv.Type().Name()))
 		fmt.Fprintf(dst, "\n}")
-		fmt.Fprintf(dst, "\nmutator := Mutate%s(v)", exportedName(rv.Type().Name()))
+		fmt.Fprintf(dst, "\nmutator := Mutate%s(v)", codegen.ExportedName(rv.Type().Name()))
 		for i := 0; i < rv.NumField(); i++ {
 			fv := rv.Type().Field(i)
 			if fv.Tag.Get("resolve") == "-" {
@@ -1000,7 +963,7 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 
 			// If this is a container type, it has a corresponding iterator.
 			// Use the iterator to assign new values
-			exported := exportedName(fv.Name)
+			exported := codegen.ExportedName(fv.Name)
 			fieldType := fv.Type.Name()
 			switch {
 			default:
@@ -1037,17 +1000,17 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 
 			// if it's an entity, or a container for entity, resolve
 			var resolve bool
-			if _, ok := entityTypes[unexportedName(fv.Type.Name())]; ok {
+			if _, ok := entityTypes[codegen.UnexportedName(fv.Type.Name())]; ok {
 				resolve = true
 			} else if _, ok := containerTypes[fv.Type.Name()]; ok {
 				resolve = true
 			}
 
 			if resolve {
-				fmt.Fprintf(dst, "\nif v.%s != nil {", unexportedName(fv.Name))
-				fmt.Fprintf(dst, "\nif err := v.%s.Resolve(resolver); err != nil {", unexportedName(fv.Name))
+				fmt.Fprintf(dst, "\nif v.%s != nil {", codegen.UnexportedName(fv.Name))
+				fmt.Fprintf(dst, "\nif err := v.%s.Resolve(resolver); err != nil {", codegen.UnexportedName(fv.Name))
 				fmt.Fprintf(dst, "\nif re, ok := err.(ResolveError); !ok || ok && re.Fatal() {")
-				fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to resolve %s`)", exportedName(fv.Name))
+				fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to resolve %s`)", codegen.ExportedName(fv.Name))
 				fmt.Fprintf(dst, "\n}")
 				fmt.Fprintf(dst, "\n}")
 				fmt.Fprintf(dst, "\n}")
@@ -1123,7 +1086,7 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 
 	fmt.Fprintf(dst, "\n\n// %[1]sFromJSON constructs a %[1]s from JSON buffer", ifacename)
 	fmt.Fprintf(dst, "\nfunc %[1]sFromJSON(buf []byte, v *%[1]s) error {", ifacename)
-	fmt.Fprintf(dst, "\nvar tmp %s", unexportedName(rv.Type().Name()))
+	fmt.Fprintf(dst, "\nvar tmp %s", codegen.UnexportedName(rv.Type().Name()))
 	fmt.Fprintf(dst, "\nif err := json.Unmarshal(buf, &tmp); err != nil {")
 	fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to unmarshal`)")
 	fmt.Fprintf(dst, "\n}")
@@ -1148,7 +1111,7 @@ func generateMutatorFromEntity(e interface{}) error {
 	writePreamble(dst)
 	writeImports(dst, []string{"log"})
 
-	ifacename := exportedName(rv.Type().Name())
+	ifacename := codegen.ExportedName(rv.Type().Name())
 	structname := rv.Type().Name()
 
 	fmt.Fprintf(dst, "\n\n// %sMutator is used to build an instance of %s. The user must", ifacename, ifacename)
@@ -1179,8 +1142,8 @@ func generateMutatorFromEntity(e interface{}) error {
 			continue
 		}
 
-		exportedName := exportedName(fv.Name)
-		unexportedName := unexportedName(fv.Name)
+		exportedName := codegen.ExportedName(fv.Name)
+		unexportedName := codegen.UnexportedName(fv.Name)
 		fieldType := fv.Type.Name()
 		switch {
 		case isMap(fieldType):
@@ -1296,7 +1259,7 @@ func generateContainer(c interface{}) error {
 
 		/*
 			fmt.Fprintf(dst, "\n\nfunc (v %s) Resolve(resolver Resolver) error {", typeName)
-			if _, ok := entityTypes[unexportedName(rv.Type().Elem().Name())]; ok {
+			if _, ok := entityTypes[codegen.UnexportedName(rv.Type().Elem().Name())]; ok {
 				fmt.Fprintf(dst, "\nif len(v) > 0 {")
 				fmt.Fprintf(dst, "\nfor i, elem := range v {")
 				fmt.Fprintf(dst, "\nif err := elem.Resolve(resolver); err != nil {")
@@ -1314,7 +1277,7 @@ func generateContainer(c interface{}) error {
 		if rv.Type().Elem().Name() != "" && rv.Type().Elem().Kind() == reflect.Interface {
 			fmt.Fprintf(dst, "\n\n// UnmarshalJSON defines how %s is deserialized from JSON", typeName)
 			fmt.Fprintf(dst, "\nfunc (v *%s) UnmarshalJSON(data []byte) error {", typeName)
-			fmt.Fprintf(dst, "\nvar proxy []*%s", unexportedName(typname(rv.Type().Elem())))
+			fmt.Fprintf(dst, "\nvar proxy []*%s", codegen.UnexportedName(typname(rv.Type().Elem())))
 			fmt.Fprintf(dst, "\nif err := json.Unmarshal(data, &proxy); err != nil {")
 			fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to unmarshal`)")
 			fmt.Fprintf(dst, "\n}")
@@ -1359,7 +1322,7 @@ func generateContainer(c interface{}) error {
 		fmt.Fprintf(dst, "\n}")
 		/*
 			fmt.Fprintf(dst, "\n\nfunc (v %s) Resolve(resolver Resolver) error {", rv.Type().Name())
-			if _, ok := entityTypes[unexportedName(rv.Type().Elem().Name())]; ok {
+			if _, ok := entityTypes[codegen.UnexportedName(rv.Type().Elem().Name())]; ok {
 				fmt.Fprintf(dst, "\nif len(v) > 0 {")
 				fmt.Fprintf(dst, "\nfor name, elem := range v {")
 				fmt.Fprintf(dst, "\nif err := elem.Resolve(resolver); err != nil {")
@@ -1403,7 +1366,7 @@ func generateContainer(c interface{}) error {
 		if rv.Type().Elem().Name() != "" && rv.Type().Elem().Kind() == reflect.Interface {
 			fmt.Fprintf(dst, "\n\n// UnmarshalJSON takes a JSON buffer and properly populates `v`")
 			fmt.Fprintf(dst, "\nfunc (v *%s) UnmarshalJSON(data []byte) error {", typeName)
-			fmt.Fprintf(dst, "\nvar proxy map[%s]*%s", typname(rv.Type().Key()), unexportedName(typname(rv.Type().Elem())))
+			fmt.Fprintf(dst, "\nvar proxy map[%s]*%s", typname(rv.Type().Key()), codegen.UnexportedName(typname(rv.Type().Elem())))
 			fmt.Fprintf(dst, "\nif err := json.Unmarshal(data, &proxy); err != nil {")
 			fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to unmarshal`)")
 			fmt.Fprintf(dst, "\n}")
@@ -1414,7 +1377,7 @@ func generateContainer(c interface{}) error {
 			case "ParameterMap", "SecuritySchemeMap":
 			default:
 				// assume they all have setName(string)
-				if isEntity(unexportedName(rv.Type().Elem().Name())) {
+				if isEntity(codegen.UnexportedName(rv.Type().Elem().Name())) {
 					fmt.Fprintf(dst, "\nvalue.setName(name)")
 				}
 			}

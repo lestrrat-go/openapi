@@ -55,8 +55,8 @@ func (m *ItemsMutator) CollectionFormat(v CollectionFormat) *ItemsMutator {
 	return m
 }
 
-// DefaultValue sets the DefaultValue field for object Items.
-func (m *ItemsMutator) DefaultValue(v interface{}) *ItemsMutator {
+// Default sets the Default field for object Items.
+func (m *ItemsMutator) Default(v interface{}) *ItemsMutator {
 	m.proxy.defaultValue = v
 	return m
 }
@@ -67,7 +67,7 @@ func (m *ItemsMutator) ClearMaximum() *ItemsMutator {
 	return m
 }
 
-// Maximum sets the maximum field.%!(EXTRA string=Items)
+// Maximum sets the maximum field.
 func (m *ItemsMutator) Maximum(v float64) *ItemsMutator {
 	m.proxy.maximum = &v
 	return m
@@ -79,7 +79,7 @@ func (m *ItemsMutator) ClearExclusiveMaximum() *ItemsMutator {
 	return m
 }
 
-// ExclusiveMaximum sets the exclusiveMaximum field.%!(EXTRA string=Items)
+// ExclusiveMaximum sets the exclusiveMaximum field.
 func (m *ItemsMutator) ExclusiveMaximum(v float64) *ItemsMutator {
 	m.proxy.exclusiveMaximum = &v
 	return m
@@ -91,7 +91,7 @@ func (m *ItemsMutator) ClearMinimum() *ItemsMutator {
 	return m
 }
 
-// Minimum sets the minimum field.%!(EXTRA string=Items)
+// Minimum sets the minimum field.
 func (m *ItemsMutator) Minimum(v float64) *ItemsMutator {
 	m.proxy.minimum = &v
 	return m
@@ -103,7 +103,7 @@ func (m *ItemsMutator) ClearExclusiveMinimum() *ItemsMutator {
 	return m
 }
 
-// ExclusiveMinimum sets the exclusiveMinimum field.%!(EXTRA string=Items)
+// ExclusiveMinimum sets the exclusiveMinimum field.
 func (m *ItemsMutator) ExclusiveMinimum(v float64) *ItemsMutator {
 	m.proxy.exclusiveMinimum = &v
 	return m
@@ -115,7 +115,7 @@ func (m *ItemsMutator) ClearMaxLength() *ItemsMutator {
 	return m
 }
 
-// MaxLength sets the maxLength field.%!(EXTRA string=Items)
+// MaxLength sets the maxLength field.
 func (m *ItemsMutator) MaxLength(v int) *ItemsMutator {
 	m.proxy.maxLength = &v
 	return m
@@ -127,7 +127,7 @@ func (m *ItemsMutator) ClearMinLength() *ItemsMutator {
 	return m
 }
 
-// MinLength sets the minLength field.%!(EXTRA string=Items)
+// MinLength sets the minLength field.
 func (m *ItemsMutator) MinLength(v int) *ItemsMutator {
 	m.proxy.minLength = &v
 	return m
@@ -145,7 +145,7 @@ func (m *ItemsMutator) ClearMaxItems() *ItemsMutator {
 	return m
 }
 
-// MaxItems sets the maxItems field.%!(EXTRA string=Items)
+// MaxItems sets the maxItems field.
 func (m *ItemsMutator) MaxItems(v int) *ItemsMutator {
 	m.proxy.maxItems = &v
 	return m
@@ -157,7 +157,7 @@ func (m *ItemsMutator) ClearMinItems() *ItemsMutator {
 	return m
 }
 
-// MinItems sets the minItems field.%!(EXTRA string=Items)
+// MinItems sets the minItems field.
 func (m *ItemsMutator) MinItems(v int) *ItemsMutator {
 	m.proxy.minItems = &v
 	return m
@@ -187,7 +187,7 @@ func (m *ItemsMutator) ClearMultipleOf() *ItemsMutator {
 	return m
 }
 
-// MultipleOf sets the multipleOf field.%!(EXTRA string=Items)
+// MultipleOf sets the multipleOf field.
 func (m *ItemsMutator) MultipleOf(v float64) *ItemsMutator {
 	m.proxy.multipleOf = &v
 	return m
