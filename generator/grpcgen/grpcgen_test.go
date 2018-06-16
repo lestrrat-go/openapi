@@ -11,6 +11,8 @@ import (
 )
 
 func TestGenerate(t *testing.T) {
+	t.Skip()
+
 	gen := grpcgen.New()
 
 	f, err := os.Open("cats.yaml")
