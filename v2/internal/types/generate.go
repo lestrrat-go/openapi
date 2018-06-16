@@ -1221,7 +1221,7 @@ func generateMutatorFromEntity(e interface{}) error {
 				fmt.Fprintf(dst, "\nm.proxy.%s = nil", unexportedName)
 				fmt.Fprintf(dst, "\nreturn m")
 				fmt.Fprintf(dst, "\n}")
-				fmt.Fprintf(dst, "\n\n// %s sets the %s field.", exportedName, unexportedName, ifacename)
+				fmt.Fprintf(dst, "\n\n// %s sets the %s field.", exportedName, unexportedName)
 				fmt.Fprintf(dst, "\nfunc (m *%sMutator) %s(v %s) *%sMutator {", ifacename, exportedName, typname(fv.Type.Elem()), ifacename)
 				fmt.Fprintf(dst, "\nm.proxy.%s = &v", unexportedName)
 				fmt.Fprintf(dst, "\nreturn m")
