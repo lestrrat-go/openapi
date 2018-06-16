@@ -1,5 +1,6 @@
 //go:generate go run internal/cmd/gentypes/gentypes.go
 
+// Package openapi implement OpenAPI Spec v2
 package openapi
 
 import (
