@@ -890,7 +890,7 @@ func formatClient(ctx *Context, dst io.Writer, cl *Client) error {
 	fmt.Fprintf(dst, "\n\nfunc encodeCallPayload(marshalers map[string]Marshaler, mtype string, payload interface{}) (io.Reader, error) {")
 	fmt.Fprintf(dst, "\nmarshaler, ok := marshalers[mtype]")
 	fmt.Fprintf(dst, "\nif !ok {")
-	fmt.Fprintf(dst, "\nreturn nil, errors.Errorf(`missing marshaler for request content type %s`, mtype)")
+	fmt.Fprintf(dst, "\nreturn nil, errors.Errorf(`missing marshaler for request content type %%s`, mtype)")
 	fmt.Fprintf(dst, "\n}")
 	fmt.Fprintf(dst, "\n\nencoded, err := marshaler.Marshal(payload)")
 	fmt.Fprintf(dst, "\nif err != nil {")
