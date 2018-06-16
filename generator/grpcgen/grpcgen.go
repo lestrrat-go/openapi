@@ -20,6 +20,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -37,7 +38,7 @@ import (
 type SchemaLike interface {
 	Type() openapi.PrimitiveType
 	Format() string
-	DefaultValue() interface{}
+	Default() interface{}
 	Maximum() float64
 	ExclusiveMaximum() float64
 	Minimum() float64
@@ -169,7 +170,18 @@ func compile(ctx *genCtx) error {
 
 func compileGlobalDefinitions(ctx *genCtx) error {
 	for defiter := ctx.root.Definitions(); defiter.Next(); {
-		name, schema := defiter.Item()
+		name, thing := defiter.Item()
+
+		// Silly, but since we don't know what this is, we're going to
+		// need to marshal/unmarshal it again
+		encoded, err := json.Marshal(thing)
+		if err != nil {
+			return errors.Wrapf(err, `failed to marshal #/definitions/%s`, name)
+		}
+		var schema openapi.Schema
+		if err := openapi.SchemaFromJSON(encoded, &schema); err != nil {
+			return errors.Wrapf(err, `failed to unmarshal #/definitions/%s`, name)
+		}
 
 		log.Printf(" * Compiling #/definitions/%s", name)
 		m, err := compileMessage(ctx, name, schema)
