@@ -80,6 +80,10 @@ func Generate(spec openapi.Swagger, options ...Option) error {
 	}
 
 	// declare types
+	if err := writeResponseFile(&ctx); err != nil {
+		return errors.Wrap(err, `failed to write response file`)
+	}
+
 	if err := writeTypesFile(&ctx); err != nil {
 		return errors.Wrap(err, `failed to write options file`)
 	}
@@ -110,6 +114,30 @@ func RunFlow() error {
 	return nil
 }
 
+func writeResponseFile(ctx *Context) error {
+	fn := filepath.Join(ctx.dir, "types", "response.js")
+	log.Printf("Generating %s", fn)
+
+	var buf bytes.Buffer
+	var dst io.Writer = &buf
+	codegen.WritePreamble(dst, ctx.packageName)
+
+	fmt.Fprintf(dst, "\n\nexport default class Response {")
+	fmt.Fprintf(dst, "\ncode :number")
+	fmt.Fprintf(dst, "\ndata :any")
+  fmt.Fprintf(dst, "\nconstructor(code: number, data: any) {")
+	fmt.Fprintf(dst, "\nthis.code = code;")
+	fmt.Fprintf(dst, "\nthis.data = data;")
+	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\n}")
+
+	if err := codegen.WriteFormattedToFile(fn, buf.Bytes()); err != nil {
+		codegen.DumpCode(os.Stdout, bytes.NewReader(buf.Bytes()))
+		return errors.Wrapf(err, `failed to write to %s`, fn)
+	}
+	return nil
+}
+
 func writeTypesFile(ctx *Context) error {
 	fn := filepath.Join(ctx.dir, "types_gen.js")
 	log.Printf("Generating %s", fn)
@@ -117,6 +145,15 @@ func writeTypesFile(ctx *Context) error {
 	var buf bytes.Buffer
 	var dst io.Writer = &buf
 	codegen.WritePreamble(dst, ctx.packageName)
+
+	fmt.Fprintf(dst, "\n\nexport class Response {")
+	fmt.Fprintf(dst, "\ncode :number")
+	fmt.Fprintf(dst, "\ndata :any")
+  fmt.Fprintf(dst, "\nconstructor(code: number, data: any) {")
+	fmt.Fprintf(dst, "\nthis.code = code;")
+	fmt.Fprintf(dst, "\nthis.data = data;")
+	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\n}")
 
 	var typDefs []typeDefinition
 	for _, typ := range ctx.types {
@@ -281,7 +318,7 @@ func formatService(ctx *Context, dst io.Writer, svc *Service) error {
 		return svc.calls[i].name < svc.calls[j].name
 	})
 
-	fmt.Fprintf(dst, "\n\nimport Response from '../response'")
+	fmt.Fprintf(dst, "\n\nimport Response from '../types/response'")
 
 	for _, call := range svc.calls {
 		var allFields []*Field
@@ -417,6 +454,8 @@ func formatService(ctx *Context, dst io.Writer, svc *Service) error {
 			fmt.Fprintf(dst, "\ncase 'application/x-www-form-urlencoded':")
 			fmt.Fprintf(dst, "\nbody = this.body._form();")
 			fmt.Fprintf(dst, "\nbreak;")
+			fmt.Fprintf(dst, "\ndefault:")
+			fmt.Fprintf(dst, "\nreturn new Response(500, {error: 'unsupported content-type ' + mime})")
 			fmt.Fprintf(dst, "\n}")
 		}
 
