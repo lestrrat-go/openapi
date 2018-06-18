@@ -52,7 +52,18 @@ inner scope.
 
 `oagen` command is available to generate code. Compile using `go build ./cmd/oagen/oagen.go`
 
-## Go REST Client
+## Protobuf (gRPC)
+
+Work is still pending. Currently can generate some protobuf declaration.
+
+```
+oagen protobuf \
+    -output=/path/to/file.proto \
+    -global-option=go_package=myapi \
+    spec.yaml
+```
+
+## Go/ES6(+Flow) REST Client
 
 Currently `oagen restclient` command will generate a Go REST client loosely based on
 Google-ish api (see https://google.golang.org/api)
@@ -61,8 +72,8 @@ Google-ish api (see https://google.golang.org/api)
 oagen restclient \
     -target=go \ # or es6flow
     -directory=path/to/dir \
-    -package=packageName
-    ...
+    -package=packageName \
+    spec.yaml
 ```
 
 # CAVEATS
@@ -70,6 +81,3 @@ oagen restclient \
 *JSON Reference* (those pesky `$ref`s) are supported, but only if it's internal to the document itself.
 I plan on incorporating external references, but in a separate level. I believe external references
 should be resolved before we do anything with this library.
-
-*Code Generation* for clients are still pending. I plan on supporting HTTP client generator, and a
-protobuf (and therefore gRPC) definition generator.
