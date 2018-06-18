@@ -85,13 +85,6 @@ func (v *response) Extensions() *ExtensionsIterator {
 	return &iter
 }
 
-func (v *response) Validate(recurse bool) error {
-	if recurse {
-		return v.recurseValidate()
-	}
-	return nil
-}
-
 func (v *response) recurseValidate() error {
 	if elem := v.schema; elem != nil {
 		if err := elem.Validate(true); err != nil {

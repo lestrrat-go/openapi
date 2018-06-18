@@ -69,7 +69,7 @@ func GenerateCode() error {
 		name := reflect.TypeOf(e).Name()
 		entityTypes[name] = e
 		switch name {
-		case "swagger", "paths", "parameter", "operation":
+		case "swagger", "paths", "parameter", "operation", "response":
 		default:
 			validators[name] = struct{}{}
 		}
