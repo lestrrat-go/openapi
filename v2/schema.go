@@ -12,3 +12,11 @@ func (v *schema) IsRequiredProperty(prop string) bool {
 	}
 	return false
 }
+
+// ConvertToSchema fulfills the SchemaCoverter interface.
+// schema is already a Schema object, but it's useful to
+// align the interface with other Schema-like objects.
+// This method just returns itself
+func (v *schema) ConvertToSchema() (Schema, error) {
+	return v, nil
+}

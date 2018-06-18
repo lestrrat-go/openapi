@@ -610,6 +610,7 @@ type Schema interface {
 	MarshalJSON() ([]byte, error)
 	Reference() string
 	Validator
+	SchemaConverter
 	IsRequiredProperty(string) bool
 }
 

@@ -290,6 +290,7 @@ type header struct {
 }
 
 type Schema interface {
+	SchemaConverter
 	IsRequiredProperty(string) bool
 }
 
