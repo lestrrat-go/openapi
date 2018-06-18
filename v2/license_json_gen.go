@@ -131,8 +131,13 @@ func (v *license) QueryJSON(path string) (ret interface{}, ok bool) {
 	return nil, false
 }
 
-// LicenseFromJSON constructs a License from JSON buffer
-func LicenseFromJSON(buf []byte, v *License) error {
+// LicenseFromJSON constructs a License from JSON buffer. `dst` must
+// be a pointer to `License`
+func LicenseFromJSON(buf []byte, dst interface{}) error {
+	v, ok := dst.(*License)
+	if !ok {
+		return errors.Errorf(`dst needs to be a pointer to License, but got %T`, dst)
+	}
 	var tmp license
 	if err := json.Unmarshal(buf, &tmp); err != nil {
 		return errors.Wrap(err, `failed to unmarshal`)

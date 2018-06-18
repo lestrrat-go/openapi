@@ -164,8 +164,13 @@ func (v *response) QueryJSON(path string) (ret interface{}, ok bool) {
 	return nil, false
 }
 
-// ResponseFromJSON constructs a Response from JSON buffer
-func ResponseFromJSON(buf []byte, v *Response) error {
+// ResponseFromJSON constructs a Response from JSON buffer. `dst` must
+// be a pointer to `Response`
+func ResponseFromJSON(buf []byte, dst interface{}) error {
+	v, ok := dst.(*Response)
+	if !ok {
+		return errors.Errorf(`dst needs to be a pointer to Response, but got %T`, dst)
+	}
 	var tmp response
 	if err := json.Unmarshal(buf, &tmp); err != nil {
 		return errors.Wrap(err, `failed to unmarshal`)

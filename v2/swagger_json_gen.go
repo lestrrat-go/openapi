@@ -334,8 +334,13 @@ func (v *swagger) QueryJSON(path string) (ret interface{}, ok bool) {
 	return nil, false
 }
 
-// SwaggerFromJSON constructs a Swagger from JSON buffer
-func SwaggerFromJSON(buf []byte, v *Swagger) error {
+// SwaggerFromJSON constructs a Swagger from JSON buffer. `dst` must
+// be a pointer to `Swagger`
+func SwaggerFromJSON(buf []byte, dst interface{}) error {
+	v, ok := dst.(*Swagger)
+	if !ok {
+		return errors.Errorf(`dst needs to be a pointer to Swagger, but got %T`, dst)
+	}
 	var tmp swagger
 	if err := json.Unmarshal(buf, &tmp); err != nil {
 		return errors.Wrap(err, `failed to unmarshal`)

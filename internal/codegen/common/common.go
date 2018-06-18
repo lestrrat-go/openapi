@@ -2,6 +2,8 @@ package common
 
 import (
 	"bufio"
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -9,6 +11,25 @@ import (
 
 	"github.com/pkg/errors"
 )
+
+// RoundTripDecode exists to assert that `src` can actually be decoded
+// to `dst`. This is necessary when `src` is an unknown thing resolved
+// via a JSON reference, and we're not sure what the value is.
+// This function does a roundtrip to make sure things correctly get
+// unmarshaled. Make sure to pass a pointer to the type you want to
+// end up with to `dst`
+func RoundTripDecode(dst, src interface{}, unmarshaler func([]byte, interface{}) error) error {
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(src); err != nil {
+		return errors.Wrap(err, `failed to marshal src into JSON`)
+	}
+
+	if err := unmarshaler(buf.Bytes(), dst); err != nil {
+		return errors.Wrap(err, `failed to unmarshal JSON`)
+	}
+
+	return nil
+}
 
 func DumpCode(dst io.Writer, src io.Reader) {
 	scanner := bufio.NewScanner(src)

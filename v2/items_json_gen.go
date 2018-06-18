@@ -344,8 +344,13 @@ func (v *items) QueryJSON(path string) (ret interface{}, ok bool) {
 	return nil, false
 }
 
-// ItemsFromJSON constructs a Items from JSON buffer
-func ItemsFromJSON(buf []byte, v *Items) error {
+// ItemsFromJSON constructs a Items from JSON buffer. `dst` must
+// be a pointer to `Items`
+func ItemsFromJSON(buf []byte, dst interface{}) error {
+	v, ok := dst.(*Items)
+	if !ok {
+		return errors.Errorf(`dst needs to be a pointer to Items, but got %T`, dst)
+	}
 	var tmp items
 	if err := json.Unmarshal(buf, &tmp); err != nil {
 		return errors.Wrap(err, `failed to unmarshal`)

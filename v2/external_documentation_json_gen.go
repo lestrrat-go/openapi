@@ -131,8 +131,13 @@ func (v *externalDocumentation) QueryJSON(path string) (ret interface{}, ok bool
 	return nil, false
 }
 
-// ExternalDocumentationFromJSON constructs a ExternalDocumentation from JSON buffer
-func ExternalDocumentationFromJSON(buf []byte, v *ExternalDocumentation) error {
+// ExternalDocumentationFromJSON constructs a ExternalDocumentation from JSON buffer. `dst` must
+// be a pointer to `ExternalDocumentation`
+func ExternalDocumentationFromJSON(buf []byte, dst interface{}) error {
+	v, ok := dst.(*ExternalDocumentation)
+	if !ok {
+		return errors.Errorf(`dst needs to be a pointer to ExternalDocumentation, but got %T`, dst)
+	}
 	var tmp externalDocumentation
 	if err := json.Unmarshal(buf, &tmp); err != nil {
 		return errors.Wrap(err, `failed to unmarshal`)

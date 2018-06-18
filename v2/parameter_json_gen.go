@@ -443,8 +443,13 @@ func (v *parameter) QueryJSON(path string) (ret interface{}, ok bool) {
 	return nil, false
 }
 
-// ParameterFromJSON constructs a Parameter from JSON buffer
-func ParameterFromJSON(buf []byte, v *Parameter) error {
+// ParameterFromJSON constructs a Parameter from JSON buffer. `dst` must
+// be a pointer to `Parameter`
+func ParameterFromJSON(buf []byte, dst interface{}) error {
+	v, ok := dst.(*Parameter)
+	if !ok {
+		return errors.Errorf(`dst needs to be a pointer to Parameter, but got %T`, dst)
+	}
 	var tmp parameter
 	if err := json.Unmarshal(buf, &tmp); err != nil {
 		return errors.Wrap(err, `failed to unmarshal`)

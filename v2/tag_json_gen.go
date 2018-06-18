@@ -146,8 +146,13 @@ func (v *tag) QueryJSON(path string) (ret interface{}, ok bool) {
 	return nil, false
 }
 
-// TagFromJSON constructs a Tag from JSON buffer
-func TagFromJSON(buf []byte, v *Tag) error {
+// TagFromJSON constructs a Tag from JSON buffer. `dst` must
+// be a pointer to `Tag`
+func TagFromJSON(buf []byte, dst interface{}) error {
+	v, ok := dst.(*Tag)
+	if !ok {
+		return errors.Errorf(`dst needs to be a pointer to Tag, but got %T`, dst)
+	}
 	var tmp tag
 	if err := json.Unmarshal(buf, &tmp); err != nil {
 		return errors.Wrap(err, `failed to unmarshal`)

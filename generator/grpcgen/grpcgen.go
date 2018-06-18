@@ -20,7 +20,6 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -31,6 +30,8 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/iancoleman/strcase"
+	"github.com/lestrrat-go/openapi/internal/codegen/common"
+	codegen "github.com/lestrrat-go/openapi/internal/codegen/golang"
 	openapi "github.com/lestrrat-go/openapi/v2"
 	"github.com/pkg/errors"
 )
@@ -78,11 +79,7 @@ func (r *Resolver) Resolve(ref string) (interface{}, error) {
 	return r.resolver.Resolve(ref)
 }
 
-func New() *Generator {
-	return &Generator{}
-}
-
-func (g *Generator) Generate(ctx context.Context, spec openapi.OpenAPI, options ...Option) error {
+func Generate(ctx context.Context, spec openapi.OpenAPI, options ...Option) error {
 	var dst io.Writer = os.Stdout
 	for _, o := range options {
 		switch o.Name() {
@@ -172,19 +169,13 @@ func compileGlobalDefinitions(ctx *genCtx) error {
 	for defiter := ctx.root.Definitions(); defiter.Next(); {
 		name, thing := defiter.Item()
 
-		// Silly, but since we don't know what this is, we're going to
-		// need to marshal/unmarshal it again
-		encoded, err := json.Marshal(thing)
-		if err != nil {
-			return errors.Wrapf(err, `failed to marshal #/definitions/%s`, name)
-		}
-		var schema openapi.Schema
-		if err := openapi.SchemaFromJSON(encoded, &schema); err != nil {
-			return errors.Wrapf(err, `failed to unmarshal #/definitions/%s`, name)
+		var tmp openapi.Schema
+		if err := common.RoundTripDecode(tmp, thing, openapi.SchemaFromJSON); err != nil {
+			return errors.Wrapf(err, `expected openapi.Schema for #/defnitions/%s, got %T`, name, thing)
 		}
 
 		log.Printf(" * Compiling #/definitions/%s", name)
-		m, err := compileMessage(ctx, name, schema)
+		m, err := compileMessage(ctx, name, tmp)
 		if err != nil {
 			return errors.Wrapf(err, `failed to compile message #/definitions/%s`, name)
 		}
@@ -238,13 +229,16 @@ func compileMessage(ctx *genCtx, name string, s openapi.Schema) (message *Messag
 		if err != nil {
 			return nil, errors.Wrapf(err, `failed to resolve reference %s`, ref)
 		}
-		asserted, ok := v.(openapi.Schema)
-		if !ok {
+
+		var tmp openapi.Schema
+		if err := common.RoundTripDecode(&tmp, v, openapi.SchemaFromJSON); err != nil {
 			return nil, errors.Errorf(`expected resolved object to be an openapi.Schema, but got %T`, v)
 		}
-		s = asserted
+		s = tmp
 	}
 	var m Message
+
+	log.Printf("%#v", s)
 
 	m.name = name
 
@@ -280,21 +274,33 @@ func compileArrayElement(ctx *genCtx, s SchemaLike) (*Message, error) {
 	return nil, errors.New(`unimplemented`)
 }
 
-func grpcType(ctx *genCtx, s SchemaLike) (string, bool, error) {
+func grpcType(ctx *genCtx, s SchemaLike, name string) (string, bool, error) {
 	var typ string
 	var repeated bool
 	// If this is a reference, resolve it
 	if ref := s.Reference(); ref != "" {
+		// if it's a reference, the chances are it's already registered in our type registry
+		if m, ok := lookupMessage(ctx, ref); ok {
+			return m.name, false, nil
+		}
+
 		v, err := ctx.resolver.Resolve(ref)
 		if err != nil {
 			return "", false, errors.Wrap(err, `failed to resolve referece`)
 		}
 
-		tmp, ok := v.(openapi.Schema)
-		if !ok {
-			return "", false, errors.Errorf(`expected reference %s to resolve to a Schema, got %T`, ref, v)
+		var tmp openapi.Schema
+		if err := common.RoundTripDecode(&tmp, v, openapi.SchemaFromJSON); err != nil {
+			return "", false, errors.Errorf(`expected reference %s to resolve to a Schema`, ref)
 		}
-		s = tmp
+
+		msg, err := compileMessage(ctx, codegen.ExportedName(strings.TrimPrefix(ref, "#/definitions/")), tmp)
+		if err != nil {
+			return "", false, errors.Wrapf(err, `failed to compile message for %s`, ref)
+		}
+		ctx.proto.AddMessage(msg)
+
+		return msg.name, false, nil
 	}
 
 	if raw, ok := s.Extension("x-proto-type"); ok {
@@ -320,6 +326,12 @@ func grpcType(ctx *genCtx, s SchemaLike) (string, bool, error) {
 
 	if typ == "" {
 		switch s.Type() {
+		case openapi.Object:
+			msg, err := compileMessage(ctx, name, s)
+			if err != nil {
+				return "", false, errors.Wrap(err, `failed to compile message`)
+			}
+			return msg.name, false, nil
 		case openapi.Array:
 			var items SchemaLike
 			if tmp, ok := s.(openapi.Schema); ok {
@@ -340,6 +352,8 @@ func grpcType(ctx *genCtx, s SchemaLike) (string, bool, error) {
 			typ = "int32" // TODO consider format
 		case openapi.Number:
 			typ = "float32"
+		case openapi.Boolean:
+			typ = "boolean"
 		default:
 			return "", false, errors.Errorf(`unsupported field type %s`, s.Type())
 		}
@@ -349,7 +363,7 @@ func grpcType(ctx *genCtx, s SchemaLike) (string, bool, error) {
 }
 
 func compileField(ctx *genCtx, name string, s openapi.Schema) (*Field, error) {
-	typ, repeated, err := grpcType(ctx, s)
+	typ, repeated, err := grpcType(ctx, s, name)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to deduce gRPC type`)
 	}
@@ -373,9 +387,9 @@ func compileRPCParameters(ctx *genCtx, name string, iter *openapi.ParameterListI
 		var repeated bool
 		var err error
 		if param.In() == openapi.InBody {
-			typ, repeated, err = grpcType(ctx, param.Schema())
+			typ, repeated, err = grpcType(ctx, param.Schema(), codegen.ExportedName(param.Name()))
 		} else {
-			typ, repeated, err = grpcType(ctx, param)
+			typ, repeated, err = grpcType(ctx, param, codegen.ExportedName(param.Name()))
 		}
 		if err != nil {
 			return nil, errors.Wrap(err, `failed to deduce gRPC type`)

@@ -145,8 +145,13 @@ func (v *contact) QueryJSON(path string) (ret interface{}, ok bool) {
 	return nil, false
 }
 
-// ContactFromJSON constructs a Contact from JSON buffer
-func ContactFromJSON(buf []byte, v *Contact) error {
+// ContactFromJSON constructs a Contact from JSON buffer. `dst` must
+// be a pointer to `Contact`
+func ContactFromJSON(buf []byte, dst interface{}) error {
+	v, ok := dst.(*Contact)
+	if !ok {
+		return errors.Errorf(`dst needs to be a pointer to Contact, but got %T`, dst)
+	}
 	var tmp contact
 	if err := json.Unmarshal(buf, &tmp); err != nil {
 		return errors.Wrap(err, `failed to unmarshal`)

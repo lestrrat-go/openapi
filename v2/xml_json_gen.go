@@ -173,8 +173,13 @@ func (v *xml) QueryJSON(path string) (ret interface{}, ok bool) {
 	return nil, false
 }
 
-// XMLFromJSON constructs a XML from JSON buffer
-func XMLFromJSON(buf []byte, v *XML) error {
+// XMLFromJSON constructs a XML from JSON buffer. `dst` must
+// be a pointer to `XML`
+func XMLFromJSON(buf []byte, dst interface{}) error {
+	v, ok := dst.(*XML)
+	if !ok {
+		return errors.Errorf(`dst needs to be a pointer to XML, but got %T`, dst)
+	}
 	var tmp xml
 	if err := json.Unmarshal(buf, &tmp); err != nil {
 		return errors.Wrap(err, `failed to unmarshal`)

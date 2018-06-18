@@ -285,8 +285,13 @@ func (v *operation) QueryJSON(path string) (ret interface{}, ok bool) {
 	return nil, false
 }
 
-// OperationFromJSON constructs a Operation from JSON buffer
-func OperationFromJSON(buf []byte, v *Operation) error {
+// OperationFromJSON constructs a Operation from JSON buffer. `dst` must
+// be a pointer to `Operation`
+func OperationFromJSON(buf []byte, dst interface{}) error {
+	v, ok := dst.(*Operation)
+	if !ok {
+		return errors.Errorf(`dst needs to be a pointer to Operation, but got %T`, dst)
+	}
 	var tmp operation
 	if err := json.Unmarshal(buf, &tmp); err != nil {
 		return errors.Wrap(err, `failed to unmarshal`)
