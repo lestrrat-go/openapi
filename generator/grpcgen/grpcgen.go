@@ -57,6 +57,11 @@ type SchemaLike interface {
 	Reference() string
 }
 
+type globalOption struct {
+	name  string
+	value string
+}
+
 type nonFatal struct{}
 
 func (e nonFatal) Error() string {
@@ -81,10 +86,13 @@ func (r *Resolver) Resolve(ref string) (interface{}, error) {
 
 func Generate(ctx context.Context, spec openapi.OpenAPI, options ...Option) error {
 	var dst io.Writer = os.Stdout
+	var globalOptions []*globalOption
 	for _, o := range options {
 		switch o.Name() {
 		case optkeyDestination:
 			dst = o.Value().(io.Writer)
+		case optkeyGlobalOption:
+			globalOptions = append(globalOptions, o.Value().(*globalOption))
 		}
 	}
 
@@ -100,20 +108,27 @@ func Generate(ctx context.Context, spec openapi.OpenAPI, options ...Option) erro
 		resolver: resolver,
 		root:     spec,
 		dst:      dst,
-		messages: make(map[string]*Message),
+		proto: &Protobuf{
+			packageName:   "myapp",
+			globalOptions: globalOptions,
+			imports:       make(map[string]struct{}),
+		},
+
+		// types that are defined at the top level through references.
+		types: make(map[string]Type),
 	}
 
 	return generate(c)
 }
 
-func registerMessage(ctx *genCtx, name string, message *Message) {
-	log.Printf(" * Registering message %s (%s)", name, message.name)
-	ctx.messages[name] = message
+func (ctx *genCtx) RegisterMessage(path string, typ Type) {
+	ctx.log("* Registering type %s (%s)", path, typ.Name())
+	ctx.types[path] = typ
 }
 
-func lookupMessage(ctx *genCtx, name string) (*Message, bool) {
-	message, ok := ctx.messages[name]
-	return message, ok
+func (ctx *genCtx) LookupType(path string) (Type, bool) {
+	typ, ok := ctx.types[path]
+	return typ, ok
 }
 
 func grpcMethodName(oper openapi.Operation) string {
@@ -149,44 +164,67 @@ func generate(ctx *genCtx) error {
 }
 
 func compile(ctx *genCtx) error {
-	ctx.proto = &Protobuf{
-		packageName: "myapp",
-		imports:     make(map[string]struct{}),
-	}
-
 	if err := compileGlobalDefinitions(ctx); err != nil {
 		return errors.Wrap(err, `failed to compile definitions`)
 	}
 
-	if err := compileMethods(ctx); err != nil {
-		return errors.Wrap(err, `failed to compile methods`)
+	if err := compileRPCs(ctx); err != nil {
+		return errors.Wrap(err, `failed to compile RPC calls`)
 	}
 
 	return nil
 }
 
+func (ctx *genCtx) log(f string, args ...interface{}) {
+	log.Printf(ctx.Indent(f, args...))
+}
+
+func (ctx *genCtx) Indent(f string, args ...interface{}) string {
+	return ctx.indent + fmt.Sprintf(f, args...)
+}
+
+func (ctx *genCtx) Start(f string, args ...interface{}) func() {
+	ctx.log(f, args...)
+	ctx.indent = ctx.indent + "  "
+	return func() {
+		ctx.indent = ctx.indent[:len(ctx.indent)-2]
+	}
+}
+
 func compileGlobalDefinitions(ctx *genCtx) error {
+	done := ctx.Start("* Compiling Global Definitions")
+	defer done()
+
 	for defiter := ctx.root.Definitions(); defiter.Next(); {
 		name, thing := defiter.Item()
 
 		var tmp openapi.Schema
-		if err := common.RoundTripDecode(tmp, thing, openapi.SchemaFromJSON); err != nil {
+		if err := common.RoundTripDecode(&tmp, thing, openapi.SchemaFromJSON); err != nil {
 			return errors.Wrapf(err, `expected openapi.Schema for #/defnitions/%s, got %T`, name, thing)
 		}
 
-		log.Printf(" * Compiling #/definitions/%s", name)
-		m, err := compileMessage(ctx, name, tmp)
+		ctx.log("* Compiling #/definitions/%s", name)
+		typ, err := compileMessage(ctx, tmp)
 		if err != nil {
 			return errors.Wrapf(err, `failed to compile message #/definitions/%s`, name)
 		}
 
+		m, ok := typ.(*Message)
+		if !ok {
+			return errors.Errorf(`expected global definition to compile into a message, got %T`, typ)
+		}
+
+		m.name = codegen.ExportedName(name)
 		ctx.proto.AddMessage(m)
-		registerMessage(ctx, "#/definitions/"+name, m)
+		ctx.RegisterMessage("#/definitions/"+name, m)
 	}
 	return nil
 }
 
-func compileMethods(ctx *genCtx) error {
+func compileRPCs(ctx *genCtx) error {
+	done := ctx.Start("* Compiling RPCs")
+	defer done()
+
 	for piter := ctx.root.Paths().Paths(); piter.Next(); {
 		_, pi := piter.Item()
 		for operiter := pi.Operations(); operiter.Next(); {
@@ -211,18 +249,25 @@ func compileMethods(ctx *genCtx) error {
 	return nil
 }
 
+/*
+// compileMessage takes a schema an compiles it into a Message object.
+// if the value is a built-in, then it's an error
 func compileMessage(ctx *genCtx, name string, s openapi.Schema) (message *Message, err error) {
 	if ref := s.Reference(); ref != "" {
 		// if it's a reference, the chances are it's already registered in our type registry
-		if m, ok := lookupMessage(ctx, ref); ok {
-			return m, nil
+		if m, ok := ctx.LookupType(ref); ok {
+			if m, ok := m.(*Message); ok {
+				return m, nil
+			}
+			return nil, errors.Errorf(`expected Message object, but %s resolved to %T`, ref, m)
 		}
+
 		log.Printf(" * Compiling %s", ref)
 		defer func() {
 			if err != nil {
 				return
 			}
-			registerMessage(ctx, ref, message)
+			ctx.RegisterMessage(ref, message)
 		}()
 
 		v, err := ctx.resolver.Resolve(ref)
@@ -262,8 +307,144 @@ func compileMessage(ctx *genCtx, name string, s openapi.Schema) (message *Messag
 
 	return &m, nil
 }
+*/
 
-func compileArrayElement(ctx *genCtx, s SchemaLike) (*Message, error) {
+func compileBuiltin(ctx *genCtx, s openapi.Schema) (Type, error) {
+	switch s.Type() {
+	case openapi.Boolean:
+		return Builtin("bool"), nil
+	case openapi.String:
+		return Builtin(s.Type()), nil
+	case openapi.Integer:
+		switch s.Format() {
+		case "int64":
+			return Builtin("int64"), nil
+		default:
+			return Builtin("int"), nil
+		}
+	default:
+		return nil, errors.Errorf(`unknown builtin %s`, s.Type())
+	}
+}
+
+// compileMessage takes a schema and compiles it into a Message.
+// Messages normally need to be an object-like type, but in case
+// we have an array, we will actually wrap the elements in an object.
+func compileMessage(ctx *genCtx, schema openapi.Schema) (Type, error) {
+	done := ctx.Start("* Compiling Message")
+	defer done()
+
+	// it better be an object
+	switch schema.Type() {
+	case openapi.Object:
+	case openapi.Array:
+		// special case
+		items, err := openapi.NewSchema().
+			Type(openapi.Array).
+			Items(schema.Items()).
+			Do()
+		if err != nil {
+			return nil, errors.Wrap(err, `failed to create new schema for items`)
+		}
+
+		schema, err = openapi.NewSchema().
+			Type(openapi.Object).
+			Property("items", items).
+			Do()
+		if err != nil {
+			return nil, errors.Wrap(err, `failed to create new schema wrapping array`)
+		}
+	default:
+		return nil, errors.Errorf(`compileMessage: expected type "object", got %s`, schema.Type())
+	}
+
+	var m Message
+	for piter := schema.Properties(); piter.Next(); {
+		name, prop := piter.Item()
+		field, err := compileField(ctx, name, prop)
+		if err != nil {
+			return nil, errors.Wrapf(err, `failed to compile property %s`, name)
+		}
+		m.fields = append(m.fields, field)
+	}
+
+	for i, f := range m.fields {
+		f.id = i + 1
+	}
+
+	return &m, nil
+}
+
+// compileType takes something that looks like a schema, and creates an
+// appropriate type for it.
+func compileType(ctx *genCtx, src openapi.SchemaConverter) (result Type, err error) {
+	schema, err := src.ConvertToSchema()
+	if err != nil {
+		return nil, errors.Wrapf(err, `failed to extract schema out of %T`, src)
+	}
+
+	done := ctx.Start("* Compiling Type %s", schema.Type())
+	defer done()
+
+	if ref := schema.Reference(); ref != "" {
+		typ, ok := ctx.LookupType(ref)
+		if ok {
+			ctx.log("* Reference %s already compileted to %s", ref, typ.Name())
+			return typ, nil
+		}
+
+		thing, err := ctx.resolver.Resolve(ref)
+		if err != nil {
+			return nil, errors.Wrapf(err, `failed to resolve reference %s`, ref)
+		}
+
+		// Are we sure this should always resolve to a schema?
+		var tmp openapi.Schema
+		if err := common.RoundTripDecode(&tmp, thing, openapi.SchemaFromJSON); err != nil {
+			return nil, errors.Errorf(`expected reference %s to resolve to a Schema`, ref)
+		}
+
+		schema = tmp
+
+		if strings.HasPrefix(ref, "#/definitions/") {
+			// If this refers to a global definition but the previous LookupType
+			// failed, this can only mean that we encountered a global definition
+			// that refers to another global definition.
+			// In this case we need to register this message
+			defer func() {
+				if err != nil {
+					return
+				}
+
+				if m, ok := result.(*Message); ok {
+					m.name = codegen.ExportedName(strings.TrimPrefix(ref, "#/definitions/"))
+					ctx.proto.AddMessage(m)
+					ctx.RegisterMessage(ref, m)
+				}
+			}()
+		}
+	}
+
+	switch schema.Type() {
+	case openapi.String, openapi.Number, openapi.Boolean:
+		return compileBuiltin(ctx, schema)
+	case openapi.Object:
+		return compileMessage(ctx, schema)
+	case openapi.Array:
+		ctx.log("* Compiling Array Element")
+		typ, err := compileType(ctx, schema.Items())
+		if err != nil {
+			return nil, errors.Wrap(err, `failed to compile array element`)
+		}
+		return &Array{element: typ}, nil
+	default:
+		return nil, errors.Errorf(`compileType: unsupported schema.type = %s`, schema.Type())
+	}
+}
+
+/*
+
+func compileArrayElement(ctx *genCtx, s SchemaLike) (Type, error) {
 	if ref := s.Reference(); ref != "" {
 		// if ref looks like it's from #/definitions, cheat
 		if strings.HasPrefix(ref, "#/definitions/") {
@@ -271,9 +452,16 @@ func compileArrayElement(ctx *genCtx, s SchemaLike) (*Message, error) {
 		}
 	}
 
-	return nil, errors.New(`unimplemented`)
-}
+	typ, err := compileType(ctx, s)
 
+
+	return grpcType(ctx, s, "dummy")
+
+//	return nil, errors.Errorf(`unimplemented %T`, s)
+}
+*/
+
+/*
 func grpcType(ctx *genCtx, s SchemaLike, name string) (string, bool, error) {
 	var typ string
 	var repeated bool
@@ -327,7 +515,15 @@ func grpcType(ctx *genCtx, s SchemaLike, name string) (string, bool, error) {
 	if typ == "" {
 		switch s.Type() {
 		case openapi.Object:
-			msg, err := compileMessage(ctx, name, s)
+			sc, ok := s.(openapi.SchemaConverter)
+			if !ok {
+				return "", false, errors.Errorf(`%T does not implement openapi.SchemaConverter`, s)
+			}
+			converted, err := sc.ConvertToSchema()
+			if err != nil {
+				return "", false, errors.Wrapf(err, `failed to convert %T to schema`, s)
+			}
+			msg, err := compileMessage(ctx, name, converted)
 			if err != nil {
 				return "", false, errors.Wrap(err, `failed to compile message`)
 			}
@@ -340,7 +536,7 @@ func grpcType(ctx *genCtx, s SchemaLike, name string) (string, bool, error) {
 				items = tmp.Items()
 			}
 
-			msg, err := compileArrayElement(ctx, items)
+			msg, err := com(ctx, items)
 			if err != nil {
 				return "", false, errors.Wrap(err, `failed to compile array items`)
 			}
@@ -361,47 +557,62 @@ func grpcType(ctx *genCtx, s SchemaLike, name string) (string, bool, error) {
 
 	return typ, repeated, nil
 }
+*/
 
 func compileField(ctx *genCtx, name string, s openapi.Schema) (*Field, error) {
-	typ, repeated, err := grpcType(ctx, s, name)
+	done := ctx.Start("* Compiling Field %s", name)
+	defer done()
+
+	typ, err := compileType(ctx, s)
 	if err != nil {
-		return nil, errors.Wrap(err, `failed to deduce gRPC type`)
+		return nil, errors.Wrap(err, `failed to compile field`)
 	}
 
 	return &Field{
-		id:       1,
-		name:     name,
-		typ:      typ,
-		repeated: repeated,
+		id:   1,
+		name: name,
+		typ:  typ,
 	}, nil
 }
 
 func compileRPCParameters(ctx *genCtx, name string, iter *openapi.ParameterListIterator) (*Message, error) {
-	log.Printf(" * Compiling RPC parameters for %s", name)
+	done := ctx.Start("* Compiling RPC parameters for %s", name)
+	defer done()
+
 	var m Message
 	var id = 1
+	var inBody bool
 	for iter.Next() {
 		param := iter.Item()
 
-		var typ string
-		var repeated bool
+		ctx.log("* Compiling parameter %s", param.Name())
+
+		var typ Type
 		var err error
 		if param.In() == openapi.InBody {
-			typ, repeated, err = grpcType(ctx, param.Schema(), codegen.ExportedName(param.Name()))
+			typ, err = compileType(ctx, param.Schema())
+			inBody = true
 		} else {
-			typ, repeated, err = grpcType(ctx, param, codegen.ExportedName(param.Name()))
+			typ, err = compileType(ctx, param)
 		}
 		if err != nil {
 			return nil, errors.Wrap(err, `failed to deduce gRPC type`)
 		}
+
 		m.fields = append(m.fields, &Field{
-			id:       id,
-			name:     param.Name(),
-			typ:      typ,
-			repeated: repeated,
+			id:   id,
+			name: param.Name(),
+			typ:  typ,
 		})
 
 		id++
+	}
+
+	if len(m.fields) == 1 && inBody {
+		ctx.log("* Parameter single body parameter only. Replacing entire message with body message type")
+		// this element *MUST* be a message
+		body := m.fields[0].typ.(*Message)
+		m = *body
 	}
 	m.name = name
 
@@ -413,6 +624,12 @@ func compileRPC(ctx *genCtx, oper openapi.Operation) (*RPC, error) {
 	rpc.name = grpcMethodName(oper)
 	rpc.in = "google.protobuf.Empty"
 	rpc.out = "google.protobuf.Empty"
+	if desc := oper.Description(); len(desc) > 0 {
+		rpc.description = desc
+	}
+
+	done := ctx.Start("* Compiling %s", rpc.name)
+	defer done()
 
 	paramiter := oper.Parameters()
 	if paramiter.Next() {
@@ -429,18 +646,25 @@ func compileRPC(ctx *genCtx, oper openapi.Operation) (*RPC, error) {
 
 		switch code {
 		case "200":
-			var name string
 			s := res.Schema()
+			if s == nil { // no content
+				continue
+			}
+
+			var name string
 			if s.Name() == "" {
 				name = rpc.name + "Response"
 			}
-			msg, err := compileMessage(ctx, name, s)
+
+			typ, err := compileMessage(ctx, s)
 			if err != nil {
 				return nil, errors.Wrapf(err, `failed to compile response message for %s (code = %s)`, oper.PathItem().Path(), code)
 			}
+			msg := typ.(*Message)
+			msg.name = name
 			ctx.proto.AddMessage(msg)
 
-			rpc.out = msg.name
+			rpc.out = msg.Name()
 			break
 		}
 	}
@@ -458,6 +682,17 @@ func format(dst io.Writer, proto *Protobuf) error {
 	fmt.Fprintf(dst, "\n\npackage %s;", proto.packageName)
 
 	formatImports(dst, proto.imports)
+
+	sort.Slice(proto.globalOptions, func(i, j int) bool {
+		return proto.globalOptions[i].name < proto.globalOptions[j].name
+	})
+
+	if len(proto.globalOptions) > 0 {
+		fmt.Fprintf(dst, "\n")
+		for _, option := range proto.globalOptions {
+			fmt.Fprintf(dst, "\noption %s = %s;", option.name, strconv.Quote(option.value))
+		}
+	}
 
 	formatMessages(dst, proto.messages)
 
@@ -495,10 +730,7 @@ func copyIndent(dst io.Writer, src io.Reader) {
 func formatFields(dst io.Writer, fields []*Field) {
 	for _, field := range fields {
 		fmt.Fprintf(dst, "\n")
-		if field.repeated {
-			fmt.Fprintf(dst, "repeated ")
-		}
-		fmt.Fprintf(dst, "%s %s = %d;", field.typ, field.name, field.id)
+		fmt.Fprintf(dst, "%s %s = %d;", field.typ.Name(), field.name, field.id)
 	}
 }
 
@@ -511,6 +743,9 @@ func formatRPCs(dst io.Writer, rpcs []*RPC) {
 	for _, rpc := range rpcs {
 		if buf.Len() > 0 {
 			fmt.Fprintf(&buf, "\n")
+		}
+		if desc := rpc.description; len(desc) > 0 {
+			fmt.Fprintf(&buf, "\n// %s", desc)
 		}
 		fmt.Fprintf(&buf, "\nrpc %s(%s) returns (%s) {", rpc.name, rpc.in, rpc.out)
 		fmt.Fprintf(&buf, "\n}")

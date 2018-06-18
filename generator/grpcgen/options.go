@@ -13,3 +13,7 @@ func WithDestination(dst io.Writer) Option {
 func WithAnnotation(b bool) Option {
 	return option.New(optkeyAnnotation, b)
 }
+
+func WithGlobalOption(key, value string) Option {
+	return option.New(optkeyGlobalOption, &globalOption{name: key, value: value})
+}

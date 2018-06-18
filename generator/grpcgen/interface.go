@@ -11,9 +11,9 @@ import (
 type Option = option.Interface
 
 const (
-	optkeyDestination = "destination"
-	optkeyAnnotation  = "annotation"
-	optkeyPackageName = "package"
+	optkeyAnnotation   = "annotation"
+	optkeyDestination  = "destination"
+	optkeyGlobalOption = "global-option"
 )
 
 type Generator struct{}
@@ -21,18 +21,30 @@ type Generator struct{}
 type genCtx struct {
 	context.Context
 	dst      io.Writer
-	messages map[string]*Message
+	indent   string
+	types    map[string]Type
 	resolver openapi.Resolver
 	root     openapi.OpenAPI
 	proto    *Protobuf
 }
 
 type Protobuf struct {
-	packageName string
-	imports     map[string]struct{}
-	options     map[string]string
-	messages    map[string]*Message
-	services    map[string]*Service
+	globalOptions []*globalOption
+	imports       map[string]struct{}
+	messages      map[string]*Message
+	options       map[string]string
+	packageName   string
+	services      map[string]*Service
+}
+
+type Type interface {
+	Name() string
+}
+
+type Builtin string
+
+type Array struct {
+	element Type
 }
 
 type Message struct {
@@ -41,10 +53,9 @@ type Message struct {
 }
 
 type Field struct {
-	id       int
-	name     string
-	repeated bool
-	typ      string
+	id   int
+	name string
+	typ  Type
 }
 
 type Service struct {
@@ -53,8 +64,9 @@ type Service struct {
 }
 
 type RPC struct {
-	name string
-	in   string
-	out  string
-	path string
+	name        string
+	in          string
+	out         string
+	path        string
+	description string
 }

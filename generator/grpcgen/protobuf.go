@@ -27,3 +27,15 @@ func (v *Protobuf) GetService(name string) *Service {
 func (v *Service) AddRPC(r *RPC) {
 	v.rpcs = append(v.rpcs, r)
 }
+
+func (v Builtin) Name() string {
+	return string(v)
+}
+
+func (v *Message) Name() string {
+	return v.name
+}
+
+func (v *Array) Name() string {
+	return "repeated " + v.element.Name()
+}
