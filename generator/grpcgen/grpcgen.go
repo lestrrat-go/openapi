@@ -512,7 +512,7 @@ func compileRPCParameters(ctx *genCtx, name string, iter *openapi.ParameterListI
 		var typ Type
 		var err error
 		if param.In() == openapi.InBody {
-			typ, err = compileTypeWithName(ctx, param.Schema(), name+" "+param.Name())
+			typ, err = compileTypeWithName(ctx, param.Schema(), param.Name())
 		} else {
 			typ, err = compileType(ctx, param)
 		}
@@ -613,6 +613,7 @@ func format(ctx *genCtx, dst io.Writer, proto *Protobuf) error {
 		}
 	}
 
+	fmt.Fprintf(dst, "\n\n")
 	formatMessages(ctx, dst, proto.messages)
 
 	var serviceNames []string
@@ -638,18 +639,19 @@ func copyIndent(dst io.Writer, src io.Reader) {
 	scanner := bufio.NewScanner(src)
 	var n int
 	for scanner.Scan() {
-		if n > 0 {
-			fmt.Fprintf(dst, "\n")
-		}
-		fmt.Fprintf(dst, "  %s", scanner.Text())
 		n++
+		txt := scanner.Text()
+		if n == 1 && txt == ""  {
+			continue
+		}
+
+		fmt.Fprintf(dst, "\n  %s", txt)
 	}
 }
 
 func formatFields(ctx *genCtx, dst io.Writer, fields []*Field) {
 	for _, field := range fields {
-		fmt.Fprintf(dst, "\n")
-		fmt.Fprintf(dst, "%s %s = %d;", field.typ.Name(), field.name, field.id)
+		fmt.Fprintf(dst, "\n%s %s = %d;", field.typ.Name(), field.name, field.id)
 	}
 }
 
@@ -693,7 +695,7 @@ func formatAnnotation(ctx *genCtx, dst io.Writer, rpc *RPC) {
 }
 
 func formatMessage(ctx *genCtx, dst io.Writer, msg *Message) {
-	fmt.Fprintf(dst, "\nmessage %s {", msg.name)
+	fmt.Fprintf(dst, "message %s {", msg.name)
 	if len(msg.messages) > 0 {
 		var buf bytes.Buffer
 
@@ -703,11 +705,11 @@ func formatMessage(ctx *genCtx, dst io.Writer, msg *Message) {
 		}
 		sort.Strings(messageNames)
 
-		for i, name := range messageNames {
+		for _, name := range messageNames {
 			submsg := msg.messages[name]
-			if i > 0 {
-				fmt.Fprintf(&buf, "\n")
-			}
+/*			if i > 0 {
+				fmt.Fprintf(&buf, "\n\n")
+			}*/
 			formatMessage(ctx, &buf, submsg)
 		}
 		copyIndent(dst, &buf)
@@ -729,9 +731,11 @@ func formatMessages(ctx *genCtx, dst io.Writer, messages map[string]*Message) {
 	}
 	sort.Strings(messageNames)
 
-	for _, name := range messageNames {
+	for i, name := range messageNames {
 		msg := messages[name]
-		fmt.Fprintf(dst, "\n")
+		if i > 0 {
+			fmt.Fprintf(dst, "\n\n")
+		}
 		formatMessage(ctx, dst, msg)
 	}
 }
