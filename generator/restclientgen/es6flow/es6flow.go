@@ -139,7 +139,7 @@ func writeResponseFile(ctx *Context) error {
 }
 
 func writeTypesFile(ctx *Context) error {
-	fn := filepath.Join(ctx.dir, "types_gen.js")
+	fn := filepath.Join(ctx.dir, "types.js")
 	log.Printf("Generating %s", fn)
 
 	var buf bytes.Buffer
@@ -183,7 +183,7 @@ func writeTypesFile(ctx *Context) error {
 }
 
 func writeClientFile(ctx *Context) error {
-	fn := filepath.Join(ctx.dir, "client_gen.js")
+	fn := filepath.Join(ctx.dir, "client.js")
 	log.Printf("Generating %s", fn)
 
 	var buf bytes.Buffer
@@ -295,7 +295,7 @@ func formatClient(ctx *Context, dst io.Writer, cl *Client) error {
 		fmt.Fprintf(dst, "\nimport %s from './services/%s'", codegen.ClassName(name), codegen.FileName(strings.TrimSuffix(name, "Service")))
 	}
 
-	fmt.Fprintf(dst, "\n\nexport class Client {")
+	fmt.Fprintf(dst, "\n\nexport default class Client {")
 	for _, name := range serviceNames {
 		fmt.Fprintf(dst, "\n%s: %s;", codegen.FieldName(name), codegen.ClassName(name))
 	}
