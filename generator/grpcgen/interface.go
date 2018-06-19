@@ -14,18 +14,26 @@ const (
 	optkeyAnnotation   = "annotation"
 	optkeyDestination  = "destination"
 	optkeyGlobalOption = "global-option"
+	optkeyPackageName  = "package-name"
 )
 
 type Generator struct{}
 
+type messageContainer interface {
+	AddMessage(*Message)
+	LookupMessage(string) (*Message, bool)
+}
+
 type genCtx struct {
 	context.Context
+	annotate bool
 	dst      io.Writer
 	indent   string
 	types    map[string]Type
 	resolver openapi.Resolver
 	root     openapi.OpenAPI
 	proto    *Protobuf
+	parent   messageContainer
 }
 
 type Protobuf struct {
@@ -48,12 +56,15 @@ type Array struct {
 }
 
 type Message struct {
-	name   string
-	fields []*Field
+	name      string
+	reference string
+	fields    []*Field
+	messages  map[string]*Message
 }
 
 type Field struct {
 	id   int
+	body bool
 	name string
 	typ  Type
 }
@@ -65,8 +76,9 @@ type Service struct {
 
 type RPC struct {
 	name        string
-	in          string
-	out         string
+	in          Type
+	out         Type
 	path        string
+	verb        string
 	description string
 }

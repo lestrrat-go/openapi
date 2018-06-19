@@ -87,12 +87,18 @@ func (r *Resolver) Resolve(ref string) (interface{}, error) {
 func Generate(ctx context.Context, spec openapi.OpenAPI, options ...Option) error {
 	var dst io.Writer = os.Stdout
 	var globalOptions []*globalOption
+	var annotate bool
+	var packageName string = "myapp"
 	for _, o := range options {
 		switch o.Name() {
+		case optkeyPackageName:
+			packageName = o.Value().(string)
 		case optkeyDestination:
 			dst = o.Value().(io.Writer)
 		case optkeyGlobalOption:
 			globalOptions = append(globalOptions, o.Value().(*globalOption))
+		case optkeyAnnotation:
+			annotate = o.Value().(bool)
 		}
 	}
 
@@ -105,17 +111,22 @@ func Generate(ctx context.Context, spec openapi.OpenAPI, options ...Option) erro
 
 	c := &genCtx{
 		Context:  ctx,
+		annotate: annotate,
+		dst:      dst,
 		resolver: resolver,
 		root:     spec,
-		dst:      dst,
 		proto: &Protobuf{
-			packageName:   "myapp",
+			packageName:   packageName,
 			globalOptions: globalOptions,
 			imports:       make(map[string]struct{}),
 		},
 
 		// types that are defined at the top level through references.
 		types: make(map[string]Type),
+	}
+	c.parent = c.proto
+	if c.annotate {
+		c.proto.AddImport("google/api/annotations.proto")
 	}
 
 	return generate(c)
@@ -156,7 +167,7 @@ func generate(ctx *genCtx) error {
 		return errors.Wrap(err, `failed to compile from openapi spec`)
 	}
 
-	if err := format(ctx.dst, ctx.proto); err != nil {
+	if err := format(ctx, ctx.dst, ctx.proto); err != nil {
 		return errors.Wrap(err, `failed to format compile protobuf spec`)
 	}
 
@@ -359,6 +370,12 @@ func compileMessage(ctx *genCtx, schema openapi.Schema) (Type, error) {
 	}
 
 	var m Message
+	oldparent := ctx.parent
+	ctx.parent = &m
+	defer func() {
+		ctx.parent = oldparent
+	}()
+
 	for piter := schema.Properties(); piter.Next(); {
 		name, prop := piter.Item()
 		field, err := compileField(ctx, name, prop)
@@ -375,9 +392,13 @@ func compileMessage(ctx *genCtx, schema openapi.Schema) (Type, error) {
 	return &m, nil
 }
 
+func compileType(ctx *genCtx, src openapi.SchemaConverter) (result Type, err error) {
+	return compileTypeWithName(ctx, src, "")
+}
+
 // compileType takes something that looks like a schema, and creates an
 // appropriate type for it.
-func compileType(ctx *genCtx, src openapi.SchemaConverter) (result Type, err error) {
+func compileTypeWithName(ctx *genCtx, src openapi.SchemaConverter, name string) (result Type, err error) {
 	schema, err := src.ConvertToSchema()
 	if err != nil {
 		return nil, errors.Wrapf(err, `failed to extract schema out of %T`, src)
@@ -386,6 +407,7 @@ func compileType(ctx *genCtx, src openapi.SchemaConverter) (result Type, err err
 	done := ctx.Start("* Compiling Type %s", schema.Type())
 	defer done()
 
+	var registerGlobal bool
 	if ref := schema.Reference(); ref != "" {
 		typ, ok := ctx.LookupType(ref)
 		if ok {
@@ -410,15 +432,15 @@ func compileType(ctx *genCtx, src openapi.SchemaConverter) (result Type, err err
 			// If this refers to a global definition but the previous LookupType
 			// failed, this can only mean that we encountered a global definition
 			// that refers to another global definition.
-			// In this case we need to register this message
+			registerGlobal = true
 			defer func() {
 				if err != nil {
 					return
 				}
-
 				if m, ok := result.(*Message); ok {
 					m.name = codegen.ExportedName(strings.TrimPrefix(ref, "#/definitions/"))
-					ctx.proto.AddMessage(m)
+					m.reference = ref
+					ctx.log("* Adding message %s (global)", m.Name())
 					ctx.RegisterMessage(ref, m)
 				}
 			}()
@@ -429,9 +451,20 @@ func compileType(ctx *genCtx, src openapi.SchemaConverter) (result Type, err err
 	case openapi.String, openapi.Number, openapi.Boolean:
 		return compileBuiltin(ctx, schema)
 	case openapi.Object:
-		return compileMessage(ctx, schema)
+		typ, err := compileMessage(ctx, schema)
+		if err != nil {
+			return nil, errors.Wrap(err, `failed to compile message`)
+		}
+		ctx.log(" -----> %#v", typ)
+		if !registerGlobal {
+			if m, ok := typ.(*Message); ok {
+				m.name = codegen.ExportedName(name)
+				ctx.log("* Adding message %s", m.Name())
+				ctx.parent.AddMessage(m)
+			}
+		}
+		return typ, nil
 	case openapi.Array:
-		ctx.log("* Compiling Array Element")
 		typ, err := compileType(ctx, schema.Items())
 		if err != nil {
 			return nil, errors.Wrap(err, `failed to compile array element`)
@@ -441,123 +474,6 @@ func compileType(ctx *genCtx, src openapi.SchemaConverter) (result Type, err err
 		return nil, errors.Errorf(`compileType: unsupported schema.type = %s`, schema.Type())
 	}
 }
-
-/*
-
-func compileArrayElement(ctx *genCtx, s SchemaLike) (Type, error) {
-	if ref := s.Reference(); ref != "" {
-		// if ref looks like it's from #/definitions, cheat
-		if strings.HasPrefix(ref, "#/definitions/") {
-			return &Message{name: strings.TrimPrefix(ref, "#/definitions/")}, nil
-		}
-	}
-
-	typ, err := compileType(ctx, s)
-
-
-	return grpcType(ctx, s, "dummy")
-
-//	return nil, errors.Errorf(`unimplemented %T`, s)
-}
-*/
-
-/*
-func grpcType(ctx *genCtx, s SchemaLike, name string) (string, bool, error) {
-	var typ string
-	var repeated bool
-	// If this is a reference, resolve it
-	if ref := s.Reference(); ref != "" {
-		// if it's a reference, the chances are it's already registered in our type registry
-		if m, ok := lookupMessage(ctx, ref); ok {
-			return m.name, false, nil
-		}
-
-		v, err := ctx.resolver.Resolve(ref)
-		if err != nil {
-			return "", false, errors.Wrap(err, `failed to resolve referece`)
-		}
-
-		var tmp openapi.Schema
-		if err := common.RoundTripDecode(&tmp, v, openapi.SchemaFromJSON); err != nil {
-			return "", false, errors.Errorf(`expected reference %s to resolve to a Schema`, ref)
-		}
-
-		msg, err := compileMessage(ctx, codegen.ExportedName(strings.TrimPrefix(ref, "#/definitions/")), tmp)
-		if err != nil {
-			return "", false, errors.Wrapf(err, `failed to compile message for %s`, ref)
-		}
-		ctx.proto.AddMessage(msg)
-
-		return msg.name, false, nil
-	}
-
-	if raw, ok := s.Extension("x-proto-type"); ok {
-		// better be a map of strings (disguised as interface{} and map[string]interface{})
-		proto, ok := raw.(map[string]interface{})
-		if !ok {
-			return "", false, errors.Errorf(`expected x-proto-type to be a map`)
-		}
-		rawName := proto["name"]
-		name, ok := rawName.(string)
-		if !ok {
-			return "", false, errors.Errorf(`expected x-proto-type.name to be a string`)
-		}
-		rawImport, ok := proto["import"]
-		lib, ok := rawImport.(string)
-		if !ok {
-			return "", false, errors.Errorf(`expected x-proto-type.import to be a string`)
-		}
-
-		typ = name
-		ctx.proto.AddImport(lib)
-	}
-
-	if typ == "" {
-		switch s.Type() {
-		case openapi.Object:
-			sc, ok := s.(openapi.SchemaConverter)
-			if !ok {
-				return "", false, errors.Errorf(`%T does not implement openapi.SchemaConverter`, s)
-			}
-			converted, err := sc.ConvertToSchema()
-			if err != nil {
-				return "", false, errors.Wrapf(err, `failed to convert %T to schema`, s)
-			}
-			msg, err := compileMessage(ctx, name, converted)
-			if err != nil {
-				return "", false, errors.Wrap(err, `failed to compile message`)
-			}
-			return msg.name, false, nil
-		case openapi.Array:
-			var items SchemaLike
-			if tmp, ok := s.(openapi.Schema); ok {
-				items = tmp.Items()
-			} else if tmp, ok := s.(openapi.Items); ok {
-				items = tmp.Items()
-			}
-
-			msg, err := com(ctx, items)
-			if err != nil {
-				return "", false, errors.Wrap(err, `failed to compile array items`)
-			}
-			typ = msg.name
-			repeated = true
-		case openapi.String:
-			typ = "string"
-		case openapi.Integer:
-			typ = "int32" // TODO consider format
-		case openapi.Number:
-			typ = "float32"
-		case openapi.Boolean:
-			typ = "boolean"
-		default:
-			return "", false, errors.Errorf(`unsupported field type %s`, s.Type())
-		}
-	}
-
-	return typ, repeated, nil
-}
-*/
 
 func compileField(ctx *genCtx, name string, s openapi.Schema) (*Field, error) {
 	done := ctx.Start("* Compiling Field %s", name)
@@ -580,8 +496,14 @@ func compileRPCParameters(ctx *genCtx, name string, iter *openapi.ParameterListI
 	defer done()
 
 	var m Message
+
+	oldparent := ctx.parent
+	ctx.parent = &m
+	defer func() {
+		ctx.parent = oldparent
+	}()
+
 	var id = 1
-	var inBody bool
 	for iter.Next() {
 		param := iter.Item()
 
@@ -590,8 +512,7 @@ func compileRPCParameters(ctx *genCtx, name string, iter *openapi.ParameterListI
 		var typ Type
 		var err error
 		if param.In() == openapi.InBody {
-			typ, err = compileType(ctx, param.Schema())
-			inBody = true
+			typ, err = compileTypeWithName(ctx, param.Schema(), name+" "+param.Name())
 		} else {
 			typ, err = compileType(ctx, param)
 		}
@@ -599,21 +520,18 @@ func compileRPCParameters(ctx *genCtx, name string, iter *openapi.ParameterListI
 			return nil, errors.Wrap(err, `failed to deduce gRPC type`)
 		}
 
+		// if this type was not a builtin, we need to register it
+
 		m.fields = append(m.fields, &Field{
 			id:   id,
 			name: param.Name(),
 			typ:  typ,
+			body: param.In() == openapi.InBody,
 		})
 
 		id++
 	}
 
-	if len(m.fields) == 1 && inBody {
-		ctx.log("* Parameter single body parameter only. Replacing entire message with body message type")
-		// this element *MUST* be a message
-		body := m.fields[0].typ.(*Message)
-		m = *body
-	}
 	m.name = name
 
 	return &m, nil
@@ -622,8 +540,8 @@ func compileRPCParameters(ctx *genCtx, name string, iter *openapi.ParameterListI
 func compileRPC(ctx *genCtx, oper openapi.Operation) (*RPC, error) {
 	var rpc RPC
 	rpc.name = grpcMethodName(oper)
-	rpc.in = "google.protobuf.Empty"
-	rpc.out = "google.protobuf.Empty"
+	rpc.in = Builtin("google.protobuf.Empty")
+	rpc.out = Builtin("google.protobuf.Empty")
 	if desc := oper.Description(); len(desc) > 0 {
 		rpc.description = desc
 	}
@@ -637,7 +555,7 @@ func compileRPC(ctx *genCtx, oper openapi.Operation) (*RPC, error) {
 		if err != nil {
 			return nil, errors.Wrap(err, `failed to compile request parameters into message`)
 		}
-		rpc.in = msg.name
+		rpc.in = msg
 		ctx.proto.AddMessage(msg)
 	}
 
@@ -664,20 +582,21 @@ func compileRPC(ctx *genCtx, oper openapi.Operation) (*RPC, error) {
 			msg.name = name
 			ctx.proto.AddMessage(msg)
 
-			rpc.out = msg.Name()
+			rpc.out = msg
 			break
 		}
 	}
 	rpc.path = oper.PathItem().Path()
+	rpc.verb = oper.Verb()
 
-	if rpc.in == "google.protobuf.Empty" || rpc.out == "google.protobuf.Empty" {
+	if rpc.in.Name() == "google.protobuf.Empty" || rpc.out.Name() == "google.protobuf.Empty" {
 		ctx.proto.AddImport("google/protobuf/empty.proto")
 	}
 
 	return &rpc, nil
 }
 
-func format(dst io.Writer, proto *Protobuf) error {
+func format(ctx *genCtx, dst io.Writer, proto *Protobuf) error {
 	fmt.Fprintf(dst, "syntax = \"proto3\";")
 	fmt.Fprintf(dst, "\n\npackage %s;", proto.packageName)
 
@@ -694,7 +613,7 @@ func format(dst io.Writer, proto *Protobuf) error {
 		}
 	}
 
-	formatMessages(dst, proto.messages)
+	formatMessages(ctx, dst, proto.messages)
 
 	var serviceNames []string
 	for name := range proto.services {
@@ -707,7 +626,7 @@ func format(dst io.Writer, proto *Protobuf) error {
 		fmt.Fprintf(dst, "\n\nservice %s {", service.name)
 
 		var rpcBuf bytes.Buffer
-		formatRPCs(&rpcBuf, service.rpcs)
+		formatRPCs(ctx, &rpcBuf, service.rpcs)
 		copyIndent(dst, &rpcBuf)
 		fmt.Fprintf(dst, "\n}")
 	}
@@ -722,19 +641,19 @@ func copyIndent(dst io.Writer, src io.Reader) {
 		if n > 0 {
 			fmt.Fprintf(dst, "\n")
 		}
-		fmt.Fprintf(dst, "    %s", scanner.Text())
+		fmt.Fprintf(dst, "  %s", scanner.Text())
 		n++
 	}
 }
 
-func formatFields(dst io.Writer, fields []*Field) {
+func formatFields(ctx *genCtx, dst io.Writer, fields []*Field) {
 	for _, field := range fields {
 		fmt.Fprintf(dst, "\n")
 		fmt.Fprintf(dst, "%s %s = %d;", field.typ.Name(), field.name, field.id)
 	}
 }
 
-func formatRPCs(dst io.Writer, rpcs []*RPC) {
+func formatRPCs(ctx *genCtx, dst io.Writer, rpcs []*RPC) {
 	sort.Slice(rpcs, func(i, j int) bool {
 		return rpcs[i].name < rpcs[j].name
 	})
@@ -747,14 +666,63 @@ func formatRPCs(dst io.Writer, rpcs []*RPC) {
 		if desc := rpc.description; len(desc) > 0 {
 			fmt.Fprintf(&buf, "\n// %s", desc)
 		}
-		fmt.Fprintf(&buf, "\nrpc %s(%s) returns (%s) {", rpc.name, rpc.in, rpc.out)
+		fmt.Fprintf(&buf, "\nrpc %s(%s) returns (%s) {", rpc.name, rpc.in.Name(), rpc.out.Name())
+		if ctx.annotate {
+			var annotationBuf bytes.Buffer
+			formatAnnotation(ctx, &annotationBuf, rpc)
+			copyIndent(&buf, &annotationBuf)
+		}
 		fmt.Fprintf(&buf, "\n}")
 	}
 
 	buf.WriteTo(dst)
 }
 
-func formatMessages(dst io.Writer, messages map[string]*Message) {
+func formatAnnotation(ctx *genCtx, dst io.Writer, rpc *RPC) {
+	fmt.Fprintf(dst, "\noption (google.api.http) = {")
+	var buf bytes.Buffer
+	fmt.Fprintf(&buf, "\n%s: %s", strings.ToLower(rpc.verb), strconv.Quote(rpc.path))
+
+	if m, ok := rpc.in.(*Message); ok {
+		if len(m.fields) == 1 && m.fields[0].body {
+			fmt.Fprintf(&buf, "\nbody: %s", strconv.Quote(m.fields[0].name))
+		}
+	}
+	copyIndent(dst, &buf)
+	fmt.Fprintf(dst, "\n};")
+}
+
+func formatMessage(ctx *genCtx, dst io.Writer, msg *Message) {
+	fmt.Fprintf(dst, "\nmessage %s {", msg.name)
+	if len(msg.messages) > 0 {
+		var buf bytes.Buffer
+
+		var messageNames []string
+		for name := range msg.messages {
+			messageNames = append(messageNames, name)
+		}
+		sort.Strings(messageNames)
+
+		for i, name := range messageNames {
+			submsg := msg.messages[name]
+			if i > 0 {
+				fmt.Fprintf(&buf, "\n")
+			}
+			formatMessage(ctx, &buf, submsg)
+		}
+		copyIndent(dst, &buf)
+	}
+
+	if len(msg.fields) > 0 {
+		var fieldsBuf bytes.Buffer
+		formatFields(ctx, &fieldsBuf, msg.fields)
+		copyIndent(dst, &fieldsBuf)
+	}
+
+	fmt.Fprintf(dst, "\n}")
+}
+
+func formatMessages(ctx *genCtx, dst io.Writer, messages map[string]*Message) {
 	var messageNames []string
 	for name := range messages {
 		messageNames = append(messageNames, name)
@@ -763,14 +731,8 @@ func formatMessages(dst io.Writer, messages map[string]*Message) {
 
 	for _, name := range messageNames {
 		msg := messages[name]
-
-		fmt.Fprintf(dst, "\n\nmessage %s {", msg.name)
-
-		var fieldsBuf bytes.Buffer
-		formatFields(&fieldsBuf, msg.fields)
-		copyIndent(dst, &fieldsBuf)
-
-		fmt.Fprintf(dst, "\n}")
+		fmt.Fprintf(dst, "\n")
+		formatMessage(ctx, dst, msg)
 	}
 }
 
@@ -786,7 +748,7 @@ func formatImports(dst io.Writer, imports map[string]struct{}) {
 		if buf.Len() == 0 {
 			fmt.Fprintf(&buf, "\n")
 		}
-		fmt.Fprintf(&buf, "\nimport %s", strconv.Quote(lib))
+		fmt.Fprintf(&buf, "\nimport %s;", strconv.Quote(lib))
 	}
 	buf.WriteTo(dst)
 }
