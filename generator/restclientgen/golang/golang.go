@@ -191,6 +191,7 @@ func writeOptionsFile(ctx *Context) error {
 	var buf bytes.Buffer
 	var dst io.Writer = &buf
 	codegen.WritePreamble(dst, ctx.packageName)
+	codegen.WriteImports(dst, "io")
 
 	fmt.Fprintf(dst, "\n\ntype Option interface {")
 	fmt.Fprintf(dst, "\nName() string")
@@ -223,6 +224,7 @@ func writeOptionsFile(ctx *Context) error {
 
 	fmt.Fprintf(dst, "\n\nconst (")
 	fmt.Fprintf(dst, "\noptkeyAccessToken = `accessToken`")
+	fmt.Fprintf(dst, "\noptkeyDebugDump = `debugDump`")
 	fmt.Fprintf(dst, "\noptkeyRequestContentType = `requestContentType`")
 	fmt.Fprintf(dst, "\n)")
 
@@ -241,6 +243,12 @@ func writeOptionsFile(ctx *Context) error {
 	fmt.Fprintf(dst, "\n// authorization on the requested endpoint")
 	fmt.Fprintf(dst, "\nfunc WithAccessToken(s string) CallOption {")
 	fmt.Fprintf(dst, "\nreturn newOption(optkeyAccessToken, s)")
+	fmt.Fprintf(dst, "\n}")
+
+	fmt.Fprintf(dst, "\n\n// WithDebugDump is used to dump request and response to")
+	fmt.Fprintf(dst, "\n// the sepcified io.Writer")
+	fmt.Fprintf(dst, "\nfunc WithDebugDump(dst io.Writer) CallOption {")
+	fmt.Fprintf(dst, "\nreturn newOption(optkeyDebugDump, dst)")
 	fmt.Fprintf(dst, "\n}")
 
 	if err := codegen.WriteFormattedToFile(fn, buf.Bytes()); err != nil {
@@ -878,7 +886,7 @@ func compileCall(ctx *Context, oper openapi.Operation) error {
 
 func formatClient(ctx *Context, dst io.Writer, cl *Client) error {
 	codegen.WritePreamble(dst, ctx.packageName)
-	codegen.WriteImports(dst, "bytes", "io", "net/http", "github.com/pkg/errors")
+	codegen.WriteImports(dst, "bytes", "net/http", "github.com/pkg/errors")
 	fmt.Fprintf(dst, "\n\n")
 	var serviceNames []string
 	for name := range cl.services {
@@ -916,7 +924,7 @@ func formatClient(ctx *Context, dst io.Writer, cl *Client) error {
 	fmt.Fprintf(dst, "\nreturn r.data")
 	fmt.Fprintf(dst, "\n}")
 
-	fmt.Fprintf(dst, "\n\nfunc encodeCallPayload(marshalers map[string]Marshaler, mtype string, payload interface{}) (io.Reader, error) {")
+	fmt.Fprintf(dst, "\n\nfunc encodeCallPayload(marshalers map[string]Marshaler, mtype string, payload interface{}) (*bytes.Buffer, error) {")
 	fmt.Fprintf(dst, "\nmarshaler, ok := marshalers[mtype]")
 	fmt.Fprintf(dst, "\nif !ok {")
 	fmt.Fprintf(dst, "\nreturn nil, errors.Errorf(`missing marshaler for request content type %%s`, mtype)")
@@ -976,7 +984,7 @@ func formatClient(ctx *Context, dst io.Writer, cl *Client) error {
 func formatService(ctx *Context, dst io.Writer, svc *Service) error {
 	log.Printf(" * Generating Service %s", svc.name)
 	codegen.WritePreamble(dst, ctx.packageName)
-	codegen.WriteImports(dst, "context", "encoding/json", "mime", "net/http", "net/url", "strings", "strconv", "github.com/pkg/errors", "github.com/lestrrat-go/urlenc")
+	codegen.WriteImports(dst, "context", "encoding/json", "fmt", "io", "mime", "net/http", "net/http/httputil", "net/url", "strings", "strconv", "github.com/pkg/errors", "github.com/lestrrat-go/urlenc")
 
 	fmt.Fprintf(dst, "\n\ntype %s struct {", svc.name)
 	fmt.Fprintf(dst, "\nhttpCl *http.Client")
@@ -1090,30 +1098,29 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 	fmt.Fprintf(dst, "\n\nfunc (call *%s) Do(ctx context.Context, options ...CallOption) (Response, error) {", call.name)
 
 	var hasOAuth2 bool
-	var parseOptions bool
 	if len(call.securitySettings) > 0 {
 		for _, settings := range call.securitySettings {
 			switch settings.definition.Type() {
 			case "oauth2":
 				// Require Authorization header
 				hasOAuth2 = true
-				parseOptions = true
 			}
 		}
 	}
 
+	fmt.Fprintf(dst, "\n\nvar debugOut io.Writer")
 	if hasOAuth2 {
 		fmt.Fprintf(dst, "\nvar accessToken string")
 	}
 
 	if call.body != nil {
 		fmt.Fprintf(dst, "\ncontentType := %#v", call.DefaultConsumes())
-		parseOptions = true
 	}
 
-	if parseOptions {
 		fmt.Fprintf(dst, "\nfor _, option := range options {")
 		fmt.Fprintf(dst, "\nswitch option.Name() {")
+		fmt.Fprintf(dst, "\ncase optkeyDebugDump:")
+		fmt.Fprintf(dst, "\ndebugOut = option.Value().(io.Writer)")
 		if call.body != nil {
 			fmt.Fprintf(dst, "\ncase optkeyRequestContentType:")
 			fmt.Fprintf(dst, "\ncontentType = option.Value().(string)")
@@ -1124,7 +1131,6 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 		}
 		fmt.Fprintf(dst, "\n}")
 		fmt.Fprintf(dst, "\n}")
-	}
 
 	fmt.Fprintf(dst, "\npath := %s", strconv.Quote(call.requestPath))
 	if call.path != nil {
@@ -1189,6 +1195,7 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 
 	if call.body != nil {
 		fmt.Fprintf(dst, "\nreq.Header.Set(`Content-Type`, contentType)")
+		fmt.Fprintf(dst, "\nreq.Header.Set(`Content-Length`, strconv.Itoa(body.Len()))")
 	}
 
 	if hasOAuth2 {
@@ -1197,10 +1204,21 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 		fmt.Fprintf(dst, "\n}")
 	}
 
+	fmt.Fprintf(dst, "\n\nif debugOut != nil {")
+	fmt.Fprintf(dst, "\ndump, _ := httputil.DumpRequest(req, true)")
+	fmt.Fprintf(dst, "\nfmt.Fprintf(debugOut, \"=== REQUEST ===\\n%%s\\n===============\\n\", dump)")
+	fmt.Fprintf(dst, "\n}")
+
 	fmt.Fprintf(dst, "\n\nres, err := call.httpCl.Do(req)")
 	fmt.Fprintf(dst, "\nif err != nil {")
 	fmt.Fprintf(dst, "\nreturn nil, errors.Wrap(err, `failed to make HTTP request`)")
 	fmt.Fprintf(dst, "\n}")
+
+	fmt.Fprintf(dst, "\n\nif debugOut != nil {")
+	fmt.Fprintf(dst, "\ndump, _ := httputil.DumpResponse(res, true)")
+	fmt.Fprintf(dst, "\nfmt.Fprintf(debugOut, \"=== RESPONSE ===\\n%%s\\n===============\\n\", dump)")
+	fmt.Fprintf(dst, "\n}")
+
 	fmt.Fprintf(dst, "\n\nvar apires response")
 	fmt.Fprintf(dst, "\napires.code = res.StatusCode")
 
