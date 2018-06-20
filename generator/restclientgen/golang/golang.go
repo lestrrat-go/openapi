@@ -222,6 +222,7 @@ func writeOptionsFile(ctx *Context) error {
 	fmt.Fprintf(dst, "\n\ntype CallOption = Option")
 
 	fmt.Fprintf(dst, "\n\nconst (")
+	fmt.Fprintf(dst, "\noptkeyAccessToken = `accessToken`")
 	fmt.Fprintf(dst, "\noptkeyRequestContentType = `requestContentType`")
 	fmt.Fprintf(dst, "\n)")
 
@@ -234,6 +235,12 @@ func writeOptionsFile(ctx *Context) error {
 	fmt.Fprintf(dst, "\n// be using to send the payload. This is useful when you have")
 	fmt.Fprintf(dst, "\nfunc WithContentType(s string) CallOption {")
 	fmt.Fprintf(dst, "\nreturn newOption(optkeyRequestContentType, s)")
+	fmt.Fprintf(dst, "\n}")
+
+	fmt.Fprintf(dst, "\n\n// WithAccessToken is used to specify access token used to perform")
+	fmt.Fprintf(dst, "\n// authorization on the requested endpoint")
+	fmt.Fprintf(dst, "\nfunc WithAccessToken(s string) CallOption {")
+	fmt.Fprintf(dst, "\nreturn newOption(optkeyAccessToken, s)")
 	fmt.Fprintf(dst, "\n}")
 
 	if err := codegen.WriteFormattedToFile(fn, buf.Bytes()); err != nil {
@@ -1082,12 +1089,39 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 
 	fmt.Fprintf(dst, "\n\nfunc (call *%s) Do(ctx context.Context, options ...CallOption) (Response, error) {", call.name)
 
+	var hasOAuth2 bool
+	var parseOptions bool
+	if len(call.securitySettings) > 0 {
+		for _, settings := range call.securitySettings {
+			switch settings.definition.Type() {
+			case "oauth2":
+				// Require Authorization header
+				hasOAuth2 = true
+				parseOptions = true
+			}
+		}
+	}
+
+	if hasOAuth2 {
+		fmt.Fprintf(dst, "\nvar accessToken string")
+	}
+
 	if call.body != nil {
-		fmt.Fprintf(dst, "\n\ncontentType := %#v", call.DefaultConsumes())
+		fmt.Fprintf(dst, "\ncontentType := %#v", call.DefaultConsumes())
+		parseOptions = true
+	}
+
+	if parseOptions {
 		fmt.Fprintf(dst, "\nfor _, option := range options {")
 		fmt.Fprintf(dst, "\nswitch option.Name() {")
-		fmt.Fprintf(dst, "\ncase optkeyRequestContentType:")
-		fmt.Fprintf(dst, "\ncontentType = option.Value().(string)")
+		if call.body != nil {
+			fmt.Fprintf(dst, "\ncase optkeyRequestContentType:")
+			fmt.Fprintf(dst, "\ncontentType = option.Value().(string)")
+		}
+		if hasOAuth2 {
+			fmt.Fprintf(dst, "\ncase optkeyAccessToken:")
+			fmt.Fprintf(dst, "\naccessToken = option.Value().(string)")
+		}
 		fmt.Fprintf(dst, "\n}")
 		fmt.Fprintf(dst, "\n}")
 	}
@@ -1157,14 +1191,10 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 		fmt.Fprintf(dst, "\nreq.Header.Set(`Content-Type`, contentType)")
 	}
 
-	if len(call.securitySettings) > 0 {
-		for _, settings := range call.securitySettings {
-			switch settings.definition.Type() {
-			case "oauth2":
-				
-			}
-		}
-
+	if hasOAuth2 {
+		fmt.Fprintf(dst, "\nif len(accessToken) > 0 {")
+		fmt.Fprintf(dst, "\nreq.Header.Set(`Authorization`, `Bearer ` + accessToken)")
+		fmt.Fprintf(dst, "\n}")
 	}
 
 	fmt.Fprintf(dst, "\n\nres, err := call.httpCl.Do(req)")
