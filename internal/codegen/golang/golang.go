@@ -66,12 +66,14 @@ func WritePreamble(dst io.Writer, pkg string) error {
 }
 
 var importDummies = map[string]string{
-	"github.com/pkg/errors": "errors.Cause",
-	"encoding/json":         "json.Unmarshal",
-	"log":                   "log.Printf",
-	"net/url":               "url.Parse",
-	"sort":                  "sort.Strings",
-	"strconv":               "strconv.Quote",
+	"github.com/pkg/errors":          "errors.Cause",
+	"encoding/json":                  "json.Unmarshal",
+	"log":                            "log.Printf",
+	"net/url":                        "url.Parse",
+	"sort":                           "sort.Strings",
+	"strconv":                        "strconv.Quote",
+	"github.com/lestrrat-go/jwx/jwt": "jwt.Parse",
+	"golang.org/x/oauth2":            "oauth2.NewClient",
 }
 
 func WriteImports(dst io.Writer, libs ...string) error {

@@ -191,7 +191,7 @@ func writeOptionsFile(ctx *Context) error {
 	var buf bytes.Buffer
 	var dst io.Writer = &buf
 	codegen.WritePreamble(dst, ctx.packageName)
-	codegen.WriteImports(dst, "io")
+	codegen.WriteImports(dst, "io", "golang.org/x/oauth2")
 
 	fmt.Fprintf(dst, "\n\ntype Option interface {")
 	fmt.Fprintf(dst, "\nName() string")
@@ -223,7 +223,7 @@ func writeOptionsFile(ctx *Context) error {
 	fmt.Fprintf(dst, "\n\ntype CallOption = Option")
 
 	fmt.Fprintf(dst, "\n\nconst (")
-	fmt.Fprintf(dst, "\noptkeyAccessToken = `accessToken`")
+	fmt.Fprintf(dst, "\noptkeyTokenSource = `tokenSource`")
 	fmt.Fprintf(dst, "\noptkeyDebugDump = `debugDump`")
 	fmt.Fprintf(dst, "\noptkeyRequestContentType = `requestContentType`")
 	fmt.Fprintf(dst, "\n)")
@@ -239,10 +239,10 @@ func writeOptionsFile(ctx *Context) error {
 	fmt.Fprintf(dst, "\nreturn newOption(optkeyRequestContentType, s)")
 	fmt.Fprintf(dst, "\n}")
 
-	fmt.Fprintf(dst, "\n\n// WithAccessToken is used to specify access token used to perform")
-	fmt.Fprintf(dst, "\n// authorization on the requested endpoint")
-	fmt.Fprintf(dst, "\nfunc WithAccessToken(s string) CallOption {")
-	fmt.Fprintf(dst, "\nreturn newOption(optkeyAccessToken, s)")
+	fmt.Fprintf(dst, "\n\n// WithTokenSource is used to specify token source to")
+	fmt.Fprintf(dst, "\n// retrieve the token for authorization on the requested endpoint")
+	fmt.Fprintf(dst, "\nfunc WithTokenSource(s oauth2.TokenSource) CallOption {")
+	fmt.Fprintf(dst, "\nreturn newOption(optkeyTokenSource, s)")
 	fmt.Fprintf(dst, "\n}")
 
 	fmt.Fprintf(dst, "\n\n// WithDebugDump is used to dump request and response to")
@@ -984,7 +984,10 @@ func formatClient(ctx *Context, dst io.Writer, cl *Client) error {
 func formatService(ctx *Context, dst io.Writer, svc *Service) error {
 	log.Printf(" * Generating Service %s", svc.name)
 	codegen.WritePreamble(dst, ctx.packageName)
-	codegen.WriteImports(dst, "context", "encoding/json", "fmt", "io", "mime", "net/http", "net/http/httputil", "net/url", "strings", "strconv", "github.com/pkg/errors", "github.com/lestrrat-go/urlenc")
+
+	// TODO: be smarter as to which libraries to include
+	// for exmaple, oauth stuff
+	codegen.WriteImports(dst, "context", "encoding/json", "fmt", "io", "mime", "net/http", "net/http/httputil", "net/url", "strings", "strconv", "github.com/pkg/errors", "github.com/lestrrat-go/urlenc", "github.com/lestrrat-go/jwx/jwt", "golang.org/x/oauth2")
 
 	fmt.Fprintf(dst, "\n\ntype %s struct {", svc.name)
 	fmt.Fprintf(dst, "\nhttpCl *http.Client")
@@ -1110,7 +1113,7 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 
 	fmt.Fprintf(dst, "\n\nvar debugOut io.Writer")
 	if hasOAuth2 {
-		fmt.Fprintf(dst, "\nvar accessToken string")
+		fmt.Fprintf(dst, "\nvar tokenSrc oauth2.TokenSource")
 	}
 
 	if call.body != nil {
@@ -1126,8 +1129,8 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 			fmt.Fprintf(dst, "\ncontentType = option.Value().(string)")
 		}
 		if hasOAuth2 {
-			fmt.Fprintf(dst, "\ncase optkeyAccessToken:")
-			fmt.Fprintf(dst, "\naccessToken = option.Value().(string)")
+			fmt.Fprintf(dst, "\ncase optkeyTokenSource:")
+			fmt.Fprintf(dst, "\ntokenSrc = option.Value().(oauth2.TokenSource)")
 		}
 		fmt.Fprintf(dst, "\n}")
 		fmt.Fprintf(dst, "\n}")
@@ -1199,9 +1202,25 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 	}
 
 	if hasOAuth2 {
-		fmt.Fprintf(dst, "\nif len(accessToken) > 0 {")
-		fmt.Fprintf(dst, "\nreq.Header.Set(`Authorization`, `Bearer ` + accessToken)")
+		fmt.Fprintf(dst, "\ntok, err := tokenSrc.Token()")
+		fmt.Fprintf(dst, "\nif err != nil {")
+		fmt.Fprintf(dst, "\nreturn nil, errors.Wrap(err, `failed to fetch token`)")
 		fmt.Fprintf(dst, "\n}")
+		fmt.Fprintf(dst, "\nidToken := tok.Extra(`id_token`)")
+		fmt.Fprintf(dst, "\nreq.Header.Set(`Authorization`, fmt.Sprintf(`Bearer %%s`, idToken))")
+		fmt.Fprintf(dst, "\nif debugOut != nil {")
+		fmt.Fprintf(dst, "\ntoken, err := jwt.Parse(strings.NewReader(fmt.Sprintf(`%%s`, idToken)))")
+		fmt.Fprintf(dst, "\nif err != nil {")
+		fmt.Fprintf(dst, "\nfmt.Fprintf(debugOut, `failed to decode JWT token: %%s`, err)")
+		fmt.Fprintf(dst, "\n} else {")
+		fmt.Fprintf(dst, "\nencoded, err := json.MarshalIndent(token, ``, `  `)")
+		fmt.Fprintf(dst, "\nif err != nil {")
+		fmt.Fprintf(dst, "\nfmt.Fprintf(debugOut, `failed to marshal token back into JSON: %%s`, err)")
+		fmt.Fprintf(dst, "\n} else {")
+		fmt.Fprintf(dst, "\nfmt.Fprintf(debugOut, \"=== ID Token ===\\n%%s\\n===============\", encoded)")
+		fmt.Fprintf(dst, "\n}") // end if err != nil
+		fmt.Fprintf(dst, "\n}") // end if err != nil
+		fmt.Fprintf(dst, "\n}") // end if debugOut != nil
 	}
 
 	fmt.Fprintf(dst, "\n\nif debugOut != nil {")
