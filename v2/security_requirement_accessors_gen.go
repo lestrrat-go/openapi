@@ -11,8 +11,24 @@ import (
 var _ = sort.Strings
 var _ = errors.Cause
 
-func (v *securityRequirement) Data() map[string][]string {
-	return v.data
+func (v *securityRequirement) Name() string {
+	return v.name
+}
+
+func (v *securityRequirement) Scopes() *ScopesMapIterator {
+	var keys []string
+	for key := range v.scopes {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	var items []interface{}
+	for _, key := range keys {
+		item := v.scopes[key]
+		items = append(items, &mapIteratorItem{key: key, item: item})
+	}
+	var iter ScopesMapIterator
+	iter.list.items = items
+	return &iter
 }
 
 // Reference returns the value of `$ref` field

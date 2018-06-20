@@ -270,6 +270,20 @@ func (iter *SchemeListIterator) Item() Scheme {
 	return iter.listIterator.Item().(Scheme)
 }
 
+type ScopesMapIterator struct {
+	mapIterator
+}
+
+// Item returns the next item in this iterator. Make sure to call Next()
+// before hand to check if the iterator has more items
+func (iter *ScopesMapIterator) Item() (string, []string) {
+	item := iter.mapIterator.Item()
+	if item == nil {
+		return "", []string(nil)
+	}
+	return item.key.(string), item.item.([]string)
+}
+
 type SecurityRequirementListIterator struct {
 	listIterator
 }

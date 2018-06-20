@@ -112,6 +112,12 @@ func Generate(spec openapi.Swagger, options ...Option) error {
 		types:              make(map[string]typeDefinition),
 	}
 
+	ctx.security = make(map[string]openapi.SecurityScheme)
+	for iter := spec.SecurityDefinitions(); iter.Next(); {
+		name, scheme := iter.Item()
+		ctx.security[name] = scheme
+	}
+
 	consumes, err := canonicalConsumesList(spec.Consumes())
 	if err != nil {
 		return errors.Wrap(err, `failed to parse global "consumes" list`)
@@ -841,6 +847,22 @@ func compileCall(ctx *Context, oper openapi.Operation) error {
 		}
 	}
 
+	// Check if we have security
+	for iter := oper.Security(); iter.Next(); {
+		requirement := iter.Item()
+		for siter := requirement.Scopes(); siter.Next(); {
+			name, scopes := siter.Item()
+			security, ok := ctx.security[name]
+			if !ok {
+				return errors.Errorf(`invalid security definition %s (not found)`, name)
+			}
+			call.securitySettings = append(call.securitySettings, &SecuritySettings{
+				definition: security,
+				scopes:     scopes,
+			})
+		}
+	}
+
 	svcName = strcase.ToCamel(svcName)
 	svc := ctx.client.getServiceFor(svcName)
 	svc.addCall(call)
@@ -1133,6 +1155,16 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 
 	if call.body != nil {
 		fmt.Fprintf(dst, "\nreq.Header.Set(`Content-Type`, contentType)")
+	}
+
+	if len(call.securitySettings) > 0 {
+		for _, settings := range call.securitySettings {
+			switch settings.definition.Type() {
+			case "oauth2":
+				
+			}
+		}
+
 	}
 
 	fmt.Fprintf(dst, "\n\nres, err := call.httpCl.Do(req)")

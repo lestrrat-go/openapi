@@ -31,9 +31,9 @@ func MutateSecurityRequirement(v SecurityRequirement) *SecurityRequirementMutato
 	}
 }
 
-// Data sets the Data field for object SecurityRequirement.
-func (m *SecurityRequirementMutator) Data(v map[string][]string) *SecurityRequirementMutator {
-	m.proxy.data = v
+// Name sets the Name field for object SecurityRequirement.
+func (m *SecurityRequirementMutator) Name(v string) *SecurityRequirementMutator {
+	m.proxy.name = v
 	return m
 }
 

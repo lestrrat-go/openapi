@@ -294,7 +294,7 @@ func OperationFromJSON(buf []byte, dst interface{}) error {
 	}
 	var tmp operation
 	if err := json.Unmarshal(buf, &tmp); err != nil {
-		return errors.Wrap(err, `failed to unmarshal`)
+		return errors.Wrap(err, `failed to unmarshal Operation`)
 	}
 	*v = &tmp
 	return nil

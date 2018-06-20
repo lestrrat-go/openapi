@@ -33,6 +33,7 @@ var containers = []interface{}{
 	SchemaList{},
 	SchemaMap{},
 	SchemeList{},
+	ScopesMap{},
 	SecurityRequirementList{},
 	SecuritySchemeMap{},
 	StringList{},
@@ -69,7 +70,7 @@ func GenerateCode() error {
 		name := reflect.TypeOf(e).Name()
 		entityTypes[name] = e
 		switch name {
-		case "swagger", "paths", "parameter", "operation", "response":
+		case "swagger", "schema", "paths", "parameter", "operation", "response":
 		default:
 			validators[name] = struct{}{}
 		}
@@ -788,7 +789,7 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 
 	writeImports(dst, []string{"encoding/json", "fmt", "log", "strings", "strconv", "github.com/pkg/errors"})
 	switch rv.Type().Name() {
-	case "paths", "responses":
+	case "paths", "responses", "securityRequirement":
 	default:
 		mpname := rv.Type().Name() + "MarshalProxy"
 
@@ -1093,7 +1094,7 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 	fmt.Fprintf(dst, "\n}")
 	fmt.Fprintf(dst, "\nvar tmp %s", codegen.UnexportedName(rv.Type().Name()))
 	fmt.Fprintf(dst, "\nif err := json.Unmarshal(buf, &tmp); err != nil {")
-	fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to unmarshal`)")
+	fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to unmarshal %s`)", ifacename)
 	fmt.Fprintf(dst, "\n}")
 	fmt.Fprintf(dst, "\n*v = &tmp")
 	fmt.Fprintf(dst, "\nreturn nil")

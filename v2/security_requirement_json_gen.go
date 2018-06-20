@@ -18,101 +18,10 @@ var _ = log.Printf
 var _ = strconv.ParseInt
 var _ = errors.Cause
 
-type securityRequirementMarshalProxy struct {
-	Reference string              `json:"$ref,omitempty"`
-	Data      map[string][]string `json:""`
-}
-
-func (v *securityRequirement) MarshalJSON() ([]byte, error) {
-	var proxy securityRequirementMarshalProxy
-	if s := v.reference; len(s) > 0 {
-		return []byte(fmt.Sprintf(refOnlyTmpl, strconv.Quote(s))), nil
-	}
-	proxy.Data = v.data
-	buf, err := json.Marshal(proxy)
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to marshal struct`)
-	}
-	if len(v.extensions) > 0 {
-		extBuf, err := json.Marshal(v.extensions)
-		if err != nil || len(extBuf) <= 2 {
-			return nil, errors.Wrap(err, `failed to marshal struct (extensions)`)
-		}
-		buf = append(append(buf[:len(buf)-1], ','), extBuf[1:]...)
-	}
-	return buf, nil
-}
-
-// UnmarshalJSON defines how securityRequirement is deserialized from JSON
-func (v *securityRequirement) UnmarshalJSON(data []byte) error {
-	var proxy map[string]json.RawMessage
-	if err := json.Unmarshal(data, &proxy); err != nil {
-		return err
-	}
-	if raw, ok := proxy["$ref"]; ok {
-		if err := json.Unmarshal(raw, &v.reference); err != nil {
-			return errors.Wrap(err, `failed to unmarshal $ref`)
-		}
-		return nil
-	}
-
-	mutator := MutateSecurityRequirement(v)
-
-	const dataMapKey = ""
-	if raw, ok := proxy[dataMapKey]; ok {
-		var decoded map[string][]string
-		if err := json.Unmarshal(raw, &decoded); err != nil {
-			return errors.Wrap(err, `failed to unmarshal field `)
-		}
-		mutator.Data(decoded)
-		delete(proxy, dataMapKey)
-	}
-
-	for name, raw := range proxy {
-		if strings.HasPrefix(name, `x-`) {
-			var ext interface{}
-			if err := json.Unmarshal(raw, &ext); err != nil {
-				return errors.Wrapf(err, `failed to unmarshal field %s`, name)
-			}
-			mutator.Extension(name, ext)
-		}
-	}
-
-	if err := mutator.Do(); err != nil {
-		return errors.Wrap(err, `failed to  unmarshal JSON`)
-	}
-	return nil
-}
-
 func (v *securityRequirement) QueryJSON(path string) (ret interface{}, ok bool) {
 	path = strings.TrimLeftFunc(path, func(r rune) bool { return r == '#' || r == '/' })
 	if path == "" {
 		return v, true
-	}
-
-	var frag string
-	if i := strings.Index(path, "/"); i > -1 {
-		frag = path[:i]
-		path = path[i+1:]
-	} else {
-		frag = path
-		path = ""
-	}
-
-	var target interface{}
-
-	switch frag {
-	case "data":
-		target = v.data
-	default:
-		return nil, false
-	}
-
-	if qj, ok := target.(QueryJSONer); ok {
-		return qj.QueryJSON(path)
-	}
-	if path == "" {
-		return target, true
 	}
 	return nil, false
 }
@@ -126,7 +35,7 @@ func SecurityRequirementFromJSON(buf []byte, dst interface{}) error {
 	}
 	var tmp securityRequirement
 	if err := json.Unmarshal(buf, &tmp); err != nil {
-		return errors.Wrap(err, `failed to unmarshal`)
+		return errors.Wrap(err, `failed to unmarshal SecurityRequirement`)
 	}
 	*v = &tmp
 	return nil

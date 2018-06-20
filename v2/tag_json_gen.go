@@ -155,7 +155,7 @@ func TagFromJSON(buf []byte, dst interface{}) error {
 	}
 	var tmp tag
 	if err := json.Unmarshal(buf, &tmp); err != nil {
-		return errors.Wrap(err, `failed to unmarshal`)
+		return errors.Wrap(err, `failed to unmarshal Tag`)
 	}
 	*v = &tmp
 	return nil

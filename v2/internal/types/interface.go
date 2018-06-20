@@ -356,7 +356,8 @@ type SecurityRequirement interface {
 }
 
 type securityRequirement struct {
-	data map[string][]string
+	name   string    `json:"-"`
+	scopes ScopesMap `json:"-" mutator:"-" builder:"-"`
 }
 
 type Tag interface {
@@ -387,6 +388,8 @@ type SchemeList []string
 type SchemaList []Schema
 type SchemaMapKey = string
 type SchemaMap map[SchemaMapKey]Schema
+type ScopesMapKey = string
+type ScopesMap map[ScopesMapKey][]string
 type SecurityRequirementList []SecurityRequirement
 type SecuritySchemeMapKey = string
 type SecuritySchemeMap map[SecuritySchemeMapKey]SecurityScheme

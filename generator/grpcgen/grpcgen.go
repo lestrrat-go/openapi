@@ -214,6 +214,12 @@ func compileGlobalDefinitions(ctx *genCtx) error {
 			return errors.Wrapf(err, `expected openapi.Schema for #/defnitions/%s, got %T`, name, thing)
 		}
 
+		if err := tmp.Validate(true); err != nil {
+			// If this doesn't look like a valid schema, it's OK. skip
+			ctx.log(`* invalid schema object found in definition, skipping`)
+			continue
+		}
+
 		ctx.log("* Compiling #/definitions/%s", name)
 		typ, err := compileMessage(ctx, tmp)
 		if err != nil {

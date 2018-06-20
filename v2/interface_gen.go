@@ -709,7 +709,8 @@ type securityScheme struct {
 }
 
 type SecurityRequirement interface {
-	Data() map[string][]string
+	Name() string
+	Scopes() *ScopesMapIterator
 	Extension(string) (interface{}, bool)
 	Extensions() *ExtensionsIterator
 	Clone() SecurityRequirement
@@ -723,7 +724,8 @@ type securityRequirement struct {
 	reference  string     `json:"$ref,omitempty"`
 	resolved   bool       `json:"-"`
 	extensions Extensions `json:"-"`
-	data       map[string][]string
+	name       string     `json:"-"`
+	scopes     ScopesMap  `json:"-" mutator:"-" builder:"-"`
 }
 
 type Tag interface {
@@ -767,6 +769,8 @@ type SchemeList []string
 type SchemaList []Schema
 type SchemaMapKey = string
 type SchemaMap map[SchemaMapKey]Schema
+type ScopesMapKey = string
+type ScopesMap map[ScopesMapKey][]string
 type SecurityRequirementList []SecurityRequirement
 type SecuritySchemeMapKey = string
 type SecuritySchemeMap map[SecuritySchemeMapKey]SecurityScheme

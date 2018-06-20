@@ -140,7 +140,7 @@ func LicenseFromJSON(buf []byte, dst interface{}) error {
 	}
 	var tmp license
 	if err := json.Unmarshal(buf, &tmp); err != nil {
-		return errors.Wrap(err, `failed to unmarshal`)
+		return errors.Wrap(err, `failed to unmarshal License`)
 	}
 	*v = &tmp
 	return nil

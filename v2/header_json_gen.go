@@ -367,7 +367,7 @@ func HeaderFromJSON(buf []byte, dst interface{}) error {
 	}
 	var tmp header
 	if err := json.Unmarshal(buf, &tmp); err != nil {
-		return errors.Wrap(err, `failed to unmarshal`)
+		return errors.Wrap(err, `failed to unmarshal Header`)
 	}
 	*v = &tmp
 	return nil

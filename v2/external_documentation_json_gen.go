@@ -140,7 +140,7 @@ func ExternalDocumentationFromJSON(buf []byte, dst interface{}) error {
 	}
 	var tmp externalDocumentation
 	if err := json.Unmarshal(buf, &tmp); err != nil {
-		return errors.Wrap(err, `failed to unmarshal`)
+		return errors.Wrap(err, `failed to unmarshal ExternalDocumentation`)
 	}
 	*v = &tmp
 	return nil

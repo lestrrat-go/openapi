@@ -320,13 +320,6 @@ func (v *schema) Extensions() *ExtensionsIterator {
 	return &iter
 }
 
-func (v *schema) Validate(recurse bool) error {
-	if recurse {
-		return v.recurseValidate()
-	}
-	return nil
-}
-
 func (v *schema) recurseValidate() error {
 	if elem := v.required; elem != nil {
 		if err := elem.Validate(true); err != nil {

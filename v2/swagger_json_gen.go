@@ -343,7 +343,7 @@ func SwaggerFromJSON(buf []byte, dst interface{}) error {
 	}
 	var tmp swagger
 	if err := json.Unmarshal(buf, &tmp); err != nil {
-		return errors.Wrap(err, `failed to unmarshal`)
+		return errors.Wrap(err, `failed to unmarshal Swagger`)
 	}
 	*v = &tmp
 	return nil

@@ -198,7 +198,7 @@ func InfoFromJSON(buf []byte, dst interface{}) error {
 	}
 	var tmp info
 	if err := json.Unmarshal(buf, &tmp); err != nil {
-		return errors.Wrap(err, `failed to unmarshal`)
+		return errors.Wrap(err, `failed to unmarshal Info`)
 	}
 	*v = &tmp
 	return nil

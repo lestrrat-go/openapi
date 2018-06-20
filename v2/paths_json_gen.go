@@ -35,7 +35,7 @@ func PathsFromJSON(buf []byte, dst interface{}) error {
 	}
 	var tmp paths
 	if err := json.Unmarshal(buf, &tmp); err != nil {
-		return errors.Wrap(err, `failed to unmarshal`)
+		return errors.Wrap(err, `failed to unmarshal Paths`)
 	}
 	*v = &tmp
 	return nil

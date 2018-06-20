@@ -22,6 +22,7 @@ type Context struct {
 	exportNew          bool
 	consumes           []string
 	produces           []string
+	security           map[string]openapi.SecurityScheme
 }
 
 type typeDefinition struct {
@@ -124,19 +125,20 @@ func (s *Service) addCall(call *Call) {
 }
 
 type Call struct {
-	name      string
-	method    string
-	requestPath      string
-	verb      string
-	consumes  []string
-	produces  []string
-	requireds []*Field
-	optionals []*Field
-	query     Type
-	path      Type
-	header    Type
-	body      Type
-	responses []*Response
+	name        string
+	method      string
+	requestPath string
+	verb        string
+	consumes    []string
+	produces    []string
+	requireds   []*Field
+	optionals   []*Field
+	query       Type
+	path        Type
+	header      Type
+	body        Type
+	responses   []*Response
+	securitySettings []*SecuritySettings
 }
 
 func (call *Call) DefaultConsumes() string {
@@ -188,4 +190,9 @@ func canonicalConsumesList(iter *openapi.MIMETypeListIterator) ([]string, error)
 		consumesList[i] = mt
 	}
 	return consumesList, nil
+}
+
+type SecuritySettings struct {
+	definition openapi.SecurityScheme
+	scopes     []string
 }
