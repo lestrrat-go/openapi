@@ -191,7 +191,7 @@ func writeOptionsFile(ctx *Context) error {
 	var buf bytes.Buffer
 	var dst io.Writer = &buf
 	codegen.WritePreamble(dst, ctx.packageName)
-	codegen.WriteImports(dst, "io", "golang.org/x/oauth2")
+	codegen.WriteImports(dst, "io")
 
 	fmt.Fprintf(dst, "\n\ntype Option interface {")
 	fmt.Fprintf(dst, "\nName() string")
@@ -223,7 +223,7 @@ func writeOptionsFile(ctx *Context) error {
 	fmt.Fprintf(dst, "\n\ntype CallOption = Option")
 
 	fmt.Fprintf(dst, "\n\nconst (")
-	fmt.Fprintf(dst, "\noptkeyTokenSource = `tokenSource`")
+	fmt.Fprintf(dst, "\noptkeyJWT = `jwt`")
 	fmt.Fprintf(dst, "\noptkeyDebugDump = `debugDump`")
 	fmt.Fprintf(dst, "\noptkeyRequestContentType = `requestContentType`")
 	fmt.Fprintf(dst, "\n)")
@@ -239,10 +239,10 @@ func writeOptionsFile(ctx *Context) error {
 	fmt.Fprintf(dst, "\nreturn newOption(optkeyRequestContentType, s)")
 	fmt.Fprintf(dst, "\n}")
 
-	fmt.Fprintf(dst, "\n\n// WithTokenSource is used to specify token source to")
-	fmt.Fprintf(dst, "\n// retrieve the token for authorization on the requested endpoint")
-	fmt.Fprintf(dst, "\nfunc WithTokenSource(s oauth2.TokenSource) CallOption {")
-	fmt.Fprintf(dst, "\nreturn newOption(optkeyTokenSource, s)")
+	fmt.Fprintf(dst, "\n\n// WithJWT is used to specify a signed token to be")
+	fmt.Fprintf(dst, "\n// included in the Authorization header.")
+	fmt.Fprintf(dst, "\nfunc WithJWT(s string) CallOption {")
+	fmt.Fprintf(dst, "\nreturn newOption(optkeyJWT, s)")
 	fmt.Fprintf(dst, "\n}")
 
 	fmt.Fprintf(dst, "\n\n// WithDebugDump is used to dump request and response to")
@@ -1100,20 +1100,20 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 
 	fmt.Fprintf(dst, "\n\nfunc (call *%s) Do(ctx context.Context, options ...CallOption) (Response, error) {", call.name)
 
-	var hasOAuth2 bool
+	var hasJWT bool
 	if len(call.securitySettings) > 0 {
 		for _, settings := range call.securitySettings {
 			switch settings.definition.Type() {
 			case "oauth2":
 				// Require Authorization header
-				hasOAuth2 = true
+				hasJWT = true
 			}
 		}
 	}
 
 	fmt.Fprintf(dst, "\n\nvar debugOut io.Writer")
-	if hasOAuth2 {
-		fmt.Fprintf(dst, "\nvar tokenSrc oauth2.TokenSource")
+	if hasJWT {
+		fmt.Fprintf(dst, "\nvar signedJWT string")
 	}
 
 	if call.body != nil {
@@ -1128,9 +1128,9 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 			fmt.Fprintf(dst, "\ncase optkeyRequestContentType:")
 			fmt.Fprintf(dst, "\ncontentType = option.Value().(string)")
 		}
-		if hasOAuth2 {
-			fmt.Fprintf(dst, "\ncase optkeyTokenSource:")
-			fmt.Fprintf(dst, "\ntokenSrc = option.Value().(oauth2.TokenSource)")
+		if hasJWT {
+			fmt.Fprintf(dst, "\ncase optkeyJWT:")
+			fmt.Fprintf(dst, "\nsignedJWT = option.Value().(string)")
 		}
 		fmt.Fprintf(dst, "\n}")
 		fmt.Fprintf(dst, "\n}")
@@ -1201,13 +1201,9 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 		fmt.Fprintf(dst, "\nreq.Header.Set(`Content-Length`, strconv.Itoa(body.Len()))")
 	}
 
-	if hasOAuth2 {
-		fmt.Fprintf(dst, "\ntok, err := tokenSrc.Token()")
-		fmt.Fprintf(dst, "\nif err != nil {")
-		fmt.Fprintf(dst, "\nreturn nil, errors.Wrap(err, `failed to fetch token`)")
-		fmt.Fprintf(dst, "\n}")
-		fmt.Fprintf(dst, "\nidToken := tok.Extra(`id_token`)")
-		fmt.Fprintf(dst, "\nreq.Header.Set(`Authorization`, fmt.Sprintf(`Bearer %%s`, idToken))")
+	if hasJWT {
+		fmt.Fprintf(dst, "\nif len(signedJWT) > 0 {")
+		fmt.Fprintf(dst, "\nreq.Header.Set(`Authorization`, `Bearer ` + signedJWT)")
 		fmt.Fprintf(dst, "\nif debugOut != nil {")
 		fmt.Fprintf(dst, "\ntoken, err := jwt.Parse(strings.NewReader(fmt.Sprintf(`%%s`, idToken)))")
 		fmt.Fprintf(dst, "\nif err != nil {")
@@ -1221,6 +1217,7 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 		fmt.Fprintf(dst, "\n}") // end if err != nil
 		fmt.Fprintf(dst, "\n}") // end if err != nil
 		fmt.Fprintf(dst, "\n}") // end if debugOut != nil
+		fmt.Fprintf(dst, "\n}") // end if len(signedJWT) > 0
 	}
 
 	fmt.Fprintf(dst, "\n\nif debugOut != nil {")
