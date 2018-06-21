@@ -5,9 +5,10 @@ package openapi
 
 import (
 	"encoding/json"
-	"github.com/pkg/errors"
 	"log"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 var _ = log.Printf
@@ -124,9 +125,9 @@ func (v *openAPI) Resolve(resolver *Resolver) error {
 		}
 		asserted, ok := resolved.(*openAPI)
 		if !ok {
-			return errors.Wrapf(err, `expected resolved reference to be of type OpenApi, but got %T`, resolved)
+			return errors.Wrapf(err, `expected resolved reference to be of type OpenAPI, but got %T`, resolved)
 		}
-		mutator := MutateOpenApi(v)
+		mutator := MutateOpenAPI(v)
 		mutator.Version(asserted.Version())
 		mutator.Info(asserted.Info())
 		for iter := asserted.Servers(); iter.Next(); {

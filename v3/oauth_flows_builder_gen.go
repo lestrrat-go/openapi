@@ -7,7 +7,7 @@ package openapi
 // call `Do()` after providing all the necessary information to
 // build an instance of OAuthFlows
 type OAuthFlowsBuilder struct {
-	target *oAuthFlows
+	target *oauthFlows
 }
 
 // Do finalizes the building process for OAuthFlows and returns the result
@@ -18,7 +18,7 @@ func (b *OAuthFlowsBuilder) Do() OAuthFlows {
 // NewOAuthFlows creates a new builder object for OAuthFlows
 func NewOAuthFlows() *OAuthFlowsBuilder {
 	return &OAuthFlowsBuilder{
-		target: &oAuthFlows{},
+		target: &oauthFlows{},
 	}
 }
 

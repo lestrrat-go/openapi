@@ -3,26 +3,26 @@ package openapi
 // This file was automatically generated.
 // DO NOT EDIT MANUALLY. All changes will be lost
 
-func (v *oAuthFlows) Implicit() OAuthFlow {
+func (v *oauthFlows) Implicit() OAuthFlow {
 	return v.implicit
 }
 
-func (v *oAuthFlows) Password() OAuthFlow {
+func (v *oauthFlows) Password() OAuthFlow {
 	return v.password
 }
 
-func (v *oAuthFlows) ClientCredentials() OAuthFlow {
+func (v *oauthFlows) ClientCredentials() OAuthFlow {
 	return v.clientCredentials
 }
 
-func (v *oAuthFlows) AuthorizationCode() OAuthFlow {
+func (v *oauthFlows) AuthorizationCode() OAuthFlow {
 	return v.authorizationCode
 }
 
-func (v *oAuthFlows) Reference() string {
+func (v *oauthFlows) Reference() string {
 	return v.reference
 }
 
-func (v *oAuthFlows) IsUnresolved() bool {
+func (v *oauthFlows) IsUnresolved() bool {
 	return v.reference != "" && !v.resolved
 }

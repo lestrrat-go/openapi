@@ -73,7 +73,7 @@ func (v *securityScheme) UnmarshalJSON(data []byte) error {
 	v.bearerFormat = proxy.BearerFormat
 
 	if len(proxy.Flows) > 0 {
-		var decoded oAuthFlows
+		var decoded oauthFlows
 		if err := json.Unmarshal(proxy.Flows, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Flows`)
 		}

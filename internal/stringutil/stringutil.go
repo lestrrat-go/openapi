@@ -80,7 +80,12 @@ func Snake(s string) string {
 		s = buf.String()
 	}
 
-	return strcase.ToSnake(s)
+	s = strcase.ToSnake(s)
+
+	// Except...
+	s = strings.Replace(s, "o_auth", "oauth", -1)
+	s = strings.Replace(s, "open_api", "openapi", -1)
+	return s
 }
 
 func Camel(s string) string {

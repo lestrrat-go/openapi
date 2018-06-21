@@ -630,7 +630,7 @@ type OAuthFlows interface {
 	Clone() OAuthFlows
 }
 
-type oAuthFlows struct {
+type oauthFlows struct {
 	reference         string    `json:"$ref,omitempty"`
 	resolved          bool      `json:"-"`
 	implicit          OAuthFlow `json:"implicit"`
@@ -650,7 +650,7 @@ type OAuthFlow interface {
 	Clone() OAuthFlow
 }
 
-type oAuthFlow struct {
+type oauthFlow struct {
 	reference        string   `json:"$ref,omitempty"`
 	resolved         bool     `json:"-"`
 	authorizationURL string   `json:"authorizationUrl"`

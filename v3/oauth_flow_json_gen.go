@@ -5,16 +5,17 @@ package openapi
 
 import (
 	"encoding/json"
-	"github.com/pkg/errors"
 	"log"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 var _ = log.Printf
 var _ = json.Unmarshal
 var _ = errors.Cause
 
-type oAuthFlowMarshalProxy struct {
+type oauthFlowMarshalProxy struct {
 	Reference        string   `json:"$ref,omitempty"`
 	AuthorizationURL string   `json:"authorizationUrl"`
 	TokenURL         string   `json:"tokenUrl"`
@@ -22,7 +23,7 @@ type oAuthFlowMarshalProxy struct {
 	Scopes           ScopeMap `json:"scopes"`
 }
 
-type oAuthFlowUnmarshalProxy struct {
+type oauthFlowUnmarshalProxy struct {
 	Reference        string   `json:"$ref,omitempty"`
 	AuthorizationURL string   `json:"authorizationUrl"`
 	TokenURL         string   `json:"tokenUrl"`
@@ -30,8 +31,8 @@ type oAuthFlowUnmarshalProxy struct {
 	Scopes           ScopeMap `json:"scopes"`
 }
 
-func (v *oAuthFlow) MarshalJSON() ([]byte, error) {
-	var proxy oAuthFlowMarshalProxy
+func (v *oauthFlow) MarshalJSON() ([]byte, error) {
+	var proxy oauthFlowMarshalProxy
 	if len(v.reference) > 0 {
 		proxy.Reference = v.reference
 		return json.Marshal(proxy)
@@ -43,8 +44,8 @@ func (v *oAuthFlow) MarshalJSON() ([]byte, error) {
 	return json.Marshal(proxy)
 }
 
-func (v *oAuthFlow) UnmarshalJSON(data []byte) error {
-	var proxy oAuthFlowUnmarshalProxy
+func (v *oauthFlow) UnmarshalJSON(data []byte) error {
+	var proxy oauthFlowUnmarshalProxy
 	if err := json.Unmarshal(data, &proxy); err != nil {
 		return err
 	}
@@ -59,14 +60,14 @@ func (v *oAuthFlow) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (v *oAuthFlow) Resolve(resolver *Resolver) error {
+func (v *oauthFlow) Resolve(resolver *Resolver) error {
 	if v.IsUnresolved() {
 
 		resolved, err := resolver.Resolve(v.Reference())
 		if err != nil {
 			return errors.Wrapf(err, `failed to resolve reference %s`, v.Reference())
 		}
-		asserted, ok := resolved.(*oAuthFlow)
+		asserted, ok := resolved.(*oauthFlow)
 		if !ok {
 			return errors.Wrapf(err, `expected resolved reference to be of type OAuthFlow, but got %T`, resolved)
 		}
@@ -91,7 +92,7 @@ func (v *oAuthFlow) Resolve(resolver *Resolver) error {
 	return nil
 }
 
-func (v *oAuthFlow) QueryJSON(path string) (ret interface{}, ok bool) {
+func (v *oauthFlow) QueryJSON(path string) (ret interface{}, ok bool) {
 	path = strings.TrimLeftFunc(path, func(r rune) bool { return r == '#' || r == '/' })
 	if path == "" {
 		return v, true

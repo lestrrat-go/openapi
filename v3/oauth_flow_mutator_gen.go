@@ -3,9 +3,7 @@ package openapi
 // This file was automatically generated.
 // DO NOT EDIT MANUALLY. All changes will be lost
 
-import (
-	"log"
-)
+import "log"
 
 var _ = log.Printf
 
@@ -13,8 +11,8 @@ var _ = log.Printf
 // call `Do()` after providing all the necessary information to
 // the new instance of OAuthFlow with new values
 type OAuthFlowMutator struct {
-	proxy  *oAuthFlow
-	target *oAuthFlow
+	proxy  *oauthFlow
+	target *oauthFlow
 }
 
 // Do finalizes the matuation process for OAuthFlow and returns the result
@@ -26,8 +24,8 @@ func (b *OAuthFlowMutator) Do() error {
 // MutateOAuthFlow creates a new mutator object for OAuthFlow
 func MutateOAuthFlow(v OAuthFlow) *OAuthFlowMutator {
 	return &OAuthFlowMutator{
-		target: v.(*oAuthFlow),
-		proxy:  v.Clone().(*oAuthFlow),
+		target: v.(*oauthFlow),
+		proxy:  v.Clone().(*oauthFlow),
 	}
 }
 

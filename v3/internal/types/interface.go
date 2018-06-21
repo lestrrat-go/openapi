@@ -341,7 +341,7 @@ type securityScheme struct {
 type OAuthFlows interface {
 }
 
-type oAuthFlows struct {
+type oauthFlows struct {
 	implicit          OAuthFlow `json:"implicit"`
 	password          OAuthFlow `json:"password"`
 	clientCredentials OAuthFlow `json:"clientCredentials"`
@@ -351,7 +351,7 @@ type oAuthFlows struct {
 type OAuthFlow interface {
 }
 
-type oAuthFlow struct {
+type oauthFlow struct {
 	authorizationURL string   `json:"authorizationUrl"`
 	tokenURL         string   `json:"tokenUrl"`
 	refreshURL       string   `json:"refreshUrl"`

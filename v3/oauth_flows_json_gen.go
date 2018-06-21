@@ -5,16 +5,17 @@ package openapi
 
 import (
 	"encoding/json"
-	"github.com/pkg/errors"
 	"log"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 var _ = log.Printf
 var _ = json.Unmarshal
 var _ = errors.Cause
 
-type oAuthFlowsMarshalProxy struct {
+type oauthFlowsMarshalProxy struct {
 	Reference         string    `json:"$ref,omitempty"`
 	Implicit          OAuthFlow `json:"implicit"`
 	Password          OAuthFlow `json:"password"`
@@ -22,7 +23,7 @@ type oAuthFlowsMarshalProxy struct {
 	AuthorizationCode OAuthFlow `json:"authorizationCode"`
 }
 
-type oAuthFlowsUnmarshalProxy struct {
+type oauthFlowsUnmarshalProxy struct {
 	Reference         string          `json:"$ref,omitempty"`
 	Implicit          json.RawMessage `json:"implicit"`
 	Password          json.RawMessage `json:"password"`
@@ -30,8 +31,8 @@ type oAuthFlowsUnmarshalProxy struct {
 	AuthorizationCode json.RawMessage `json:"authorizationCode"`
 }
 
-func (v *oAuthFlows) MarshalJSON() ([]byte, error) {
-	var proxy oAuthFlowsMarshalProxy
+func (v *oauthFlows) MarshalJSON() ([]byte, error) {
+	var proxy oauthFlowsMarshalProxy
 	if len(v.reference) > 0 {
 		proxy.Reference = v.reference
 		return json.Marshal(proxy)
@@ -43,8 +44,8 @@ func (v *oAuthFlows) MarshalJSON() ([]byte, error) {
 	return json.Marshal(proxy)
 }
 
-func (v *oAuthFlows) UnmarshalJSON(data []byte) error {
-	var proxy oAuthFlowsUnmarshalProxy
+func (v *oauthFlows) UnmarshalJSON(data []byte) error {
+	var proxy oauthFlowsUnmarshalProxy
 	if err := json.Unmarshal(data, &proxy); err != nil {
 		return err
 	}
@@ -54,7 +55,7 @@ func (v *oAuthFlows) UnmarshalJSON(data []byte) error {
 	}
 
 	if len(proxy.Implicit) > 0 {
-		var decoded oAuthFlow
+		var decoded oauthFlow
 		if err := json.Unmarshal(proxy.Implicit, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Implicit`)
 		}
@@ -63,7 +64,7 @@ func (v *oAuthFlows) UnmarshalJSON(data []byte) error {
 	}
 
 	if len(proxy.Password) > 0 {
-		var decoded oAuthFlow
+		var decoded oauthFlow
 		if err := json.Unmarshal(proxy.Password, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field Password`)
 		}
@@ -72,7 +73,7 @@ func (v *oAuthFlows) UnmarshalJSON(data []byte) error {
 	}
 
 	if len(proxy.ClientCredentials) > 0 {
-		var decoded oAuthFlow
+		var decoded oauthFlow
 		if err := json.Unmarshal(proxy.ClientCredentials, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field ClientCredentials`)
 		}
@@ -81,7 +82,7 @@ func (v *oAuthFlows) UnmarshalJSON(data []byte) error {
 	}
 
 	if len(proxy.AuthorizationCode) > 0 {
-		var decoded oAuthFlow
+		var decoded oauthFlow
 		if err := json.Unmarshal(proxy.AuthorizationCode, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field AuthorizationCode`)
 		}
@@ -91,14 +92,14 @@ func (v *oAuthFlows) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (v *oAuthFlows) Resolve(resolver *Resolver) error {
+func (v *oauthFlows) Resolve(resolver *Resolver) error {
 	if v.IsUnresolved() {
 
 		resolved, err := resolver.Resolve(v.Reference())
 		if err != nil {
 			return errors.Wrapf(err, `failed to resolve reference %s`, v.Reference())
 		}
-		asserted, ok := resolved.(*oAuthFlows)
+		asserted, ok := resolved.(*oauthFlows)
 		if !ok {
 			return errors.Wrapf(err, `expected resolved reference to be of type OAuthFlows, but got %T`, resolved)
 		}
@@ -135,7 +136,7 @@ func (v *oAuthFlows) Resolve(resolver *Resolver) error {
 	return nil
 }
 
-func (v *oAuthFlows) QueryJSON(path string) (ret interface{}, ok bool) {
+func (v *oauthFlows) QueryJSON(path string) (ret interface{}, ok bool) {
 	path = strings.TrimLeftFunc(path, func(r rune) bool { return r == '#' || r == '/' })
 	if path == "" {
 		return v, true

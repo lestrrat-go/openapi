@@ -75,14 +75,14 @@ func (v *mediaType) Clone() MediaType {
 	return &dst
 }
 
-func (v *oAuthFlow) Clone() OAuthFlow {
-	var dst oAuthFlow
+func (v *oauthFlow) Clone() OAuthFlow {
+	var dst oauthFlow
 	dst = *v
 	return &dst
 }
 
-func (v *oAuthFlows) Clone() OAuthFlows {
-	var dst oAuthFlows
+func (v *oauthFlows) Clone() OAuthFlows {
+	var dst oauthFlows
 	dst = *v
 	return &dst
 }
