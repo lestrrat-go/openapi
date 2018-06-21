@@ -25,12 +25,16 @@ func ExportedName(s string) string {
 	switch s {
 	case "defaultValue":
 		return "Default"
+	case "urls":
+		return "URLs"
 	case "url":
 		return "URL"
 	case "xml":
 		return "XML"
 	case "typ":
 		return "Type"
+	case "openAPI":
+		return "OpenAPI"
 	}
 
 	s = stringutil.Camel(stringutil.Snake(s))
@@ -42,8 +46,12 @@ func ExportedName(s string) string {
 
 func UnexportedName(s string) string {
 	switch s {
+	case "OpenAPI":
+		return "openAPI"
 	case "Default":
 		return "defaultValue"
+	case "URLs":
+		return "urls"
 	case "URL":
 		return "url"
 	case "XML":
@@ -85,48 +93,48 @@ func WriteImports(dst io.Writer, libs ...string) error {
 	fmt.Fprintf(dst, "\n\nimport ")
 	if l == 1 {
 		fmt.Fprintf(dst, "%s", strconv.Quote(libs[0]))
-		return nil
-	}
+	} else {
 
-	// first, separate out stdlib and everything else
-	var stdlibs []string
-	var extlibs []string
-	for _, lib := range libs {
-		i := strings.IndexByte(lib, '/')
-		if i == -1 {
-			stdlibs = append(stdlibs, lib)
-			continue
+		// first, separate out stdlib and everything else
+		var stdlibs []string
+		var extlibs []string
+		for _, lib := range libs {
+			i := strings.IndexByte(lib, '/')
+			if i == -1 {
+				stdlibs = append(stdlibs, lib)
+				continue
+			}
+
+			i = strings.IndexByte(lib[:i], '.')
+			if i == -1 {
+				stdlibs = append(stdlibs, lib)
+			} else {
+				extlibs = append(extlibs, lib)
+			}
 		}
 
-		i = strings.IndexByte(lib[:i], '.')
-		if i == -1 {
-			stdlibs = append(stdlibs, lib)
-		} else {
-			extlibs = append(extlibs, lib)
-		}
-	}
+		sort.Strings(stdlibs)
+		sort.Strings(extlibs)
 
-	sort.Strings(stdlibs)
-	sort.Strings(extlibs)
+		fmt.Fprintf(dst, "(")
 
-	fmt.Fprintf(dst, "(")
-
-	// Start with stdlibs
-	for _, lib := range stdlibs {
-		fmt.Fprintf(dst, "\n%s", strconv.Quote(lib))
-	}
-
-	if len(extlibs) > 0 {
-		if len(stdlibs) > 0 {
-			fmt.Fprintf(dst, "\n")
-		}
-
-		for _, lib := range extlibs {
+		// Start with stdlibs
+		for _, lib := range stdlibs {
 			fmt.Fprintf(dst, "\n%s", strconv.Quote(lib))
 		}
-	}
 
-	fmt.Fprintf(dst, "\n)")
+		if len(extlibs) > 0 {
+			if len(stdlibs) > 0 {
+				fmt.Fprintf(dst, "\n")
+			}
+
+			for _, lib := range extlibs {
+				fmt.Fprintf(dst, "\n%s", strconv.Quote(lib))
+			}
+		}
+
+		fmt.Fprintf(dst, "\n)")
+	}
 
 	// check to see if we need dummies
 	var buf bytes.Buffer
