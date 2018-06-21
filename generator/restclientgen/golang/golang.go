@@ -1205,7 +1205,7 @@ func formatCall(dst io.Writer, svcName string, call *Call) error {
 		fmt.Fprintf(dst, "\nif len(signedJWT) > 0 {")
 		fmt.Fprintf(dst, "\nreq.Header.Set(`Authorization`, `Bearer ` + signedJWT)")
 		fmt.Fprintf(dst, "\nif debugOut != nil {")
-		fmt.Fprintf(dst, "\ntoken, err := jwt.Parse(strings.NewReader(fmt.Sprintf(`%%s`, idToken)))")
+		fmt.Fprintf(dst, "\ntoken, err := jwt.Parse(strings.NewReader(signedJWT))")
 		fmt.Fprintf(dst, "\nif err != nil {")
 		fmt.Fprintf(dst, "\nfmt.Fprintf(debugOut, `failed to decode JWT token: %%s`, err)")
 		fmt.Fprintf(dst, "\n} else {")
