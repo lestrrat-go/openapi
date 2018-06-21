@@ -13,8 +13,6 @@ import (
 func TestGenerate(t *testing.T) {
 	t.Skip()
 
-	gen := grpcgen.New()
-
 	f, err := os.Open("cats.yaml")
 	if !assert.NoError(t, err, "reading spec file should succeed") {
 		return
@@ -26,7 +24,7 @@ func TestGenerate(t *testing.T) {
 		return
 	}
 
-	if !assert.NoError(t, gen.Generate(context.Background(), spec), `generate should succeed`) {
+	if !assert.NoError(t, grpcgen.Generate(context.Background(), spec), `generate should succeed`) {
 		return
 	}
 }
