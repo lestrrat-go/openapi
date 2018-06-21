@@ -18,13 +18,13 @@ var _ = errors.Cause
 type externalDocumentationMarshalProxy struct {
 	Reference   string `json:"$ref,omitempty"`
 	Description string `json:"description"`
-	UrL         string `json:"url"`
+	URL         string `json:"url"`
 }
 
 type externalDocumentationUnmarshalProxy struct {
 	Reference   string `json:"$ref,omitempty"`
 	Description string `json:"description"`
-	UrL         string `json:"url"`
+	URL         string `json:"url"`
 }
 
 func (v *externalDocumentation) MarshalJSON() ([]byte, error) {
@@ -34,7 +34,7 @@ func (v *externalDocumentation) MarshalJSON() ([]byte, error) {
 		return json.Marshal(proxy)
 	}
 	proxy.Description = v.description
-	proxy.UrL = v.urL
+	proxy.URL = v.url
 	return json.Marshal(proxy)
 }
 
@@ -48,7 +48,7 @@ func (v *externalDocumentation) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 	v.description = proxy.Description
-	v.urL = proxy.UrL
+	v.url = proxy.URL
 	return nil
 }
 
@@ -65,7 +65,7 @@ func (v *externalDocumentation) Resolve(resolver *Resolver) error {
 		}
 		mutator := MutateExternalDocumentation(v)
 		mutator.Description(asserted.Description())
-		mutator.UrL(asserted.UrL())
+		mutator.URL(asserted.URL())
 		if err := mutator.Do(); err != nil {
 			return errors.Wrap(err, `failed to mutate`)
 		}
@@ -95,7 +95,7 @@ func (v *externalDocumentation) QueryJSON(path string) (ret interface{}, ok bool
 	case "description":
 		target = v.description
 	case "url":
-		target = v.uRL
+		target = v.url
 	default:
 		return nil, false
 	}

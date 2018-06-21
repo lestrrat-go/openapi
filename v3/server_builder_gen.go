@@ -16,10 +16,10 @@ func (b *ServerBuilder) Do() Server {
 }
 
 // NewServer creates a new builder object for Server
-func NewServer(urL string) *ServerBuilder {
+func NewServer(url string) *ServerBuilder {
 	return &ServerBuilder{
 		target: &server{
-			uRL: urL,
+			url: url,
 		},
 	}
 }

@@ -35,8 +35,8 @@ func (b *LicenseMutator) Name(v string) *LicenseMutator {
 	return b
 }
 
-// UrL sets the UrL field for object License.
-func (b *LicenseMutator) UrL(v string) *LicenseMutator {
-	b.proxy.urL = v
+// URL sets the URL field for object License.
+func (b *LicenseMutator) URL(v string) *LicenseMutator {
+	b.proxy.url = v
 	return b
 }

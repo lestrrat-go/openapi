@@ -7,8 +7,8 @@ func (v *externalDocumentation) Description() string {
 	return v.description
 }
 
-func (v *externalDocumentation) UrL() string {
-	return v.urL
+func (v *externalDocumentation) URL() string {
+	return v.url
 }
 
 func (v *externalDocumentation) Reference() string {

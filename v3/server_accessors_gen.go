@@ -3,8 +3,8 @@ package openapi
 // This file was automatically generated.
 // DO NOT EDIT MANUALLY. All changes will be lost
 
-func (v *server) UrL() string {
-	return v.urL
+func (v *server) URL() string {
+	return v.url
 }
 
 func (v *server) Description() string {

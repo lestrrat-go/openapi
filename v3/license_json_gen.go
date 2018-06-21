@@ -18,13 +18,13 @@ var _ = errors.Cause
 type licenseMarshalProxy struct {
 	Reference string `json:"$ref,omitempty"`
 	Name      string `json:"name"`
-	UrL       string `json:"url,omitempty"`
+	URL       string `json:"url,omitempty"`
 }
 
 type licenseUnmarshalProxy struct {
 	Reference string `json:"$ref,omitempty"`
 	Name      string `json:"name"`
-	UrL       string `json:"url,omitempty"`
+	URL       string `json:"url,omitempty"`
 }
 
 func (v *license) MarshalJSON() ([]byte, error) {
@@ -34,7 +34,7 @@ func (v *license) MarshalJSON() ([]byte, error) {
 		return json.Marshal(proxy)
 	}
 	proxy.Name = v.name
-	proxy.UrL = v.urL
+	proxy.URL = v.url
 	return json.Marshal(proxy)
 }
 
@@ -48,7 +48,7 @@ func (v *license) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 	v.name = proxy.Name
-	v.urL = proxy.UrL
+	v.url = proxy.URL
 	return nil
 }
 
@@ -65,7 +65,7 @@ func (v *license) Resolve(resolver *Resolver) error {
 		}
 		mutator := MutateLicense(v)
 		mutator.Name(asserted.Name())
-		mutator.UrL(asserted.UrL())
+		mutator.URL(asserted.URL())
 		if err := mutator.Do(); err != nil {
 			return errors.Wrap(err, `failed to mutate`)
 		}
@@ -95,7 +95,7 @@ func (v *license) QueryJSON(path string) (ret interface{}, ok bool) {
 	case "name":
 		target = v.name
 	case "url":
-		target = v.uRL
+		target = v.url
 	default:
 		return nil, false
 	}

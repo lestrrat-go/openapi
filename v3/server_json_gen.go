@@ -17,14 +17,14 @@ var _ = errors.Cause
 
 type serverMarshalProxy struct {
 	Reference   string            `json:"$ref,omitempty"`
-	UrL         string            `json:"url"`
+	URL         string            `json:"url"`
 	Description string            `json:"description,omitempty"`
 	Variables   ServerVariableMap `json:"variables,omitempty"`
 }
 
 type serverUnmarshalProxy struct {
 	Reference   string            `json:"$ref,omitempty"`
-	UrL         string            `json:"url"`
+	URL         string            `json:"url"`
 	Description string            `json:"description,omitempty"`
 	Variables   ServerVariableMap `json:"variables,omitempty"`
 }
@@ -35,7 +35,7 @@ func (v *server) MarshalJSON() ([]byte, error) {
 		proxy.Reference = v.reference
 		return json.Marshal(proxy)
 	}
-	proxy.UrL = v.urL
+	proxy.URL = v.url
 	proxy.Description = v.description
 	proxy.Variables = v.variables
 	return json.Marshal(proxy)
@@ -50,7 +50,7 @@ func (v *server) UnmarshalJSON(data []byte) error {
 		v.reference = proxy.Reference
 		return nil
 	}
-	v.urL = proxy.UrL
+	v.url = proxy.URL
 	v.description = proxy.Description
 	v.variables = proxy.Variables
 	return nil
@@ -68,7 +68,7 @@ func (v *server) Resolve(resolver *Resolver) error {
 			return errors.Wrapf(err, `expected resolved reference to be of type Server, but got %T`, resolved)
 		}
 		mutator := MutateServer(v)
-		mutator.UrL(asserted.UrL())
+		mutator.URL(asserted.URL())
 		mutator.Description(asserted.Description())
 		for iter := asserted.Variables(); iter.Next(); {
 			key, item := iter.Item()
@@ -106,7 +106,7 @@ func (v *server) QueryJSON(path string) (ret interface{}, ok bool) {
 
 	switch frag {
 	case "url":
-		target = v.uRL
+		target = v.url
 	case "description":
 		target = v.description
 	case "variables":

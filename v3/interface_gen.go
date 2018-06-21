@@ -88,7 +88,7 @@ type info struct {
 // https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.1.md#contactObject
 type Contact interface {
 	Name() string
-	UrL() string
+	URL() string
 	Email() string
 	MarshalJSON() ([]byte, error)
 	IsUnresolved() bool
@@ -100,13 +100,13 @@ type contact struct {
 	reference string `json:"$ref,omitempty"`
 	resolved  bool   `json:"-"`
 	name      string `json:"name,omitempty"`
-	uRL       string `json:"url,omitempty"`
+	url       string `json:"url,omitempty"`
 	email     string `json:"email,omitempty"`
 }
 
 type License interface {
 	Name() string
-	UrL() string
+	URL() string
 	MarshalJSON() ([]byte, error)
 	IsUnresolved() bool
 	Resolve(*Resolver) error
@@ -117,11 +117,11 @@ type license struct {
 	reference string `json:"$ref,omitempty"`
 	resolved  bool   `json:"-"`
 	name      string `json:"name" builder:"required"`
-	uRL       string `json:"url,omitempty"`
+	url       string `json:"url,omitempty"`
 }
 
 type Server interface {
-	UrL() string
+	URL() string
 	Description() string
 	Variables() *ServerVariableMapIterator
 	MarshalJSON() ([]byte, error)
@@ -133,7 +133,7 @@ type Server interface {
 type server struct {
 	reference   string            `json:"$ref,omitempty"`
 	resolved    bool              `json:"-"`
-	uRL         string            `json:"url" builder:"required"`
+	url         string            `json:"url" builder:"required"`
 	description string            `json:"description,omitempty"`
 	variables   ServerVariableMap `json:"variables,omitempty"`
 }
@@ -292,7 +292,7 @@ type operation struct {
 
 type ExternalDocumentation interface {
 	Description() string
-	UrL() string
+	URL() string
 	MarshalJSON() ([]byte, error)
 	IsUnresolved() bool
 	Resolve(*Resolver) error
@@ -303,7 +303,7 @@ type externalDocumentation struct {
 	reference   string `json:"$ref,omitempty"`
 	resolved    bool   `json:"-"`
 	description string `json:"description"`
-	uRL         string `json:"url" builder:"required"` // REQUIRED
+	url         string `json:"url" builder:"required"` // REQUIRED
 }
 
 type RequestBody interface {

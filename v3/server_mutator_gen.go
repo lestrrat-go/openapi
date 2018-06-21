@@ -29,9 +29,9 @@ func MutateServer(v Server) *ServerMutator {
 	}
 }
 
-// UrL sets the UrL field for object Server.
-func (b *ServerMutator) UrL(v string) *ServerMutator {
-	b.proxy.urL = v
+// URL sets the URL field for object Server.
+func (b *ServerMutator) URL(v string) *ServerMutator {
+	b.proxy.url = v
 	return b
 }
 

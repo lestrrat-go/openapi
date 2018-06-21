@@ -18,14 +18,14 @@ var _ = errors.Cause
 type contactMarshalProxy struct {
 	Reference string `json:"$ref,omitempty"`
 	Name      string `json:"name,omitempty"`
-	UrL       string `json:"url,omitempty"`
+	URL       string `json:"url,omitempty"`
 	Email     string `json:"email,omitempty"`
 }
 
 type contactUnmarshalProxy struct {
 	Reference string `json:"$ref,omitempty"`
 	Name      string `json:"name,omitempty"`
-	UrL       string `json:"url,omitempty"`
+	URL       string `json:"url,omitempty"`
 	Email     string `json:"email,omitempty"`
 }
 
@@ -36,7 +36,7 @@ func (v *contact) MarshalJSON() ([]byte, error) {
 		return json.Marshal(proxy)
 	}
 	proxy.Name = v.name
-	proxy.UrL = v.urL
+	proxy.URL = v.url
 	proxy.Email = v.email
 	return json.Marshal(proxy)
 }
@@ -51,7 +51,7 @@ func (v *contact) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 	v.name = proxy.Name
-	v.urL = proxy.UrL
+	v.url = proxy.URL
 	v.email = proxy.Email
 	return nil
 }
@@ -69,7 +69,7 @@ func (v *contact) Resolve(resolver *Resolver) error {
 		}
 		mutator := MutateContact(v)
 		mutator.Name(asserted.Name())
-		mutator.UrL(asserted.UrL())
+		mutator.URL(asserted.URL())
 		mutator.Email(asserted.Email())
 		if err := mutator.Do(); err != nil {
 			return errors.Wrap(err, `failed to mutate`)
@@ -100,7 +100,7 @@ func (v *contact) QueryJSON(path string) (ret interface{}, ok bool) {
 	case "name":
 		target = v.name
 	case "url":
-		target = v.uRL
+		target = v.url
 	case "email":
 		target = v.email
 	default:

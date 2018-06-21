@@ -16,10 +16,10 @@ func (b *ExternalDocumentationBuilder) Do() ExternalDocumentation {
 }
 
 // NewExternalDocumentation creates a new builder object for ExternalDocumentation
-func NewExternalDocumentation(urL string) *ExternalDocumentationBuilder {
+func NewExternalDocumentation(url string) *ExternalDocumentationBuilder {
 	return &ExternalDocumentationBuilder{
 		target: &externalDocumentation{
-			uRL: urL,
+			url: url,
 		},
 	}
 }

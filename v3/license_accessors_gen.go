@@ -7,8 +7,8 @@ func (v *license) Name() string {
 	return v.name
 }
 
-func (v *license) UrL() string {
-	return v.urL
+func (v *license) URL() string {
+	return v.url
 }
 
 func (v *license) Reference() string {

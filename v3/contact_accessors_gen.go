@@ -7,8 +7,8 @@ func (v *contact) Name() string {
 	return v.name
 }
 
-func (v *contact) UrL() string {
-	return v.urL
+func (v *contact) URL() string {
+	return v.url
 }
 
 func (v *contact) Email() string {

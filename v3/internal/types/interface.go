@@ -67,7 +67,7 @@ type Contact interface {
 
 type contact struct {
 	name  string `json:"name,omitempty"`
-	uRL   string `json:"url,omitempty"`
+	url   string `json:"url,omitempty"`
 	email string `json:"email,omitempty"`
 }
 
@@ -76,14 +76,14 @@ type License interface {
 
 type license struct {
 	name string `json:"name" builder:"required"`
-	uRL  string `json:"url,omitempty"`
+	url  string `json:"url,omitempty"`
 }
 
 type Server interface {
 }
 
 type server struct {
-	uRL         string            `json:"url" builder:"required"`
+	url         string            `json:"url" builder:"required"`
 	description string            `json:"description,omitempty"`
 	variables   ServerVariableMap `json:"variables,omitempty"`
 }
@@ -173,7 +173,7 @@ type ExternalDocumentation interface {
 
 type externalDocumentation struct {
 	description string `json:"description"`
-	uRL         string `json:"url" builder:"required"` // REQUIRED
+	url         string `json:"url" builder:"required"` // REQUIRED
 }
 
 type RequestBody interface {

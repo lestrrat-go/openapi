@@ -28,9 +28,9 @@ func (b *ContactBuilder) Name(v string) *ContactBuilder {
 	return b
 }
 
-// UrL sets the UrL field for object Contact.
-func (b *ContactBuilder) UrL(v string) *ContactBuilder {
-	b.target.uRL = v
+// URL sets the URL field for object Contact.
+func (b *ContactBuilder) URL(v string) *ContactBuilder {
+	b.target.url = v
 	return b
 }
 

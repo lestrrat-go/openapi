@@ -24,9 +24,9 @@ func NewLicense(name string) *LicenseBuilder {
 	}
 }
 
-// UrL sets the UrL field for object License.
-func (b *LicenseBuilder) UrL(v string) *LicenseBuilder {
-	b.target.uRL = v
+// URL sets the URL field for object License.
+func (b *LicenseBuilder) URL(v string) *LicenseBuilder {
+	b.target.url = v
 	return b
 }
 

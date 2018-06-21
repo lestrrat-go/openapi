@@ -35,8 +35,8 @@ func (b *ExternalDocumentationMutator) Description(v string) *ExternalDocumentat
 	return b
 }
 
-// UrL sets the UrL field for object ExternalDocumentation.
-func (b *ExternalDocumentationMutator) UrL(v string) *ExternalDocumentationMutator {
-	b.proxy.urL = v
+// URL sets the URL field for object ExternalDocumentation.
+func (b *ExternalDocumentationMutator) URL(v string) *ExternalDocumentationMutator {
+	b.proxy.url = v
 	return b
 }
