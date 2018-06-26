@@ -17,7 +17,8 @@ func (v *StringMap) Clear() error {
 	return nil
 }
 
-func (v StringMap) Resolve(resolver *Resolver) error {
+// Validate checks the correctness of values in StringMap
+func (v *StringMap) Validate(recurse bool) error {
 	return nil
 }
 

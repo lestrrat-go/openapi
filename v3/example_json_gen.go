@@ -56,30 +56,6 @@ func (v *example) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (v *example) Resolve(resolver *Resolver) error {
-	if v.IsUnresolved() {
-
-		resolved, err := resolver.Resolve(v.Reference())
-		if err != nil {
-			return errors.Wrapf(err, `failed to resolve reference %s`, v.Reference())
-		}
-		asserted, ok := resolved.(*example)
-		if !ok {
-			return errors.Wrapf(err, `expected resolved reference to be of type Example, but got %T`, resolved)
-		}
-		mutator := MutateExample(v)
-		mutator.Name(asserted.Name())
-		mutator.Description(asserted.Description())
-		mutator.Value(asserted.Value())
-		mutator.ExternalValue(asserted.ExternalValue())
-		if err := mutator.Do(); err != nil {
-			return errors.Wrap(err, `failed to mutate`)
-		}
-		v.resolved = true
-	}
-	return nil
-}
-
 func (v *example) QueryJSON(path string) (ret interface{}, ok bool) {
 	path = strings.TrimLeftFunc(path, func(r rune) bool { return r == '#' || r == '/' })
 	if path == "" {

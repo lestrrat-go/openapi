@@ -58,38 +58,6 @@ func (v *requestBody) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (v *requestBody) Resolve(resolver *Resolver) error {
-	if v.IsUnresolved() {
-
-		resolved, err := resolver.Resolve(v.Reference())
-		if err != nil {
-			return errors.Wrapf(err, `failed to resolve reference %s`, v.Reference())
-		}
-		asserted, ok := resolved.(*requestBody)
-		if !ok {
-			return errors.Wrapf(err, `expected resolved reference to be of type RequestBody, but got %T`, resolved)
-		}
-		mutator := MutateRequestBody(v)
-		mutator.Name(asserted.Name())
-		mutator.Description(asserted.Description())
-		for iter := asserted.Content(); iter.Next(); {
-			key, item := iter.Item()
-			mutator.Content(key, item)
-		}
-		mutator.Required(asserted.Required())
-		if err := mutator.Do(); err != nil {
-			return errors.Wrap(err, `failed to mutate`)
-		}
-		v.resolved = true
-	}
-	if v.content != nil {
-		if err := v.content.Resolve(resolver); err != nil {
-			return errors.Wrap(err, `failed to resolve Content`)
-		}
-	}
-	return nil
-}
-
 func (v *requestBody) QueryJSON(path string) (ret interface{}, ok bool) {
 	path = strings.TrimLeftFunc(path, func(r rune) bool { return r == '#' || r == '/' })
 	if path == "" {

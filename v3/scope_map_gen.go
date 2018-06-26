@@ -17,7 +17,8 @@ func (v *ScopeMap) Clear() error {
 	return nil
 }
 
-func (v ScopeMap) Resolve(resolver *Resolver) error {
+// Validate checks the correctness of values in ScopeMap
+func (v *ScopeMap) Validate(recurse bool) error {
 	return nil
 }
 

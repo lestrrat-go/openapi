@@ -17,7 +17,15 @@ func (v *InterfaceMap) Clear() error {
 	return nil
 }
 
-func (v InterfaceMap) Resolve(resolver *Resolver) error {
+// Validate checks the correctness of values in InterfaceMap
+func (v *InterfaceMap) Validate(recurse bool) error {
+	for name, elem := range *v {
+		if validator, ok := elem.(Validator); ok {
+			if err := validator.Validate(recurse); err != nil {
+				return errors.Wrapf(err, `failed to validate element %v`, name)
+			}
+		}
+	}
 	return nil
 }
 

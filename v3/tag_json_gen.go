@@ -64,34 +64,6 @@ func (v *tag) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (v *tag) Resolve(resolver *Resolver) error {
-	if v.IsUnresolved() {
-
-		resolved, err := resolver.Resolve(v.Reference())
-		if err != nil {
-			return errors.Wrapf(err, `failed to resolve reference %s`, v.Reference())
-		}
-		asserted, ok := resolved.(*tag)
-		if !ok {
-			return errors.Wrapf(err, `expected resolved reference to be of type Tag, but got %T`, resolved)
-		}
-		mutator := MutateTag(v)
-		mutator.Name(asserted.Name())
-		mutator.Description(asserted.Description())
-		mutator.ExternalDocs(asserted.ExternalDocs())
-		if err := mutator.Do(); err != nil {
-			return errors.Wrap(err, `failed to mutate`)
-		}
-		v.resolved = true
-	}
-	if v.externalDocs != nil {
-		if err := v.externalDocs.Resolve(resolver); err != nil {
-			return errors.Wrap(err, `failed to resolve ExternalDocs`)
-		}
-	}
-	return nil
-}
-
 func (v *tag) QueryJSON(path string) (ret interface{}, ok bool) {
 	path = strings.TrimLeftFunc(path, func(r rune) bool { return r == '#' || r == '/' })
 	if path == "" {

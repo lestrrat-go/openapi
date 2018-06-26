@@ -3,16 +3,42 @@ package openapi
 // This file was automatically generated.
 // DO NOT EDIT MANUALLY. All changes will be lost
 
+import "github.com/pkg/errors"
+
+var _ = errors.Cause
+
 // OperationBuilder is used to build an instance of Operation. The user must
-// call `Do()` after providing all the necessary information to
+// call `Build()` after providing all the necessary information to
 // build an instance of Operation
 type OperationBuilder struct {
 	target *operation
 }
 
-// Do finalizes the building process for Operation and returns the result
-func (b *OperationBuilder) Do() Operation {
-	return b.target
+// MustBuild is a convenience function for those time when you know that
+// the result of the builder must be successful
+func (b *OperationBuilder) MustBuild(options ...Option) Operation {
+	v, err := b.Build()
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
+// Build finalizes the building process for Operation and returns the result
+func (b *OperationBuilder) Build(options ...Option) (Operation, error) {
+	validate := true
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyValidate:
+			validate = option.Value().(bool)
+		}
+	}
+	if validate {
+		if err := b.target.Validate(false); err != nil {
+			return nil, errors.Wrap(err, `validation failed`)
+		}
+	}
+	return b.target, nil
 }
 
 // NewOperation creates a new builder object for Operation

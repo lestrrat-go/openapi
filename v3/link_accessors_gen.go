@@ -3,6 +3,10 @@ package openapi
 // This file was automatically generated.
 // DO NOT EDIT MANUALLY. All changes will be lost
 
+import "github.com/pkg/errors"
+
+var _ = errors.Cause
+
 func (v *link) Name() string {
 	return v.name
 }
@@ -43,4 +47,25 @@ func (v *link) Reference() string {
 
 func (v *link) IsUnresolved() bool {
 	return v.reference != "" && !v.resolved
+}
+
+func (v *link) Validate(recurse bool) error {
+	if recurse {
+		return v.recurseValidate()
+	}
+	return nil
+}
+
+func (v *link) recurseValidate() error {
+	if elem := v.parameters; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate field "parameters"`)
+		}
+	}
+	if elem := v.server; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate field "server"`)
+		}
+	}
+	return nil
 }

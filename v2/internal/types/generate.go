@@ -1263,23 +1263,6 @@ func generateContainer(c interface{}) error {
 		fmt.Fprintf(dst, "\nreturn nil")
 		fmt.Fprintf(dst, "\n}")
 
-		/*
-			fmt.Fprintf(dst, "\n\nfunc (v %s) Resolve(resolver Resolver) error {", typeName)
-			if _, ok := entityTypes[codegen.UnexportedName(rv.Type().Elem().Name())]; ok {
-				fmt.Fprintf(dst, "\nif len(v) > 0 {")
-				fmt.Fprintf(dst, "\nfor i, elem := range v {")
-				fmt.Fprintf(dst, "\nif err := elem.Resolve(resolver); err != nil {")
-				fmt.Fprintf(dst, "\nif re, ok := err.(ResolveError); !ok || ok && re.Fatal() {")
-				fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to resolve %s (index = %%d)`, i)", rv.Type().Name())
-				fmt.Fprintf(dst, "\n}")
-				fmt.Fprintf(dst, "\n}")
-				fmt.Fprintf(dst, "\n}")
-				fmt.Fprintf(dst, "\n}")
-			}
-			fmt.Fprintf(dst, "\nreturn nil")
-			fmt.Fprintf(dst, "\n}")
-		*/
-
 		if rv.Type().Elem().Name() != "" && rv.Type().Elem().Kind() == reflect.Interface {
 			fmt.Fprintf(dst, "\n\n// UnmarshalJSON defines how %s is deserialized from JSON", typeName)
 			fmt.Fprintf(dst, "\nfunc (v *%s) UnmarshalJSON(data []byte) error {", typeName)

@@ -56,38 +56,6 @@ func (v *serverVariable) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (v *serverVariable) Resolve(resolver *Resolver) error {
-	if v.IsUnresolved() {
-
-		resolved, err := resolver.Resolve(v.Reference())
-		if err != nil {
-			return errors.Wrapf(err, `failed to resolve reference %s`, v.Reference())
-		}
-		asserted, ok := resolved.(*serverVariable)
-		if !ok {
-			return errors.Wrapf(err, `expected resolved reference to be of type ServerVariable, but got %T`, resolved)
-		}
-		mutator := MutateServerVariable(v)
-		mutator.Name(asserted.Name())
-		for iter := asserted.Enum(); iter.Next(); {
-			item := iter.Item()
-			mutator.Enum(item)
-		}
-		mutator.Default(asserted.Default())
-		mutator.Description(asserted.Description())
-		if err := mutator.Do(); err != nil {
-			return errors.Wrap(err, `failed to mutate`)
-		}
-		v.resolved = true
-	}
-	if v.enum != nil {
-		if err := v.enum.Resolve(resolver); err != nil {
-			return errors.Wrap(err, `failed to resolve Enum`)
-		}
-	}
-	return nil
-}
-
 func (v *serverVariable) QueryJSON(path string) (ret interface{}, ok bool) {
 	path = strings.TrimLeftFunc(path, func(r rune) bool { return r == '#' || r == '/' })
 	if path == "" {

@@ -27,6 +27,7 @@ var postUnmarshalJSONHooks = map[string]struct{}{
 	"pathItem":    struct{}{},
 	"requestBody": struct{}{},
 }
+var validators = make(map[string]struct{})
 
 func GenerateCode() error {
 	entities := []interface{}{
@@ -90,6 +91,11 @@ func GenerateCode() error {
 	for _, e := range entities {
 		name := reflect.ValueOf(e).Type().Name()
 		entityTypes[name] = e
+		switch name {
+//		case "schema", "paths", "parameter", "operation", "response":
+		default:
+			validators[name] = struct{}{}
+		}
 	}
 
 	for _, c := range containers {
@@ -119,8 +125,8 @@ func GenerateCode() error {
 	}
 
 	for _, c := range containers {
-		if err := generateContainers(c); err != nil {
-			return errors.Wrap(err, `failed to generate containers`)
+		if err := generateContainer(c); err != nil {
+			return errors.Wrap(err, `failed to generate container`)
 		}
 	}
 
@@ -188,12 +194,17 @@ func copyInterface() error {
 		fmt.Fprintf(dst, "\n%s", txt)
 		if strings.HasPrefix(txt, "type ") && strings.HasSuffix(txt, " interface {") {
 			i := strings.Index(txt[5:], " ")
-			completeInterface(dst, txt[5:5+i])
+			switch txt[5 : 5+i] {
+			case "ResolveError", "Resolver", "Validator", "SchemaConverter":
+			default:
+				completeInterface(dst, txt[5:5+i])
+			}
 		} else if strings.HasPrefix(txt, "type ") && strings.HasSuffix(txt, " struct {") {
 			i := strings.Index(txt[5:], " ")
 			if _, ok := entityTypes[txt[5:5+i]]; ok {
 				fmt.Fprintf(dst, "\nreference string `json:\"$ref,omitempty\"`")
 				fmt.Fprintf(dst, "\nresolved bool `json:\"-\"`")
+				fmt.Fprintf(dst, "\nextensions Extensions `json:\"-\"`")
 			}
 		}
 	}
@@ -230,9 +241,8 @@ func completeInterface(dst io.Writer, ifacename string) {
 	}
 
 	fmt.Fprintf(dst, "\nMarshalJSON() ([]byte, error)")
-	fmt.Fprintf(dst, "\nIsUnresolved() bool")
-	fmt.Fprintf(dst, "\nResolve(*Resolver) error")
 	fmt.Fprintf(dst, "\nClone() %s", ifacename)
+	fmt.Fprintf(dst, "\nValidator")
 }
 
 func generateJSONHandlersFromEntity(e interface{}) error {
@@ -399,78 +409,6 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 		fmt.Fprintf(dst, "\n}")
 	}
 
-	fmt.Fprintf(dst, "\n\nfunc (v *%s) Resolve(resolver *Resolver) error {", rv.Type().Name())
-	fmt.Fprintf(dst, "\nif v.IsUnresolved() {")
-	fmt.Fprintf(dst, "\n\nresolved, err := resolver.Resolve(v.Reference())")
-	fmt.Fprintf(dst, "\nif err != nil {")
-	fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to resolve reference %%s`, v.Reference())")
-	fmt.Fprintf(dst, "\n}")
-	fmt.Fprintf(dst, "\nasserted, ok := resolved.(*%s)", rv.Type().Name())
-	fmt.Fprintf(dst, "\nif !ok {")
-	fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `expected resolved reference to be of type %s, but got %%T`, resolved)", codegen.ExportedName(rv.Type().Name()))
-	fmt.Fprintf(dst, "\n}")
-	fmt.Fprintf(dst, "\nmutator := Mutate%s(v)", codegen.ExportedName(rv.Type().Name()))
-	for i := 0; i < rv.NumField(); i++ {
-		fv := rv.Type().Field(i)
-		if fv.Tag.Get("resolve") == "-" {
-			continue
-		}
-
-		// If this is a container type, it has a corresponding iterator.
-		// Use the iterator to assign new values
-		exported := codegen.ExportedName(fv.Name)
-		fieldType := fv.Type.Name()
-		switch {
-		default:
-			fmt.Fprintf(dst, "\nmutator.%s(asserted.%s())", exported, exported)
-		case isContainer(fieldType):
-			switch {
-			case isMap(fieldType):
-				fmt.Fprintf(dst, "\nfor iter := asserted.%s(); iter.Next(); {", exported)
-				fmt.Fprintf(dst, "\nkey, item := iter.Item()")
-				fmt.Fprintf(dst, "\nmutator.%s(key, item)", inflection.Singular(exported))
-				fmt.Fprintf(dst, "\n}")
-			case isList(fieldType):
-				fmt.Fprintf(dst, "\nfor iter := asserted.%s(); iter.Next(); {", exported)
-				fmt.Fprintf(dst, "\nitem := iter.Item()")
-				fmt.Fprintf(dst, "\nmutator.%s(item)", inflection.Singular(exported))
-				fmt.Fprintf(dst, "\n}")
-			default:
-				return errors.Errorf(`unknown cotainer %s`, exported)
-			}
-		}
-	}
-	fmt.Fprintf(dst, "\nif err := mutator.Do(); err != nil {")
-	fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to mutate`)")
-	fmt.Fprintf(dst, "\n}")
-	fmt.Fprintf(dst, "\nv.resolved = true")
-	fmt.Fprintf(dst, "\n}")
-
-	for i := 0; i < rv.NumField(); i++ {
-		fv := rv.Type().Field(i)
-		if fv.Name == "reference" || fv.Tag.Get("resolve") == "-" {
-			continue
-		}
-
-		// if it's an entity, or a container for entity, resolve
-		var resolve bool
-		if _, ok := entityTypes[codegen.UnexportedName(fv.Type.Name())]; ok {
-			resolve = true
-		} else if _, ok := containerTypes[fv.Type.Name()]; ok {
-			resolve = true
-		}
-
-		if resolve {
-			fmt.Fprintf(dst, "\nif v.%s != nil {", codegen.UnexportedName(fv.Name))
-			fmt.Fprintf(dst, "\nif err := v.%s.Resolve(resolver); err != nil {", codegen.UnexportedName(fv.Name))
-			fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to resolve %s`)", codegen.ExportedName(fv.Name))
-			fmt.Fprintf(dst, "\n}")
-			fmt.Fprintf(dst, "\n}")
-		}
-	}
-	fmt.Fprintf(dst, "\nreturn nil")
-	fmt.Fprintf(dst, "\n}")
-
 	fmt.Fprintf(dst, "\n\nfunc (v *%s) QueryJSON(path string) (ret interface{}, ok bool)  {", rv.Type().Name())
 	fmt.Fprintf(dst, "\npath = strings.TrimLeftFunc(path, func(r rune) bool { return r == '#' || r == '/' })")
 	fmt.Fprintf(dst, "\nif path == \"\" {")
@@ -535,8 +473,11 @@ func generateAccessorsFromEntity(e interface{}) error {
 	var dst io.Writer = &buf
 
 	codegen.WritePreamble(dst, "openapi")
+	codegen.WriteImports(dst, "github.com/pkg/errors")
 
 	structname := rv.Type().Name()
+
+	var entityFields []reflect.StructField
 
 	for i := 0; i < rv.NumField(); i++ {
 		fv := rv.Type().Field(i)
@@ -547,6 +488,13 @@ func generateAccessorsFromEntity(e interface{}) error {
 		exportedName := codegen.ExportedName(fv.Name)
 		unexportedName := codegen.UnexportedName(fv.Name)
 		fieldType := fv.Type.Name()
+
+		// keep track of all fields whose type is one of our entity types
+		if fv.Tag.Get("json") != "-" {
+			if isEntity(codegen.UnexportedName(fieldType)) || isContainer(fieldType) {
+				entityFields = append(entityFields, fv)
+			}
+		}
 		switch {
 		case isMap(fieldType):
 			iteratorName := iteratorName(fv.Type)
@@ -584,6 +532,28 @@ func generateAccessorsFromEntity(e interface{}) error {
 	fmt.Fprintf(dst, "\nreturn v.reference != \"\" && !v.resolved")
 	fmt.Fprintf(dst, "\n}")
 
+	if isStockValidator(structname) {
+		fmt.Fprintf(dst, "\n\nfunc (v *%s) Validate(recurse bool) error {", structname)
+		fmt.Fprintf(dst, "\nif recurse {")
+		fmt.Fprintf(dst, "\nreturn v.recurseValidate()")
+		fmt.Fprintf(dst, "\n}")
+		fmt.Fprintf(dst, "\nreturn nil")
+		fmt.Fprintf(dst, "\n}")
+	}
+
+	fmt.Fprintf(dst, "\n\nfunc (v *%s) recurseValidate() error {", structname)
+	if len(entityFields) > 0 {
+		for _, field := range entityFields {
+			fmt.Fprintf(dst, "\nif elem := v.%s; elem != nil {", field.Name)
+			fmt.Fprintf(dst, "\nif err := elem.Validate(true); err != nil {")
+			fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to validate field %s`)", strconv.Quote(field.Name))
+			fmt.Fprintf(dst, "\n}")
+			fmt.Fprintf(dst, "\n}")
+		}
+	}
+	fmt.Fprintf(dst, "\nreturn nil")
+	fmt.Fprintf(dst, "\n}")
+
 	if err := writeFormattedSource(&buf, filename); err != nil {
 		return errors.Wrap(err, `failed to write result to file`)
 	}
@@ -599,20 +569,43 @@ func generateBuildersFromEntity(e interface{}) error {
 	var dst io.Writer = &buf
 
 	codegen.WritePreamble(dst, "openapi")
+	codegen.WriteImports(dst, "github.com/pkg/errors")
 
 	ifacename := codegen.ExportedName(rv.Type().Name())
 	structname := rv.Type().Name()
 
 	fmt.Fprintf(dst, "\n\n// %sBuilder is used to build an instance of %s. The user must", ifacename, ifacename)
-	fmt.Fprintf(dst, "\n// call `Do()` after providing all the necessary information to")
+	fmt.Fprintf(dst, "\n// call `Build()` after providing all the necessary information to")
 	fmt.Fprintf(dst, "\n// build an instance of %s", ifacename)
 	fmt.Fprintf(dst, "\ntype %sBuilder struct {", ifacename)
 	fmt.Fprintf(dst, "\ntarget *%s", structname)
 	fmt.Fprintf(dst, "\n}")
 
-	fmt.Fprintf(dst, "\n\n// Do finalizes the building process for %s and returns the result", ifacename)
-	fmt.Fprintf(dst, "\nfunc (b *%sBuilder) Do() %s {", ifacename, ifacename)
-	fmt.Fprintf(dst, "\nreturn b.target")
+	fmt.Fprintf(dst, "\n\n// MustBuild is a convenience function for those time when you know that")
+	fmt.Fprintf(dst, "\n// the result of the builder must be successful")
+	fmt.Fprintf(dst, "\nfunc (b *%[1]sBuilder) MustBuild(options ...Option) %[1]s {", ifacename)
+	fmt.Fprintf(dst, "\nv, err := b.Build()")
+	fmt.Fprintf(dst, "\nif err != nil {")
+	fmt.Fprintf(dst, "\npanic(err)")
+	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\nreturn v")
+	fmt.Fprintf(dst, "\n}")
+
+	fmt.Fprintf(dst, "\n\n// Build finalizes the building process for %s and returns the result", ifacename)
+	fmt.Fprintf(dst, "\nfunc (b *%[1]sBuilder) Build(options ...Option) (%[1]s, error) {", ifacename)
+	fmt.Fprintf(dst, "\nvalidate := true")
+	fmt.Fprintf(dst, "\nfor _, option := range options {")
+	fmt.Fprintf(dst, "\nswitch option.Name() {")
+	fmt.Fprintf(dst, "\ncase optkeyValidate:")
+	fmt.Fprintf(dst, "\nvalidate = option.Value().(bool)")
+	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\nif validate {")
+	fmt.Fprintf(dst, "\nif err := b.target.Validate(false); err != nil {")
+	fmt.Fprintf(dst, "\nreturn nil, errors.Wrap(err, `validation failed`)")
+	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\nreturn b.target, nil")
 	fmt.Fprintf(dst, "\n}")
 
 	// Iterate through the fields, check if they are required / explicitly
@@ -681,7 +674,8 @@ func generateBuildersFromEntity(e interface{}) error {
 	fmt.Fprintf(dst, "\nreturn b")
 	fmt.Fprintf(dst, "\n}")
 
-	if err := writeFormattedSource(&buf, filename); err != nil {
+	if err := codegen.WriteFormattedToFile(filename, buf.Bytes()); err != nil {
+		codegen.DumpCode(os.Stdout, &buf)
 		return errors.Wrap(err, `failed to write result to file`)
 	}
 	return nil
@@ -916,7 +910,7 @@ func generateIteratorsFromEntity(entities []interface{}) error {
 	return writeFormattedSource(&buf, filename)
 }
 
-func generateContainers(c interface{}) error {
+func generateContainer(c interface{}) error {
 	rv := reflect.ValueOf(c)
 
 	filename := fmt.Sprintf("%s_gen.go", stringutil.Snake(rv.Type().Name()))
@@ -936,20 +930,27 @@ func generateContainers(c interface{}) error {
 		fmt.Fprintf(dst, "\nreturn nil")
 		fmt.Fprintf(dst, "\n}")
 
-		elemType := codegen.UnexportedName(rv.Type().Elem().Name())
-
-		fmt.Fprintf(dst, "\n\nfunc (v %s) Resolve(resolver *Resolver) error {", typeName)
-		if _, ok := entityTypes[elemType]; ok {
-			fmt.Fprintf(dst, "\nif len(v) > 0 {")
-			fmt.Fprintf(dst, "\nfor i, elem := range v {")
-			fmt.Fprintf(dst, "\nif err := elem.Resolve(resolver); err != nil {")
-			fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to resolve %s (index = %%d)`, i)", typeName)
-			fmt.Fprintf(dst, "\n}")
-			fmt.Fprintf(dst, "\n}")
-			fmt.Fprintf(dst, "\n}")
-		}
-		fmt.Fprintf(dst, "\nreturn nil")
-		fmt.Fprintf(dst, "\n}")
+    fmt.Fprintf(dst, "\n\n// Validate checks for the values for correctness. If `recurse`")
+    fmt.Fprintf(dst, "\n// is specified, child elements are also validated")
+    fmt.Fprintf(dst, "\nfunc (v *%s) Validate(recurse bool) error {", typeName)
+    elemType := rv.Type().Elem()
+    if elemType.Kind() == reflect.Interface {
+      fmt.Fprintf(dst, "\nfor i, elem := range *v {")
+      fmt.Fprintf(dst, "\nif validator, ok := elem.(Validator); ok {")
+      fmt.Fprintf(dst, "\nif err := validator.Validate(recurse); err != nil {")
+      fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to validate element %%d`, i)")
+      fmt.Fprintf(dst, "\n}")
+      fmt.Fprintf(dst, "\n}")
+      fmt.Fprintf(dst, "\n}")
+    } else if isEntity(codegen.UnexportedName(elemType.Name())) || isContainer(elemType.Name()) {
+      fmt.Fprintf(dst, "\nfor i, elem := range *v {")
+      fmt.Fprintf(dst, "\nif err := elem.Validate(recurse); err != nil {")
+      fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to validate element %%d`, i)")
+      fmt.Fprintf(dst, "\n}")
+      fmt.Fprintf(dst, "\n}")
+    }
+    fmt.Fprintf(dst, "\nreturn nil")
+    fmt.Fprintf(dst, "\n}")
 
 		if rv.Type().Elem().Name() != "" && rv.Type().Elem().Kind() == reflect.Interface {
 			fmt.Fprintf(dst, "\n\nfunc (v *%s) UnmarshalJSON(data []byte) error {", typeName)
@@ -974,13 +975,22 @@ func generateContainers(c interface{}) error {
 		fmt.Fprintf(dst, "\n*v = make(%s)", rv.Type().Name())
 		fmt.Fprintf(dst, "\nreturn nil")
 		fmt.Fprintf(dst, "\n}")
-		fmt.Fprintf(dst, "\n\nfunc (v %s) Resolve(resolver *Resolver) error {", rv.Type().Name())
-		if _, ok := entityTypes[codegen.UnexportedName(rv.Type().Elem().Name())]; ok {
-			fmt.Fprintf(dst, "\nif len(v) > 0 {")
-			fmt.Fprintf(dst, "\nfor name, elem := range v {")
-			fmt.Fprintf(dst, "\nif err := elem.Resolve(resolver); err != nil {")
-			fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to resolve %s (key = %%s)`, name)", rv.Type().Name())
+
+		fmt.Fprintf(dst, "\n\n// Validate checks the correctness of values in %s", typeName)
+		fmt.Fprintf(dst, "\nfunc (v *%s) Validate(recurse bool) error {", typeName)
+		elemType := rv.Type().Elem()
+		if elemType.Kind() == reflect.Interface {
+			fmt.Fprintf(dst, "\nfor name, elem := range *v {")
+			fmt.Fprintf(dst, "\nif validator, ok := elem.(Validator); ok {")
+			fmt.Fprintf(dst, "\nif err := validator.Validate(recurse); err != nil {")
+			fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to validate element %%v`, name)")
 			fmt.Fprintf(dst, "\n}")
+			fmt.Fprintf(dst, "\n}")
+			fmt.Fprintf(dst, "\n}")
+		} else if isEntity(codegen.UnexportedName(elemType.Name())) || isContainer(elemType.Name()) {
+			fmt.Fprintf(dst, "\nfor name, elem := range *v {")
+			fmt.Fprintf(dst, "\nif err := elem.Validate(recurse); err != nil {")
+			fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to validate element %%v`, name)")
 			fmt.Fprintf(dst, "\n}")
 			fmt.Fprintf(dst, "\n}")
 		}
@@ -1055,6 +1065,11 @@ func writeFormattedSource(buf *bytes.Buffer, filename string) error {
 	f.Write(formatted)
 
 	return nil
+}
+
+func isStockValidator(s string) bool {
+  _, ok := validators[s]
+  return ok
 }
 
 func isMap(s string) bool {

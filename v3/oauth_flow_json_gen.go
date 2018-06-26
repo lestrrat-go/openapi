@@ -60,38 +60,6 @@ func (v *oauthFlow) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (v *oauthFlow) Resolve(resolver *Resolver) error {
-	if v.IsUnresolved() {
-
-		resolved, err := resolver.Resolve(v.Reference())
-		if err != nil {
-			return errors.Wrapf(err, `failed to resolve reference %s`, v.Reference())
-		}
-		asserted, ok := resolved.(*oauthFlow)
-		if !ok {
-			return errors.Wrapf(err, `expected resolved reference to be of type OAuthFlow, but got %T`, resolved)
-		}
-		mutator := MutateOAuthFlow(v)
-		mutator.AuthorizationURL(asserted.AuthorizationURL())
-		mutator.TokenURL(asserted.TokenURL())
-		mutator.RefreshURL(asserted.RefreshURL())
-		for iter := asserted.Scopes(); iter.Next(); {
-			key, item := iter.Item()
-			mutator.Scope(key, item)
-		}
-		if err := mutator.Do(); err != nil {
-			return errors.Wrap(err, `failed to mutate`)
-		}
-		v.resolved = true
-	}
-	if v.scopes != nil {
-		if err := v.scopes.Resolve(resolver); err != nil {
-			return errors.Wrap(err, `failed to resolve Scopes`)
-		}
-	}
-	return nil
-}
-
 func (v *oauthFlow) QueryJSON(path string) (ret interface{}, ok bool) {
 	path = strings.TrimLeftFunc(path, func(r rune) bool { return r == '#' || r == '/' })
 	if path == "" {

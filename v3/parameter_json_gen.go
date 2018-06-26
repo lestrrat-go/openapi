@@ -96,57 +96,6 @@ func (v *parameter) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (v *parameter) Resolve(resolver *Resolver) error {
-	if v.IsUnresolved() {
-
-		resolved, err := resolver.Resolve(v.Reference())
-		if err != nil {
-			return errors.Wrapf(err, `failed to resolve reference %s`, v.Reference())
-		}
-		asserted, ok := resolved.(*parameter)
-		if !ok {
-			return errors.Wrapf(err, `expected resolved reference to be of type Parameter, but got %T`, resolved)
-		}
-		mutator := MutateParameter(v)
-		mutator.In(asserted.In())
-		mutator.Required(asserted.Required())
-		mutator.Description(asserted.Description())
-		mutator.Deprecated(asserted.Deprecated())
-		mutator.AllowEmptyValue(asserted.AllowEmptyValue())
-		mutator.Explode(asserted.Explode())
-		mutator.AllowReserved(asserted.AllowReserved())
-		mutator.Schema(asserted.Schema())
-		for iter := asserted.Examples(); iter.Next(); {
-			key, item := iter.Item()
-			mutator.Example(key, item)
-		}
-		for iter := asserted.Content(); iter.Next(); {
-			key, item := iter.Item()
-			mutator.Content(key, item)
-		}
-		if err := mutator.Do(); err != nil {
-			return errors.Wrap(err, `failed to mutate`)
-		}
-		v.resolved = true
-	}
-	if v.schema != nil {
-		if err := v.schema.Resolve(resolver); err != nil {
-			return errors.Wrap(err, `failed to resolve Schema`)
-		}
-	}
-	if v.examples != nil {
-		if err := v.examples.Resolve(resolver); err != nil {
-			return errors.Wrap(err, `failed to resolve Examples`)
-		}
-	}
-	if v.content != nil {
-		if err := v.content.Resolve(resolver); err != nil {
-			return errors.Wrap(err, `failed to resolve Content`)
-		}
-	}
-	return nil
-}
-
 func (v *parameter) QueryJSON(path string) (ret interface{}, ok bool) {
 	path = strings.TrimLeftFunc(path, func(r rune) bool { return r == '#' || r == '/' })
 	if path == "" {

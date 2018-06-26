@@ -92,50 +92,6 @@ func (v *oauthFlows) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (v *oauthFlows) Resolve(resolver *Resolver) error {
-	if v.IsUnresolved() {
-
-		resolved, err := resolver.Resolve(v.Reference())
-		if err != nil {
-			return errors.Wrapf(err, `failed to resolve reference %s`, v.Reference())
-		}
-		asserted, ok := resolved.(*oauthFlows)
-		if !ok {
-			return errors.Wrapf(err, `expected resolved reference to be of type OAuthFlows, but got %T`, resolved)
-		}
-		mutator := MutateOAuthFlows(v)
-		mutator.Implicit(asserted.Implicit())
-		mutator.Password(asserted.Password())
-		mutator.ClientCredentials(asserted.ClientCredentials())
-		mutator.AuthorizationCode(asserted.AuthorizationCode())
-		if err := mutator.Do(); err != nil {
-			return errors.Wrap(err, `failed to mutate`)
-		}
-		v.resolved = true
-	}
-	if v.implicit != nil {
-		if err := v.implicit.Resolve(resolver); err != nil {
-			return errors.Wrap(err, `failed to resolve Implicit`)
-		}
-	}
-	if v.password != nil {
-		if err := v.password.Resolve(resolver); err != nil {
-			return errors.Wrap(err, `failed to resolve Password`)
-		}
-	}
-	if v.clientCredentials != nil {
-		if err := v.clientCredentials.Resolve(resolver); err != nil {
-			return errors.Wrap(err, `failed to resolve ClientCredentials`)
-		}
-	}
-	if v.authorizationCode != nil {
-		if err := v.authorizationCode.Resolve(resolver); err != nil {
-			return errors.Wrap(err, `failed to resolve AuthorizationCode`)
-		}
-	}
-	return nil
-}
-
 func (v *oauthFlows) QueryJSON(path string) (ret interface{}, ok bool) {
 	path = strings.TrimLeftFunc(path, func(r rune) bool { return r == '#' || r == '/' })
 	if path == "" {

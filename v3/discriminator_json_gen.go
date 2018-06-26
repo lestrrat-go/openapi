@@ -52,36 +52,6 @@ func (v *discriminator) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (v *discriminator) Resolve(resolver *Resolver) error {
-	if v.IsUnresolved() {
-
-		resolved, err := resolver.Resolve(v.Reference())
-		if err != nil {
-			return errors.Wrapf(err, `failed to resolve reference %s`, v.Reference())
-		}
-		asserted, ok := resolved.(*discriminator)
-		if !ok {
-			return errors.Wrapf(err, `expected resolved reference to be of type Discriminator, but got %T`, resolved)
-		}
-		mutator := MutateDiscriminator(v)
-		mutator.PropertyName(asserted.PropertyName())
-		for iter := asserted.Mapping(); iter.Next(); {
-			key, item := iter.Item()
-			mutator.Mapping(key, item)
-		}
-		if err := mutator.Do(); err != nil {
-			return errors.Wrap(err, `failed to mutate`)
-		}
-		v.resolved = true
-	}
-	if v.mapping != nil {
-		if err := v.mapping.Resolve(resolver); err != nil {
-			return errors.Wrap(err, `failed to resolve Mapping`)
-		}
-	}
-	return nil
-}
-
 func (v *discriminator) QueryJSON(path string) (ret interface{}, ok bool) {
 	path = strings.TrimLeftFunc(path, func(r rune) bool { return r == '#' || r == '/' })
 	if path == "" {

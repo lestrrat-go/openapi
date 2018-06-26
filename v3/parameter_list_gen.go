@@ -17,11 +17,13 @@ func (v *ParameterList) Clear() error {
 	return nil
 }
 
-func (v ParameterList) Resolve(resolver *Resolver) error {
-	if len(v) > 0 {
-		for i, elem := range v {
-			if err := elem.Resolve(resolver); err != nil {
-				return errors.Wrapf(err, `failed to resolve ParameterList (index = %d)`, i)
+// Validate checks for the values for correctness. If `recurse`
+// is specified, child elements are also validated
+func (v *ParameterList) Validate(recurse bool) error {
+	for i, elem := range *v {
+		if validator, ok := elem.(Validator); ok {
+			if err := validator.Validate(recurse); err != nil {
+				return errors.Wrapf(err, `failed to validate element %d`, i)
 			}
 		}
 	}

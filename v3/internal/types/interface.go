@@ -33,6 +33,13 @@ const (
 	Null    PrimitiveType = "null"
 )
 
+// Validator objects can validate themselves.
+type Validator interface {
+	Validate(bool) error
+}
+
+type Extensions map[string]interface{}
+
 type OpenAPI interface {
 	QueryJSON(string) (interface{}, bool)
 }

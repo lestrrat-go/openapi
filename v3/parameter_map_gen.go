@@ -17,11 +17,12 @@ func (v *ParameterMap) Clear() error {
 	return nil
 }
 
-func (v ParameterMap) Resolve(resolver *Resolver) error {
-	if len(v) > 0 {
-		for name, elem := range v {
-			if err := elem.Resolve(resolver); err != nil {
-				return errors.Wrapf(err, `failed to resolve ParameterMap (key = %s)`, name)
+// Validate checks the correctness of values in ParameterMap
+func (v *ParameterMap) Validate(recurse bool) error {
+	for name, elem := range *v {
+		if validator, ok := elem.(Validator); ok {
+			if err := validator.Validate(recurse); err != nil {
+				return errors.Wrapf(err, `failed to validate element %v`, name)
 			}
 		}
 	}

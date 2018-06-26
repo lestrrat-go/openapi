@@ -84,39 +84,6 @@ func (v *securityScheme) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (v *securityScheme) Resolve(resolver *Resolver) error {
-	if v.IsUnresolved() {
-
-		resolved, err := resolver.Resolve(v.Reference())
-		if err != nil {
-			return errors.Wrapf(err, `failed to resolve reference %s`, v.Reference())
-		}
-		asserted, ok := resolved.(*securityScheme)
-		if !ok {
-			return errors.Wrapf(err, `expected resolved reference to be of type SecurityScheme, but got %T`, resolved)
-		}
-		mutator := MutateSecurityScheme(v)
-		mutator.Type(asserted.Type())
-		mutator.Description(asserted.Description())
-		mutator.Name(asserted.Name())
-		mutator.In(asserted.In())
-		mutator.Scheme(asserted.Scheme())
-		mutator.BearerFormat(asserted.BearerFormat())
-		mutator.Flows(asserted.Flows())
-		mutator.OpenIDConnectURL(asserted.OpenIDConnectURL())
-		if err := mutator.Do(); err != nil {
-			return errors.Wrap(err, `failed to mutate`)
-		}
-		v.resolved = true
-	}
-	if v.flows != nil {
-		if err := v.flows.Resolve(resolver); err != nil {
-			return errors.Wrap(err, `failed to resolve Flows`)
-		}
-	}
-	return nil
-}
-
 func (v *securityScheme) QueryJSON(path string) (ret interface{}, ok bool) {
 	path = strings.TrimLeftFunc(path, func(r rune) bool { return r == '#' || r == '/' })
 	if path == "" {

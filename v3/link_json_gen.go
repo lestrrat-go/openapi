@@ -76,46 +76,6 @@ func (v *link) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (v *link) Resolve(resolver *Resolver) error {
-	if v.IsUnresolved() {
-
-		resolved, err := resolver.Resolve(v.Reference())
-		if err != nil {
-			return errors.Wrapf(err, `failed to resolve reference %s`, v.Reference())
-		}
-		asserted, ok := resolved.(*link)
-		if !ok {
-			return errors.Wrapf(err, `expected resolved reference to be of type Link, but got %T`, resolved)
-		}
-		mutator := MutateLink(v)
-		mutator.Name(asserted.Name())
-		mutator.OperationRef(asserted.OperationRef())
-		mutator.OperationID(asserted.OperationID())
-		for iter := asserted.Parameters(); iter.Next(); {
-			key, item := iter.Item()
-			mutator.Parameter(key, item)
-		}
-		mutator.RequestBody(asserted.RequestBody())
-		mutator.Description(asserted.Description())
-		mutator.Server(asserted.Server())
-		if err := mutator.Do(); err != nil {
-			return errors.Wrap(err, `failed to mutate`)
-		}
-		v.resolved = true
-	}
-	if v.parameters != nil {
-		if err := v.parameters.Resolve(resolver); err != nil {
-			return errors.Wrap(err, `failed to resolve Parameters`)
-		}
-	}
-	if v.server != nil {
-		if err := v.server.Resolve(resolver); err != nil {
-			return errors.Wrap(err, `failed to resolve Server`)
-		}
-	}
-	return nil
-}
-
 func (v *link) QueryJSON(path string) (ret interface{}, ok bool) {
 	path = strings.TrimLeftFunc(path, func(r rune) bool { return r == '#' || r == '/' })
 	if path == "" {

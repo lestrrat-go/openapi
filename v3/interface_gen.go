@@ -31,6 +31,13 @@ const (
 	Null    PrimitiveType = "null"
 )
 
+// Validator objects can validate themselves.
+type Validator interface {
+	Validate(bool) error
+}
+
+type Extensions map[string]interface{}
+
 type OpenAPI interface {
 	Version() string
 	Info() Info
@@ -41,15 +48,15 @@ type OpenAPI interface {
 	Tags() *TagListIterator
 	ExternalDocs() ExternalDocumentation
 	MarshalJSON() ([]byte, error)
-	IsUnresolved() bool
-	Resolve(*Resolver) error
 	Clone() OpenAPI
+	Validator
 	QueryJSON(string) (interface{}, bool)
 }
 
 type openAPI struct {
 	reference    string                `json:"$ref,omitempty"`
 	resolved     bool                  `json:"-"`
+	extensions   Extensions            `json:"-"`
 	version      string                `json:"openapi" builder:"required" default:"DefaultVersion"`
 	info         Info                  `json:"info" builder:"required"`
 	servers      ServerList            `json:"servers,omitempty"`
@@ -68,20 +75,20 @@ type Info interface {
 	License() License
 	Version() string
 	MarshalJSON() ([]byte, error)
-	IsUnresolved() bool
-	Resolve(*Resolver) error
 	Clone() Info
+	Validator
 }
 
 type info struct {
-	reference      string  `json:"$ref,omitempty"`
-	resolved       bool    `json:"-"`
-	title          string  `json:"title" builder:"required"`
-	description    string  `json:"description,omitempty"`
-	termsOfService string  `json:"termsOfService,omitempty"`
-	contact        Contact `json:"contact,omitempty"`
-	license        License `json:"license,omitempty"`
-	version        string  `json:"version" builder:"required" default:"DefaultSpecVersion"`
+	reference      string     `json:"$ref,omitempty"`
+	resolved       bool       `json:"-"`
+	extensions     Extensions `json:"-"`
+	title          string     `json:"title" builder:"required"`
+	description    string     `json:"description,omitempty"`
+	termsOfService string     `json:"termsOfService,omitempty"`
+	contact        Contact    `json:"contact,omitempty"`
+	license        License    `json:"license,omitempty"`
+	version        string     `json:"version" builder:"required" default:"DefaultSpecVersion"`
 }
 
 // Contact represents the contact object
@@ -91,33 +98,33 @@ type Contact interface {
 	URL() string
 	Email() string
 	MarshalJSON() ([]byte, error)
-	IsUnresolved() bool
-	Resolve(*Resolver) error
 	Clone() Contact
+	Validator
 }
 
 type contact struct {
-	reference string `json:"$ref,omitempty"`
-	resolved  bool   `json:"-"`
-	name      string `json:"name,omitempty"`
-	url       string `json:"url,omitempty"`
-	email     string `json:"email,omitempty"`
+	reference  string     `json:"$ref,omitempty"`
+	resolved   bool       `json:"-"`
+	extensions Extensions `json:"-"`
+	name       string     `json:"name,omitempty"`
+	url        string     `json:"url,omitempty"`
+	email      string     `json:"email,omitempty"`
 }
 
 type License interface {
 	Name() string
 	URL() string
 	MarshalJSON() ([]byte, error)
-	IsUnresolved() bool
-	Resolve(*Resolver) error
 	Clone() License
+	Validator
 }
 
 type license struct {
-	reference string `json:"$ref,omitempty"`
-	resolved  bool   `json:"-"`
-	name      string `json:"name" builder:"required"`
-	url       string `json:"url,omitempty"`
+	reference  string     `json:"$ref,omitempty"`
+	resolved   bool       `json:"-"`
+	extensions Extensions `json:"-"`
+	name       string     `json:"name" builder:"required"`
+	url        string     `json:"url,omitempty"`
 }
 
 type Server interface {
@@ -125,14 +132,14 @@ type Server interface {
 	Description() string
 	Variables() *ServerVariableMapIterator
 	MarshalJSON() ([]byte, error)
-	IsUnresolved() bool
-	Resolve(*Resolver) error
 	Clone() Server
+	Validator
 }
 
 type server struct {
 	reference   string            `json:"$ref,omitempty"`
 	resolved    bool              `json:"-"`
+	extensions  Extensions        `json:"-"`
 	url         string            `json:"url" builder:"required"`
 	description string            `json:"description,omitempty"`
 	variables   ServerVariableMap `json:"variables,omitempty"`
@@ -144,15 +151,15 @@ type ServerVariable interface {
 	Default() string
 	Description() string
 	MarshalJSON() ([]byte, error)
-	IsUnresolved() bool
-	Resolve(*Resolver) error
 	Clone() ServerVariable
+	Validator
 	setName(string)
 }
 
 type serverVariable struct {
 	reference    string     `json:"$ref,omitempty"`
 	resolved     bool       `json:"-"`
+	extensions   Extensions `json:"-"`
 	name         string     `json:"-" builder:"-"`
 	enum         StringList `json:"enum"`
 	defaultValue string     `json:"default" builder:"required"`
@@ -170,14 +177,14 @@ type Components interface {
 	Links() *LinkMapIterator
 	Callbacks() *CallbackMapIterator
 	MarshalJSON() ([]byte, error)
-	IsUnresolved() bool
-	Resolve(*Resolver) error
 	Clone() Components
+	Validator
 }
 
 type components struct {
 	reference       string            `json:"$ref,omitempty"`
 	resolved        bool              `json:"-"`
+	extensions      Extensions        `json:"-"`
 	schemas         SchemaMap         `json:"schemas,omitempty"`         // or Reference
 	responses       ResponseMap       `json:"responses,omitempty"`       // or Reference
 	parameters      ParameterMap      `json:"parameters,omitempty"`      // or Reference
@@ -192,15 +199,15 @@ type components struct {
 type Paths interface {
 	Paths() *PathItemMapIterator
 	MarshalJSON() ([]byte, error)
-	IsUnresolved() bool
-	Resolve(*Resolver) error
 	Clone() Paths
+	Validator
 }
 
 type paths struct {
-	reference string      `json:"$ref,omitempty"`
-	resolved  bool        `json:"-"`
-	paths     PathItemMap `json:"-" mutator:"-"`
+	reference  string      `json:"$ref,omitempty"`
+	resolved   bool        `json:"-"`
+	extensions Extensions  `json:"-"`
+	paths      PathItemMap `json:"-" mutator:"-"`
 }
 
 type PathItem interface {
@@ -219,9 +226,8 @@ type PathItem interface {
 	Servers() *ServerListIterator
 	Parameters() *ParameterListIterator
 	MarshalJSON() ([]byte, error)
-	IsUnresolved() bool
-	Resolve(*Resolver) error
 	Clone() PathItem
+	Validator
 	setPath(string)
 	setName(string)
 	Operations() *OperationListIterator
@@ -230,6 +236,7 @@ type PathItem interface {
 type pathItem struct {
 	reference   string        `json:"$ref,omitempty"`
 	resolved    bool          `json:"-"`
+	extensions  Extensions    `json:"-"`
 	name        string        `json:"-" builder:"-"` // This is a secret variable that gets reset when the item is added to a path
 	path        string        `json:"-" resolve:"-"` // This is a secret variable that gets reset when the item is added to a path
 	summary     string        `json:"summary,omitempty"`
@@ -262,9 +269,8 @@ type Operation interface {
 	Security() *SecurityRequirementListIterator
 	Servers() *ServerListIterator
 	MarshalJSON() ([]byte, error)
-	IsUnresolved() bool
-	Resolve(*Resolver) error
 	Clone() Operation
+	Validator
 	setVerb(string)
 	setPathItem(PathItem)
 	Path() string
@@ -274,6 +280,7 @@ type Operation interface {
 type operation struct {
 	reference    string                  `json:"$ref,omitempty"`
 	resolved     bool                    `json:"-"`
+	extensions   Extensions              `json:"-"`
 	verb         string                  `json:"-" builder:"-" mutator:"-" resolve:"-"`
 	pathItem     PathItem                `json:"-" builder:"-" mutator:"-" resolve:"-"`
 	tags         StringList              `json:"tags,omitempty"`
@@ -294,16 +301,16 @@ type ExternalDocumentation interface {
 	Description() string
 	URL() string
 	MarshalJSON() ([]byte, error)
-	IsUnresolved() bool
-	Resolve(*Resolver) error
 	Clone() ExternalDocumentation
+	Validator
 }
 
 type externalDocumentation struct {
-	reference   string `json:"$ref,omitempty"`
-	resolved    bool   `json:"-"`
-	description string `json:"description"`
-	url         string `json:"url" builder:"required"` // REQUIRED
+	reference   string     `json:"$ref,omitempty"`
+	resolved    bool       `json:"-"`
+	extensions  Extensions `json:"-"`
+	description string     `json:"description"`
+	url         string     `json:"url" builder:"required"` // REQUIRED
 }
 
 type RequestBody interface {
@@ -312,15 +319,15 @@ type RequestBody interface {
 	Content() *MediaTypeMapIterator
 	Required() bool
 	MarshalJSON() ([]byte, error)
-	IsUnresolved() bool
-	Resolve(*Resolver) error
 	Clone() RequestBody
+	Validator
 	setName(string)
 }
 
 type requestBody struct {
 	reference   string       `json:"$ref,omitempty"`
 	resolved    bool         `json:"-"`
+	extensions  Extensions   `json:"-"`
 	name        string       `json:"-" builder:"-"`
 	description string       `json:"description,omitempty"`
 	content     MediaTypeMap `json:"content,omitempty" builder:"-" mutator:"-"`
@@ -334,21 +341,21 @@ type MediaType interface {
 	Examples() *ExampleMapIterator
 	Encoding() *EncodingMapIterator
 	MarshalJSON() ([]byte, error)
-	IsUnresolved() bool
-	Resolve(*Resolver) error
 	Clone() MediaType
+	Validator
 	setMime(string)
 	setName(string)
 }
 
 type mediaType struct {
-	reference string      `json:"$ref,omitempty"`
-	resolved  bool        `json:"-"`
-	name      string      `json:"-" builder:"-"`    // This is a secret variable that gets reset when the  is added to the container
-	mime      string      `json:"-" builder:"-"`    // This is a secret variable that gets reset when the  is added to the container
-	schema    Schema      `json:"schema,omitempty"` // or Reference
-	examples  ExampleMap  `json:"examples,omitempty"`
-	encoding  EncodingMap `json:"encoding,omitempty"`
+	reference  string      `json:"$ref,omitempty"`
+	resolved   bool        `json:"-"`
+	extensions Extensions  `json:"-"`
+	name       string      `json:"-" builder:"-"`    // This is a secret variable that gets reset when the  is added to the container
+	mime       string      `json:"-" builder:"-"`    // This is a secret variable that gets reset when the  is added to the container
+	schema     Schema      `json:"schema,omitempty"` // or Reference
+	examples   ExampleMap  `json:"examples,omitempty"`
+	encoding   EncodingMap `json:"encoding,omitempty"`
 }
 
 type Encoding interface {
@@ -358,34 +365,34 @@ type Encoding interface {
 	Explode() bool
 	AllowReserved() bool
 	MarshalJSON() ([]byte, error)
-	IsUnresolved() bool
-	Resolve(*Resolver) error
 	Clone() Encoding
+	Validator
 	setName(string)
 }
 
 type encoding struct {
-	reference     string    `json:"$ref,omitempty"`
-	resolved      bool      `json:"-"`
-	name          string    `json:"-" builder:"-"`
-	contentType   string    `json:"contentType"`
-	headers       HeaderMap `json:"headers"`
-	explode       bool      `json:"explode"`
-	allowReserved bool      `json:"allowReserved"`
+	reference     string     `json:"$ref,omitempty"`
+	resolved      bool       `json:"-"`
+	extensions    Extensions `json:"-"`
+	name          string     `json:"-" builder:"-"`
+	contentType   string     `json:"contentType"`
+	headers       HeaderMap  `json:"headers"`
+	explode       bool       `json:"explode"`
+	allowReserved bool       `json:"allowReserved"`
 }
 
 type Responses interface {
 	Default() Response
 	Responses() *ResponseMapIterator
 	MarshalJSON() ([]byte, error)
-	IsUnresolved() bool
-	Resolve(*Resolver) error
 	Clone() Responses
+	Validator
 }
 
 type responses struct {
 	reference    string      `json:"$ref,omitempty"`
 	resolved     bool        `json:"-"`
+	extensions   Extensions  `json:"-"`
 	defaultValue Response    `json:"default,omitempty"` // or Reference
 	responses    ResponseMap `json:"-" builder:"-"`     // or Reference
 }
@@ -397,15 +404,15 @@ type Response interface {
 	Content() *MediaTypeMapIterator
 	Links() *LinkMapIterator
 	MarshalJSON() ([]byte, error)
-	IsUnresolved() bool
-	Resolve(*Resolver) error
 	Clone() Response
+	Validator
 	setName(string)
 }
 
 type response struct {
 	reference   string       `json:"$ref,omitempty"`
 	resolved    bool         `json:"-"`
+	extensions  Extensions   `json:"-"`
 	name        string       `json:"-" builder:"-"`
 	description string       `json:"description" builder:"required"`
 	headers     HeaderMap    `json:"headers,omitempty"` // or Reference
@@ -417,17 +424,17 @@ type Callback interface {
 	Name() string
 	URLs() map[string]PathItem
 	MarshalJSON() ([]byte, error)
-	IsUnresolved() bool
-	Resolve(*Resolver) error
 	Clone() Callback
+	Validator
 	setName(string)
 }
 
 type callback struct {
-	reference string `json:"$ref,omitempty"`
-	resolved  bool   `json:"-"`
-	name      string `json:"-" builder:"-"`
-	urls      map[string]PathItem
+	reference  string     `json:"$ref,omitempty"`
+	resolved   bool       `json:"-"`
+	extensions Extensions `json:"-"`
+	name       string     `json:"-" builder:"-"`
+	urls       map[string]PathItem
 }
 
 type Example interface {
@@ -436,15 +443,15 @@ type Example interface {
 	Value() interface{}
 	ExternalValue() string
 	MarshalJSON() ([]byte, error)
-	IsUnresolved() bool
-	Resolve(*Resolver) error
 	Clone() Example
+	Validator
 	setName(string)
 }
 
 type example struct {
 	reference     string      `json:"$ref,omitempty"`
 	resolved      bool        `json:"-"`
+	extensions    Extensions  `json:"-"`
 	name          string      `json:"-" builder:"-"`
 	description   string      `json:"description"`
 	value         interface{} `json:"value"`
@@ -460,15 +467,15 @@ type Link interface {
 	Description() string
 	Server() Server
 	MarshalJSON() ([]byte, error)
-	IsUnresolved() bool
-	Resolve(*Resolver) error
 	Clone() Link
+	Validator
 	setName(string)
 }
 
 type link struct {
 	reference    string       `json:"$ref,omitempty"`
 	resolved     bool         `json:"-"`
+	extensions   Extensions   `json:"-"`
 	name         string       `json:"-" builder:"-"` // This is only populated when applicable
 	operationRef string       `json:"operationRef"`
 	operationID  string       `json:"operationId"`
@@ -483,14 +490,14 @@ type Tag interface {
 	Description() string
 	ExternalDocs() ExternalDocumentation
 	MarshalJSON() ([]byte, error)
-	IsUnresolved() bool
-	Resolve(*Resolver) error
 	Clone() Tag
+	Validator
 }
 
 type tag struct {
 	reference    string                `json:"$ref,omitempty"`
 	resolved     bool                  `json:"-"`
+	extensions   Extensions            `json:"-"`
 	name         string                `json:"name" builder:"required"`
 	description  string                `json:"description,omitempty"`
 	externalDocs ExternalDocumentation `json:"externalDocs,omitempty"`
@@ -530,9 +537,8 @@ type Schema interface {
 	Example() interface{}
 	Deprecated() bool
 	MarshalJSON() ([]byte, error)
-	IsUnresolved() bool
-	Resolve(*Resolver) error
 	Clone() Schema
+	Validator
 	Type() PrimitiveType
 	setName(string)
 }
@@ -540,6 +546,7 @@ type Schema interface {
 type schema struct {
 	reference        string                `json:"$ref,omitempty"`
 	resolved         bool                  `json:"-"`
+	extensions       Extensions            `json:"-"`
 	name             string                `json:"-" builder:"-"` // This is only populated when applicable
 	title            string                `json:"title,omitempty"`
 	multipleOf       float64               `json:"multipleOf,omitempty"`
@@ -579,16 +586,16 @@ type Discriminator interface {
 	PropertyName() string
 	Mapping() *StringMapIterator
 	MarshalJSON() ([]byte, error)
-	IsUnresolved() bool
-	Resolve(*Resolver) error
 	Clone() Discriminator
+	Validator
 }
 
 type discriminator struct {
-	reference    string    `json:"$ref,omitempty"`
-	resolved     bool      `json:"-"`
-	propertyName string    `json:"propertyName" builder:"required"`
-	mapping      StringMap `json:"mapping"`
+	reference    string     `json:"$ref,omitempty"`
+	resolved     bool       `json:"-"`
+	extensions   Extensions `json:"-"`
+	propertyName string     `json:"propertyName" builder:"required"`
+	mapping      StringMap  `json:"mapping"`
 }
 
 type SecurityScheme interface {
@@ -601,14 +608,14 @@ type SecurityScheme interface {
 	Flows() OAuthFlows
 	OpenIDConnectURL() string
 	MarshalJSON() ([]byte, error)
-	IsUnresolved() bool
-	Resolve(*Resolver) error
 	Clone() SecurityScheme
+	Validator
 }
 
 type securityScheme struct {
 	reference        string     `json:"$ref,omitempty"`
 	resolved         bool       `json:"-"`
+	extensions       Extensions `json:"-"`
 	typ              string     `json:"type" builder:"required"` // REQUIRED
 	description      string     `json:"description"`
 	name             string     `json:"name" builder:"required"`   // REQUIRED
@@ -625,18 +632,18 @@ type OAuthFlows interface {
 	ClientCredentials() OAuthFlow
 	AuthorizationCode() OAuthFlow
 	MarshalJSON() ([]byte, error)
-	IsUnresolved() bool
-	Resolve(*Resolver) error
 	Clone() OAuthFlows
+	Validator
 }
 
 type oauthFlows struct {
-	reference         string    `json:"$ref,omitempty"`
-	resolved          bool      `json:"-"`
-	implicit          OAuthFlow `json:"implicit"`
-	password          OAuthFlow `json:"password"`
-	clientCredentials OAuthFlow `json:"clientCredentials"`
-	authorizationCode OAuthFlow `json:"authorizationCode"`
+	reference         string     `json:"$ref,omitempty"`
+	resolved          bool       `json:"-"`
+	extensions        Extensions `json:"-"`
+	implicit          OAuthFlow  `json:"implicit"`
+	password          OAuthFlow  `json:"password"`
+	clientCredentials OAuthFlow  `json:"clientCredentials"`
+	authorizationCode OAuthFlow  `json:"authorizationCode"`
 }
 
 type OAuthFlow interface {
@@ -645,32 +652,32 @@ type OAuthFlow interface {
 	RefreshURL() string
 	Scopes() *ScopeMapIterator
 	MarshalJSON() ([]byte, error)
-	IsUnresolved() bool
-	Resolve(*Resolver) error
 	Clone() OAuthFlow
+	Validator
 }
 
 type oauthFlow struct {
-	reference        string   `json:"$ref,omitempty"`
-	resolved         bool     `json:"-"`
-	authorizationURL string   `json:"authorizationUrl"`
-	tokenURL         string   `json:"tokenUrl"`
-	refreshURL       string   `json:"refreshUrl"`
-	scopes           ScopeMap `json:"scopes"`
+	reference        string     `json:"$ref,omitempty"`
+	resolved         bool       `json:"-"`
+	extensions       Extensions `json:"-"`
+	authorizationURL string     `json:"authorizationUrl"`
+	tokenURL         string     `json:"tokenUrl"`
+	refreshURL       string     `json:"refreshUrl"`
+	scopes           ScopeMap   `json:"scopes"`
 }
 
 type SecurityRequirement interface {
 	Schemes() *StringListMapIterator
 	MarshalJSON() ([]byte, error)
-	IsUnresolved() bool
-	Resolve(*Resolver) error
 	Clone() SecurityRequirement
+	Validator
 }
 
 type securityRequirement struct {
-	reference string `json:"$ref,omitempty"`
-	resolved  bool   `json:"-"`
-	schemes   StringListMap
+	reference  string     `json:"$ref,omitempty"`
+	resolved   bool       `json:"-"`
+	extensions Extensions `json:"-"`
+	schemes    StringListMap
 }
 
 type Header interface {
@@ -686,15 +693,15 @@ type Header interface {
 	Examples() *ExampleMapIterator
 	Content() *MediaTypeMapIterator
 	MarshalJSON() ([]byte, error)
-	IsUnresolved() bool
-	Resolve(*Resolver) error
 	Clone() Header
+	Validator
 	setName(string)
 }
 
 type header struct {
 	reference       string       `json:"$ref,omitempty"`
 	resolved        bool         `json:"-"`
+	extensions      Extensions   `json:"-"`
 	name            string       `json:"-" builder:"-" mutator:"-" resolve:"-"`
 	in              Location     `json:"-" builder:"required" default:"InHeader"`
 	required        bool         `json:"required,omitempty"`
@@ -721,14 +728,14 @@ type Parameter interface {
 	Examples() *ExampleMapIterator
 	Content() *MediaTypeMapIterator
 	MarshalJSON() ([]byte, error)
-	IsUnresolved() bool
-	Resolve(*Resolver) error
 	Clone() Parameter
+	Validator
 }
 
 type parameter struct {
 	reference       string       `json:"$ref,omitempty"`
 	resolved        bool         `json:"-"`
+	extensions      Extensions   `json:"-"`
 	name            string       `json:"name,omitempty" builder:"required" resolve:"-"`
 	in              Location     `json:"in" builder:"required"`
 	required        bool         `json:"required,omitempty" default:"defaultParameterRequiredFromLocation(in)"`

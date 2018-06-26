@@ -52,28 +52,6 @@ func (v *license) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (v *license) Resolve(resolver *Resolver) error {
-	if v.IsUnresolved() {
-
-		resolved, err := resolver.Resolve(v.Reference())
-		if err != nil {
-			return errors.Wrapf(err, `failed to resolve reference %s`, v.Reference())
-		}
-		asserted, ok := resolved.(*license)
-		if !ok {
-			return errors.Wrapf(err, `expected resolved reference to be of type License, but got %T`, resolved)
-		}
-		mutator := MutateLicense(v)
-		mutator.Name(asserted.Name())
-		mutator.URL(asserted.URL())
-		if err := mutator.Do(); err != nil {
-			return errors.Wrap(err, `failed to mutate`)
-		}
-		v.resolved = true
-	}
-	return nil
-}
-
 func (v *license) QueryJSON(path string) (ret interface{}, ok bool) {
 	path = strings.TrimLeftFunc(path, func(r rune) bool { return r == '#' || r == '/' })
 	if path == "" {

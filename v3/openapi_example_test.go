@@ -1,184 +1,147 @@
 package openapi_test
 
 import (
-	"context"
 	"log"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/ghodss/yaml"
 	openapi "github.com/lestrrat-go/openapi/v3"
-	client "github.com/lestrrat-go/openapi/v3/generator/client"
 )
 
 func ExampleBuild() {
 	errReference := openapi.NewSchema().
 		Reference("#/components/schemas/Error").
-		Do()
+		MustBuild()
+
+	errMediaType := openapi.NewMediaType().
+		Schema(errReference).
+		MustBuild()
 	errResponse := openapi.NewResponse("unexpected error").
-		Content("application/json",
-			openapi.NewMediaType().
-				Schema(errReference).
-				Do(),
-		).
-		Do()
+		Content("application/json", errMediaType).
+		MustBuild()
+
+	idProp := openapi.NewSchema().
+		Type(openapi.Integer).
+		Format("int64").
+		MustBuild()
+	strSchema := openapi.NewSchema().
+		Type(openapi.String).
+		MustBuild()
+	petsRef := openapi.NewSchema().
+		Reference("#/components/schemas/Pet").
+		MustBuild()
 	petSchema :=
 		openapi.NewSchema().
 			Required([]string{"id", "name"}).
-			Property("id", openapi.NewSchema().
-				Type(openapi.Integer).
-				Format("int64").
-				Do(),
-			).
-			Property("name", openapi.NewSchema().
-				Type(openapi.String).
-				Do(),
-			).
-			Property("tag", openapi.NewSchema().
-				Type(openapi.String).
-				Do(),
-			).
-			Do()
+			Property("id", idProp).
+			Property("name", strSchema).
+			Property("tag", strSchema).
+			MustBuild()
 	petsSchema := openapi.NewSchema().
 		Type(openapi.Array).
-		Items(openapi.NewSchema().
-			Reference("#/components/schemas/Pet").
-			Do(),
-		).
-		Do()
+		Items(petsRef).
+		MustBuild()
+	int32Schema := openapi.NewSchema().
+		Type(openapi.Integer).
+		Format("int32").
+		MustBuild()
 	errSchema := openapi.NewSchema().
 		Required([]string{"code", "message"}).
-		Property("code", openapi.NewSchema().
-			Type(openapi.Integer).
-			Format("int32").
-			Do(),
-		).
-		Property("message", openapi.NewSchema().
-			Type(openapi.String).
-			Do(),
-		).
-		Do()
+		Property("code", int32Schema).
+		Property("message", strSchema).
+		MustBuild()
 
 	components := openapi.NewComponents().
 		Schema("Pet", petSchema).
 		Schema("Pets", petsSchema).
 		Schema("Error", errSchema).
-		Do()
+		MustBuild()
 
-	petsPostOperation := openapi.NewOperation(
-		openapi.NewResponses().
-			Response(
-				"201",
-				openapi.NewResponse("Null response").
-					Do(),
-			).
-			Default(errResponse).
-			Do(),
-	).
-		Summary("Create a pet").
-		OperationID("createPets").
-		Tag("pets").
-		Do()
+	nullResponse := openapi.NewResponse("Null response").
+		MustBuild()
 
-	petsGetOperation := openapi.NewOperation(
-		openapi.NewResponses().
-			Response(
-				"200",
-				openapi.NewResponse("An paged array of pets").
-					Header("x-next",
-						openapi.NewHeader().
-							Description("A link to the next page of responses").
-							Schema(
-								openapi.NewSchema().
-									Type("string").
-									Do(),
-							).
-							Do(),
-					).
-					Content("application/json",
-						openapi.NewMediaType().
-							Schema(
-								openapi.NewSchema().
-									Reference("#/components/schemas/Pets").
-									Do(),
-							).
-							Do(),
-					).
-					Do(),
-			).
-			Default(errResponse).
-			Do(),
-	).
-		Summary("List all pets").
-		OperationID("listPets").
-		Tag("pets").
-		Parameter(
-			openapi.NewParameter("limit", openapi.InQuery).
-				Description("How many items to return at one time (max 100)").
-				Schema(openapi.NewSchema().
-					Type(openapi.Integer).
-					Format("int32").
-					Do(),
-				).
-				Do(),
-		).
-		Do()
-
-	petsPath := openapi.NewPathItem().
-		Post(petsPostOperation).
-		Get(petsGetOperation).
-		Do()
-
-	petsIDPath := openapi.NewPathItem().
-		Get(
-			openapi.NewOperation(
-				openapi.NewResponses().
-					Response(
-						"200",
-						openapi.NewResponse("Expected response to a valid request").
-							Content("application/json",
-								openapi.NewMediaType().
-									Schema(
-										openapi.NewSchema().
-											Reference("#/components/schemas/Pets").
-											Do(),
-									).
-									Do(),
-							).
-							Do(),
-					).
-					Default(errResponse).
-					Do(),
-			).
-				Summary("Info for a specific pet").
-				OperationID("showPetById").
-				Tag("pets").
-				Parameter(
-					openapi.NewParameter("petId", openapi.InPath).
-						Description("The id of the pet to retrieve").
-						Schema(
-							openapi.NewSchema().Type(openapi.String).Do(),
-						).
-						Do(),
-				).
-				Do(),
-		).
-		Do()
+	petsSchemaRef := openapi.NewSchema().
+		Reference("#/components/schemas/Pets").
+		MustBuild()
 
 	o := openapi.NewOpenAPI(
 		openapi.NewInfo("Swagger Petstore").
 			Version("1.0.0").
 			License(
-				openapi.NewLicense("MIT").Do(),
-			).Do(),
+				openapi.NewLicense("MIT").MustBuild(),
+			).MustBuild(),
 		openapi.NewPaths().
-			Path("/pets", petsPath).
-			Path("/pets/{petId}", petsIDPath).
-			Do(),
+			Path("/pets", openapi.NewPathItem().
+				Post(openapi.NewOperation(
+					openapi.NewResponses().
+						Response("201", nullResponse).
+						Default(errResponse).
+						MustBuild(),
+				).
+					Summary("Create a pet").
+					OperationID("createPets").
+					Tag("pets").
+					MustBuild(),
+				).
+				Get(openapi.NewOperation(openapi.NewResponses().
+					Response("200", openapi.NewResponse("An paged array of pets").
+						Header("x-next", openapi.NewHeader().
+							Description("A link to the next page of responses").
+							Schema(strSchema).
+							MustBuild(),
+						).
+						Content("application/json", openapi.NewMediaType().
+							Schema(petsSchemaRef).
+							MustBuild(),
+						).
+						MustBuild(),
+					).
+					Default(errResponse).
+					MustBuild(),
+				).
+					Summary("List all pets").
+					OperationID("listPets").
+					Tag("pets").
+					Parameter(
+						openapi.NewParameter("limit", openapi.InQuery).
+							Description("How many items to return at one time (max 100)").
+							Schema(int32Schema).
+							MustBuild(),
+					).
+					MustBuild(),
+				).
+				MustBuild(),
+			).
+			Path("/pets/{petId}", openapi.NewPathItem().
+				Get(openapi.NewOperation(openapi.NewResponses().
+					Response("200", openapi.NewResponse("Expected response to a valid request").
+						Content("application/json", openapi.NewMediaType().
+							Schema(petsSchemaRef).
+							MustBuild(),
+						).
+						MustBuild(),
+					).
+					Default(errResponse).
+					MustBuild(),
+				).
+					Summary("Info for a specific pet").
+					OperationID("showPetById").
+					Tag("pets").
+					Parameter(
+						openapi.NewParameter("petId", openapi.InPath).
+							Description("The id of the pet to retrieve").
+							Schema(strSchema).
+							MustBuild(),
+					).
+					MustBuild(),
+				).
+				MustBuild(),
+			).
+			MustBuild(),
 	).
 		Components(components).
-		Do()
+		MustBuild()
 
 	buf, err := yaml.Marshal(o)
 	if err != nil {
@@ -479,25 +442,4 @@ paths:
 	//       summary: Info for a specific pet
 	//       tags:
 	//       - pets
-}
-
-func ExampleGenerateClient() {
-	f, err := os.Open(filepath.Join("..", "spec", "examples", "v3.0", "petstore-expanded.yaml"))
-	if err != nil {
-		os.Stdout.Write([]byte(err.Error()))
-		return
-	}
-	defer f.Close()
-
-	spec, err := openapi.ParseYAML(f)
-	if err != nil {
-		os.Stdout.Write([]byte(err.Error()))
-		return
-	}
-
-	c := client.New()
-	if err := c.Generate(context.Background(), spec); err != nil {
-		return
-	}
-	// OUTPUT:
 }

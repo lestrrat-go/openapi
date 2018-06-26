@@ -60,39 +60,6 @@ func (v *encoding) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (v *encoding) Resolve(resolver *Resolver) error {
-	if v.IsUnresolved() {
-
-		resolved, err := resolver.Resolve(v.Reference())
-		if err != nil {
-			return errors.Wrapf(err, `failed to resolve reference %s`, v.Reference())
-		}
-		asserted, ok := resolved.(*encoding)
-		if !ok {
-			return errors.Wrapf(err, `expected resolved reference to be of type Encoding, but got %T`, resolved)
-		}
-		mutator := MutateEncoding(v)
-		mutator.Name(asserted.Name())
-		mutator.ContentType(asserted.ContentType())
-		for iter := asserted.Headers(); iter.Next(); {
-			key, item := iter.Item()
-			mutator.Header(key, item)
-		}
-		mutator.Explode(asserted.Explode())
-		mutator.AllowReserved(asserted.AllowReserved())
-		if err := mutator.Do(); err != nil {
-			return errors.Wrap(err, `failed to mutate`)
-		}
-		v.resolved = true
-	}
-	if v.headers != nil {
-		if err := v.headers.Resolve(resolver); err != nil {
-			return errors.Wrap(err, `failed to resolve Headers`)
-		}
-	}
-	return nil
-}
-
 func (v *encoding) QueryJSON(path string) (ret interface{}, ok bool) {
 	path = strings.TrimLeftFunc(path, func(r rune) bool { return r == '#' || r == '/' })
 	if path == "" {

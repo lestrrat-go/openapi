@@ -84,42 +84,6 @@ func (v *info) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (v *info) Resolve(resolver *Resolver) error {
-	if v.IsUnresolved() {
-
-		resolved, err := resolver.Resolve(v.Reference())
-		if err != nil {
-			return errors.Wrapf(err, `failed to resolve reference %s`, v.Reference())
-		}
-		asserted, ok := resolved.(*info)
-		if !ok {
-			return errors.Wrapf(err, `expected resolved reference to be of type Info, but got %T`, resolved)
-		}
-		mutator := MutateInfo(v)
-		mutator.Title(asserted.Title())
-		mutator.Description(asserted.Description())
-		mutator.TermsOfService(asserted.TermsOfService())
-		mutator.Contact(asserted.Contact())
-		mutator.License(asserted.License())
-		mutator.Version(asserted.Version())
-		if err := mutator.Do(); err != nil {
-			return errors.Wrap(err, `failed to mutate`)
-		}
-		v.resolved = true
-	}
-	if v.contact != nil {
-		if err := v.contact.Resolve(resolver); err != nil {
-			return errors.Wrap(err, `failed to resolve Contact`)
-		}
-	}
-	if v.license != nil {
-		if err := v.license.Resolve(resolver); err != nil {
-			return errors.Wrap(err, `failed to resolve License`)
-		}
-	}
-	return nil
-}
-
 func (v *info) QueryJSON(path string) (ret interface{}, ok bool) {
 	path = strings.TrimLeftFunc(path, func(r rune) bool { return r == '#' || r == '/' })
 	if path == "" {

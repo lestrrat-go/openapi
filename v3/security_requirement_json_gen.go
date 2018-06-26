@@ -48,35 +48,6 @@ func (v *securityRequirement) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (v *securityRequirement) Resolve(resolver *Resolver) error {
-	if v.IsUnresolved() {
-
-		resolved, err := resolver.Resolve(v.Reference())
-		if err != nil {
-			return errors.Wrapf(err, `failed to resolve reference %s`, v.Reference())
-		}
-		asserted, ok := resolved.(*securityRequirement)
-		if !ok {
-			return errors.Wrapf(err, `expected resolved reference to be of type SecurityRequirement, but got %T`, resolved)
-		}
-		mutator := MutateSecurityRequirement(v)
-		for iter := asserted.Schemes(); iter.Next(); {
-			key, item := iter.Item()
-			mutator.Scheme(key, item)
-		}
-		if err := mutator.Do(); err != nil {
-			return errors.Wrap(err, `failed to mutate`)
-		}
-		v.resolved = true
-	}
-	if v.schemes != nil {
-		if err := v.schemes.Resolve(resolver); err != nil {
-			return errors.Wrap(err, `failed to resolve Schemes`)
-		}
-	}
-	return nil
-}
-
 func (v *securityRequirement) QueryJSON(path string) (ret interface{}, ok bool) {
 	path = strings.TrimLeftFunc(path, func(r rune) bool { return r == '#' || r == '/' })
 	if path == "" {

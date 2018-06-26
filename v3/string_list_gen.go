@@ -17,6 +17,8 @@ func (v *StringList) Clear() error {
 	return nil
 }
 
-func (v StringList) Resolve(resolver *Resolver) error {
+// Validate checks for the values for correctness. If `recurse`
+// is specified, child elements are also validated
+func (v *StringList) Validate(recurse bool) error {
 	return nil
 }

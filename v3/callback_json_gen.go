@@ -59,28 +59,6 @@ func (v *callback) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (v *callback) Resolve(resolver *Resolver) error {
-	if v.IsUnresolved() {
-
-		resolved, err := resolver.Resolve(v.Reference())
-		if err != nil {
-			return errors.Wrapf(err, `failed to resolve reference %s`, v.Reference())
-		}
-		asserted, ok := resolved.(*callback)
-		if !ok {
-			return errors.Wrapf(err, `expected resolved reference to be of type Callback, but got %T`, resolved)
-		}
-		mutator := MutateCallback(v)
-		mutator.Name(asserted.Name())
-		mutator.URLs(asserted.URLs())
-		if err := mutator.Do(); err != nil {
-			return errors.Wrap(err, `failed to mutate`)
-		}
-		v.resolved = true
-	}
-	return nil
-}
-
 func (v *callback) QueryJSON(path string) (ret interface{}, ok bool) {
 	path = strings.TrimLeftFunc(path, func(r rune) bool { return r == '#' || r == '/' })
 	if path == "" {

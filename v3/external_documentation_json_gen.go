@@ -52,28 +52,6 @@ func (v *externalDocumentation) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (v *externalDocumentation) Resolve(resolver *Resolver) error {
-	if v.IsUnresolved() {
-
-		resolved, err := resolver.Resolve(v.Reference())
-		if err != nil {
-			return errors.Wrapf(err, `failed to resolve reference %s`, v.Reference())
-		}
-		asserted, ok := resolved.(*externalDocumentation)
-		if !ok {
-			return errors.Wrapf(err, `expected resolved reference to be of type ExternalDocumentation, but got %T`, resolved)
-		}
-		mutator := MutateExternalDocumentation(v)
-		mutator.Description(asserted.Description())
-		mutator.URL(asserted.URL())
-		if err := mutator.Do(); err != nil {
-			return errors.Wrap(err, `failed to mutate`)
-		}
-		v.resolved = true
-	}
-	return nil
-}
-
 func (v *externalDocumentation) QueryJSON(path string) (ret interface{}, ok bool) {
 	path = strings.TrimLeftFunc(path, func(r rune) bool { return r == '#' || r == '/' })
 	if path == "" {

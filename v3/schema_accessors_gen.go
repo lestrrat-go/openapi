@@ -3,6 +3,10 @@ package openapi
 // This file was automatically generated.
 // DO NOT EDIT MANUALLY. All changes will be lost
 
+import "github.com/pkg/errors"
+
+var _ = errors.Cause
+
 func (v *schema) Name() string {
 	return v.name
 }
@@ -173,4 +177,65 @@ func (v *schema) Reference() string {
 
 func (v *schema) IsUnresolved() bool {
 	return v.reference != "" && !v.resolved
+}
+
+func (v *schema) Validate(recurse bool) error {
+	if recurse {
+		return v.recurseValidate()
+	}
+	return nil
+}
+
+func (v *schema) recurseValidate() error {
+	if elem := v.required; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate field "required"`)
+		}
+	}
+	if elem := v.enum; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate field "enum"`)
+		}
+	}
+	if elem := v.allOf; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate field "allOf"`)
+		}
+	}
+	if elem := v.oneOf; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate field "oneOf"`)
+		}
+	}
+	if elem := v.anyOf; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate field "anyOf"`)
+		}
+	}
+	if elem := v.not; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate field "not"`)
+		}
+	}
+	if elem := v.items; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate field "items"`)
+		}
+	}
+	if elem := v.properties; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate field "properties"`)
+		}
+	}
+	if elem := v.discriminator; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate field "discriminator"`)
+		}
+	}
+	if elem := v.externalDocs; elem != nil {
+		if err := elem.Validate(true); err != nil {
+			return errors.Wrap(err, `failed to validate field "externalDocs"`)
+		}
+	}
+	return nil
 }
