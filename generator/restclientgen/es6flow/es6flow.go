@@ -650,7 +650,7 @@ func compileCall(ctx *Context, oper openapi.Operation) error {
 				b.MultipleOf(param.MultipleOf())
 			}
 
-			prop, err := b.Do()
+			prop, err := b.Build()
 			if err != nil {
 				return errors.Wrapf(err, `failed to create schema for form parameter %s`, param.Name())
 			}
