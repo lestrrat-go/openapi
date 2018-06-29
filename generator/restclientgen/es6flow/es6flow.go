@@ -716,7 +716,7 @@ func compileCall(ctx *Context, oper openapi.Operation) error {
 
 	// if we have form fields, compile that into a struct
 	if formBuilder != nil {
-		formSchema, err := formBuilder.Do()
+		formSchema, err := formBuilder.Build()
 		if err != nil {
 			return errors.Wrap(err, `failed to build schema for formData fields`)
 		}

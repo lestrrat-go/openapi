@@ -657,9 +657,9 @@ func compileParameterToProperty(parentBuilder *openapi.SchemaBuilder, param open
 }
 
 func compileStructFromBuilder(ctx *Context, builder interface {
-	Do(...openapi.Option) (openapi.Schema, error)
+	Build(...openapi.Option) (openapi.Schema, error)
 }, location openapi.Location) (Type, error) {
-	schema, err := builder.Do()
+	schema, err := builder.Build()
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to build schema`)
 	}
