@@ -62,7 +62,7 @@ func ParseYAML(src io.Reader, options ...Option) (Swagger, error) {
 	return &spec, nil
 }
 
-func ParseJSON(src io.Reader) (Swagger, error) {
+func ParseJSON(src io.Reader, options ...Option) (Swagger, error) {
 	buf, err := ioutil.ReadAll(src)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to read from source`)
@@ -71,6 +71,20 @@ func ParseJSON(src io.Reader) (Swagger, error) {
 	var spec swagger
 	if err := json.Unmarshal(buf, &spec); err != nil {
 		return nil, errors.Wrap(err, `failed to unmarshal spec`)
+	}
+
+	validate := true
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyValidate:
+			validate = option.Value().(bool)
+		}
+	}
+
+	if validate {
+		if err := spec.Validate(true); err != nil {
+			return nil, errors.Wrap(err, `failed to validate spec`)
+		}
 	}
 
 	return &spec, nil
