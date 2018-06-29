@@ -118,8 +118,12 @@ func parse(unmarshaler func([]byte, interface{}) error, src io.Reader, options .
 	return &spec, nil
 }
 
+func yamlUnmarshal(buf []byte, v interface{}) error {
+  return yaml.Unmarshal(buf, v)
+}
+
 func ParseYAML(src io.Reader, options ...Option) (OpenAPI, error) {
-	return parse(yaml.Unmarshal, src, options...)
+	return parse(yamlUnmarshal, src, options...)
 }
 
 func ParseJSON(src io.Reader, options ...Option) (OpenAPI, error) {
