@@ -39,10 +39,11 @@ func ExportedName(s string) string {
 
 	s = stringutil.Camel(stringutil.Snake(s))
 	s = strings.Replace(s, "Id", "ID", -1)
-	s = strings.Replace(s, "Url", "URL", -1)
 	s = strings.Replace(s, "MimeType", "MIMEType", -1)
 	s = strings.Replace(s, "Openapi", "OpenAPI", -1)
 	s = strings.Replace(s, "Oauth", "OAuth", -1)
+	s = strings.Replace(s, "Url", "URL", -1)
+	s = strings.Replace(s, "Xml", "XML", -1)
 	return s
 }
 
@@ -81,6 +82,7 @@ func WritePreamble(dst io.Writer, pkg string) error {
 
 var importDummies = map[string]string{
 	"github.com/pkg/errors":          "errors.Cause",
+	"context":                        "context.Background",
 	"encoding/json":                  "json.Unmarshal",
 	"log":                            "log.Printf",
 	"net/url":                        "url.Parse",

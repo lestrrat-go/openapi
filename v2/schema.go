@@ -1,9 +1,5 @@
 package openapi
 
-import (
-	"github.com/pkg/errors"
-)
-
 func (v *schema) setName(s string) {
 	v.name = s
 }
@@ -23,19 +19,4 @@ func (v *schema) IsRequiredProperty(prop string) bool {
 // This method just returns itself
 func (v *schema) ConvertToSchema() (Schema, error) {
 	return v, nil
-}
-
-func (v *schema) Validate(recurse bool) error {
-	if v.reference != "" {
-		return nil
-	}
-
-	if v.typ != "" && !v.typ.IsValid() {
-		return errors.Errorf(`invalid type in schema: %s`, v.typ)
-	}
-
-	if recurse {
-		return v.recurseValidate()
-	}
-	return nil
 }
