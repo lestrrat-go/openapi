@@ -34,14 +34,14 @@ func extractFragFromPath(path string) (string, string) {
 	return frag, path
 }
 
-func ParseYAML(src io.Reader, options ...Option) (Swagger, error) {
+func parse(unmarshaler func([]byte, interface{}) error, src io.Reader, options ...Option) (Swagger, error) {
 	buf, err := ioutil.ReadAll(src)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to read from source`)
 	}
 
 	var spec swagger
-	if err := yaml.Unmarshal(buf, &spec); err != nil {
+	if err := unmarshaler(buf, &spec); err != nil {
 		return nil, errors.Wrap(err, `failed to unmarshal spec`)
 	}
 
@@ -58,34 +58,13 @@ func ParseYAML(src io.Reader, options ...Option) (Swagger, error) {
 			return nil, errors.Wrap(err, `failed to validate spec`)
 		}
 	}
-
 	return &spec, nil
 }
 
+func ParseYAML(src io.Reader, options ...Option) (Swagger, error) {
+	return parse(yaml.Unmarshal, src, options...)
+}
+
 func ParseJSON(src io.Reader, options ...Option) (Swagger, error) {
-	buf, err := ioutil.ReadAll(src)
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to read from source`)
-	}
-
-	var spec swagger
-	if err := json.Unmarshal(buf, &spec); err != nil {
-		return nil, errors.Wrap(err, `failed to unmarshal spec`)
-	}
-
-	validate := true
-	for _, option := range options {
-		switch option.Name() {
-		case optkeyValidate:
-			validate = option.Value().(bool)
-		}
-	}
-
-	if validate {
-		if err := spec.Validate(true); err != nil {
-			return nil, errors.Wrap(err, `failed to validate spec`)
-		}
-	}
-
-	return &spec, nil
+	return parse(json.Unmarshal, src, options...)
 }
