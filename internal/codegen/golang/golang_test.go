@@ -12,7 +12,7 @@ func TestExportedName(t *testing.T) {
 		Expected string
 		Input    string
 	}{
-		{Expected: "FooXmlBlah", Input: "fooXMLBlah"},
+		{Expected: "FooXMLBlah", Input: "fooXMLBlah"},
 	}
 
 	for _, test := range tests {
