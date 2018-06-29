@@ -91,30 +91,38 @@ func extractFragFromPath(path string) (string, string) {
 	return frag, path
 }
 
-func ParseYAML(src io.Reader) (OpenAPI, error) {
+func parse(unmarshaler func([]byte, interface{}) error, src io.Reader, options ...Option) (OpenAPI, error) {
 	buf, err := ioutil.ReadAll(src)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to read from source`)
 	}
 
 	var spec openAPI
-	if err := yaml.Unmarshal(buf, &spec); err != nil {
+	if err := unmarshaler(buf, &spec); err != nil {
 		return nil, errors.Wrap(err, `failed to unmarshal spec`)
 	}
 
+	validate := true
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyValidate:
+			validate = option.Value().(bool)
+		}
+	}
+
+	if validate {
+		if err := spec.Validate(true); err != nil {
+			return nil, errors.Wrap(err, `failed to validate spec`)
+		}
+	}
 	return &spec, nil
 }
 
-func ParseJSON(src io.Reader) (OpenAPI, error) {
-	buf, err := ioutil.ReadAll(src)
-	if err != nil {
-		return nil, errors.Wrap(err, `failed to read from source`)
-	}
-
-	var spec openAPI
-	if err := json.Unmarshal(buf, &spec); err != nil {
-		return nil, errors.Wrap(err, `failed to unmarshal spec`)
-	}
-
-	return &spec, nil
+func ParseYAML(src io.Reader, options ...Option) (OpenAPI, error) {
+	return parse(yaml.Unmarshal, src, options...)
 }
+
+func ParseJSON(src io.Reader, options ...Option) (OpenAPI, error) {
+	return parse(json.Unmarshal, src, options...)
+}
+
