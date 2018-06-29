@@ -10,14 +10,24 @@ import (
 var _ = errors.Cause
 
 // ExternalDocumentationBuilder is used to build an instance of ExternalDocumentation. The user must
-// call `Do()` after providing all the necessary information to
+// call `Build()` after providing all the necessary information to
 // build an instance of ExternalDocumentation
 type ExternalDocumentationBuilder struct {
 	target *externalDocumentation
 }
 
-// Do finalizes the building process for ExternalDocumentation and returns the result
-func (b *ExternalDocumentationBuilder) Do(options ...Option) (ExternalDocumentation, error) {
+// MustBuild is a convenience function for those time when you know that
+// the result of the builder must be successful
+func (b *ExternalDocumentationBuilder) MustBuild(options ...Option) ExternalDocumentation {
+	v, err := b.Build()
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
+// Build finalizes the building process for ExternalDocumentation and returns the result
+func (b *ExternalDocumentationBuilder) Build(options ...Option) (ExternalDocumentation, error) {
 	validate := true
 	for _, option := range options {
 		switch option.Name() {

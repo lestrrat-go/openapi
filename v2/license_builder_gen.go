@@ -10,14 +10,24 @@ import (
 var _ = errors.Cause
 
 // LicenseBuilder is used to build an instance of License. The user must
-// call `Do()` after providing all the necessary information to
+// call `Build()` after providing all the necessary information to
 // build an instance of License
 type LicenseBuilder struct {
 	target *license
 }
 
-// Do finalizes the building process for License and returns the result
-func (b *LicenseBuilder) Do(options ...Option) (License, error) {
+// MustBuild is a convenience function for those time when you know that
+// the result of the builder must be successful
+func (b *LicenseBuilder) MustBuild(options ...Option) License {
+	v, err := b.Build()
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
+// Build finalizes the building process for License and returns the result
+func (b *LicenseBuilder) Build(options ...Option) (License, error) {
 	validate := true
 	for _, option := range options {
 		switch option.Name() {

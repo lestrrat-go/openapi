@@ -10,14 +10,24 @@ import (
 var _ = errors.Cause
 
 // ResponseBuilder is used to build an instance of Response. The user must
-// call `Do()` after providing all the necessary information to
+// call `Build()` after providing all the necessary information to
 // build an instance of Response
 type ResponseBuilder struct {
 	target *response
 }
 
-// Do finalizes the building process for Response and returns the result
-func (b *ResponseBuilder) Do(options ...Option) (Response, error) {
+// MustBuild is a convenience function for those time when you know that
+// the result of the builder must be successful
+func (b *ResponseBuilder) MustBuild(options ...Option) Response {
+	v, err := b.Build()
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
+// Build finalizes the building process for Response and returns the result
+func (b *ResponseBuilder) Build(options ...Option) (Response, error) {
 	validate := true
 	for _, option := range options {
 		switch option.Name() {

@@ -10,14 +10,24 @@ import (
 var _ = errors.Cause
 
 // SecuritySchemeBuilder is used to build an instance of SecurityScheme. The user must
-// call `Do()` after providing all the necessary information to
+// call `Build()` after providing all the necessary information to
 // build an instance of SecurityScheme
 type SecuritySchemeBuilder struct {
 	target *securityScheme
 }
 
-// Do finalizes the building process for SecurityScheme and returns the result
-func (b *SecuritySchemeBuilder) Do(options ...Option) (SecurityScheme, error) {
+// MustBuild is a convenience function for those time when you know that
+// the result of the builder must be successful
+func (b *SecuritySchemeBuilder) MustBuild(options ...Option) SecurityScheme {
+	v, err := b.Build()
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
+// Build finalizes the building process for SecurityScheme and returns the result
+func (b *SecuritySchemeBuilder) Build(options ...Option) (SecurityScheme, error) {
 	validate := true
 	for _, option := range options {
 		switch option.Name() {

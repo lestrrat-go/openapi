@@ -10,14 +10,24 @@ import (
 var _ = errors.Cause
 
 // TagBuilder is used to build an instance of Tag. The user must
-// call `Do()` after providing all the necessary information to
+// call `Build()` after providing all the necessary information to
 // build an instance of Tag
 type TagBuilder struct {
 	target *tag
 }
 
-// Do finalizes the building process for Tag and returns the result
-func (b *TagBuilder) Do(options ...Option) (Tag, error) {
+// MustBuild is a convenience function for those time when you know that
+// the result of the builder must be successful
+func (b *TagBuilder) MustBuild(options ...Option) Tag {
+	v, err := b.Build()
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
+// Build finalizes the building process for Tag and returns the result
+func (b *TagBuilder) Build(options ...Option) (Tag, error) {
 	validate := true
 	for _, option := range options {
 		switch option.Name() {

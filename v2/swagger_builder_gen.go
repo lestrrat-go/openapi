@@ -10,14 +10,24 @@ import (
 var _ = errors.Cause
 
 // SwaggerBuilder is used to build an instance of Swagger. The user must
-// call `Do()` after providing all the necessary information to
+// call `Build()` after providing all the necessary information to
 // build an instance of Swagger
 type SwaggerBuilder struct {
 	target *swagger
 }
 
-// Do finalizes the building process for Swagger and returns the result
-func (b *SwaggerBuilder) Do(options ...Option) (Swagger, error) {
+// MustBuild is a convenience function for those time when you know that
+// the result of the builder must be successful
+func (b *SwaggerBuilder) MustBuild(options ...Option) Swagger {
+	v, err := b.Build()
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
+// Build finalizes the building process for Swagger and returns the result
+func (b *SwaggerBuilder) Build(options ...Option) (Swagger, error) {
 	validate := true
 	for _, option := range options {
 		switch option.Name() {

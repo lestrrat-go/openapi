@@ -10,14 +10,24 @@ import (
 var _ = errors.Cause
 
 // ItemsBuilder is used to build an instance of Items. The user must
-// call `Do()` after providing all the necessary information to
+// call `Build()` after providing all the necessary information to
 // build an instance of Items
 type ItemsBuilder struct {
 	target *items
 }
 
-// Do finalizes the building process for Items and returns the result
-func (b *ItemsBuilder) Do(options ...Option) (Items, error) {
+// MustBuild is a convenience function for those time when you know that
+// the result of the builder must be successful
+func (b *ItemsBuilder) MustBuild(options ...Option) Items {
+	v, err := b.Build()
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
+// Build finalizes the building process for Items and returns the result
+func (b *ItemsBuilder) Build(options ...Option) (Items, error) {
 	validate := true
 	for _, option := range options {
 		switch option.Name() {

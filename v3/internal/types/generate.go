@@ -89,7 +89,7 @@ func GenerateCode() error {
 	}
 
 	for _, e := range entities {
-		name := reflect.ValueOf(e).Type().Name()
+		name := reflect.TypeOf(e).Name()
 		entityTypes[name] = e
 		switch name {
 //		case "schema", "paths", "parameter", "operation", "response":
@@ -99,8 +99,7 @@ func GenerateCode() error {
 	}
 
 	for _, c := range containers {
-		name := reflect.ValueOf(c).Type().Name()
-		containerTypes[name] = c
+		containerTypes[reflect.TypeOf(c).Name()] = c
 	}
 
 	// Copy the interfaces file after swapping the package name

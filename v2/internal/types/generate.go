@@ -86,19 +86,19 @@ func GenerateCode() error {
 
 	for _, e := range entities {
 		if err := generateJSONHandlersFromEntity(e); err != nil {
-			return errors.Wrap(err, `failed to generate JSON handlers from entity list`)
+			return errors.Wrap(err, `failed to generate JSON handlers from entity`)
 		}
 
 		if err := generateAccessorsFromEntity(e); err != nil {
-			return errors.Wrap(err, `failed to generate accessors from entity list`)
+			return errors.Wrap(err, `failed to generate accessors from entity`)
 		}
 
 		if err := generateBuilderFromEntity(e); err != nil {
-			return errors.Wrap(err, `failed to generate builder from entity list`)
+			return errors.Wrap(err, `failed to generate builder from entity`)
 		}
 
 		if err := generateMutatorFromEntity(e); err != nil {
-			return errors.Wrap(err, `failed to generate mutator from entity list`)
+			return errors.Wrap(err, `failed to generate mutator from entity`)
 		}
 	}
 
@@ -481,14 +481,24 @@ func generateBuilderFromEntity(e interface{}) error {
 	structname := rv.Type().Name()
 
 	fmt.Fprintf(dst, "\n\n// %sBuilder is used to build an instance of %s. The user must", ifacename, ifacename)
-	fmt.Fprintf(dst, "\n// call `Do()` after providing all the necessary information to")
+	fmt.Fprintf(dst, "\n// call `Build()` after providing all the necessary information to")
 	fmt.Fprintf(dst, "\n// build an instance of %s", ifacename)
 	fmt.Fprintf(dst, "\ntype %sBuilder struct {", ifacename)
 	fmt.Fprintf(dst, "\ntarget *%s", structname)
 	fmt.Fprintf(dst, "\n}")
 
-	fmt.Fprintf(dst, "\n\n// Do finalizes the building process for %s and returns the result", ifacename)
-	fmt.Fprintf(dst, "\nfunc (b *%sBuilder) Do(options ...Option) (%s, error) {", ifacename, ifacename)
+	fmt.Fprintf(dst, "\n\n// MustBuild is a convenience function for those time when you know that")
+	fmt.Fprintf(dst, "\n// the result of the builder must be successful")
+	fmt.Fprintf(dst, "\nfunc (b *%[1]sBuilder) MustBuild(options ...Option) %[1]s {", ifacename)
+	fmt.Fprintf(dst, "\nv, err := b.Build()")
+	fmt.Fprintf(dst, "\nif err != nil {")
+	fmt.Fprintf(dst, "\npanic(err)")
+	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\nreturn v")
+	fmt.Fprintf(dst, "\n}")
+
+	fmt.Fprintf(dst, "\n\n// Build finalizes the building process for %s and returns the result", ifacename)
+	fmt.Fprintf(dst, "\nfunc (b *%[1]sBuilder) Build(options ...Option) (%[1]s, error) {", ifacename)
 	fmt.Fprintf(dst, "\nvalidate := true")
 	fmt.Fprintf(dst, "\nfor _, option := range options {")
 	fmt.Fprintf(dst, "\nswitch option.Name() {")

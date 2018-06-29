@@ -9,19 +9,19 @@ import (
 
 func TestParameterValidate(t *testing.T) {
 	t.Run("invalid name", func(t *testing.T) {
-		_, err := openapi.NewParameter("", openapi.InQuery).Do()
+		_, err := openapi.NewParameter("", openapi.InQuery).Build()
 		if !assert.Error(t, err, "empty name should result in error") {
 			return
 		}
 	})
 	t.Run("invalid location", func(t *testing.T) {
-		_, err := openapi.NewParameter("foo", openapi.Location("")).Do()
+		_, err := openapi.NewParameter("foo", openapi.Location("")).Build()
 		if !assert.Error(t, err, "empty location should result in error") {
 			return
 		}
 	})
 	t.Run("location = InBody + nil schema", func(t *testing.T) {
-		_, err := openapi.NewParameter("foo", openapi.InBody).Do()
+		_, err := openapi.NewParameter("foo", openapi.InBody).Build()
 		if !assert.Error(t, err, "empty schema when location = body should result in error") {
 			return
 		}
@@ -30,7 +30,7 @@ func TestParameterValidate(t *testing.T) {
 		for _, loc := range []openapi.Location{openapi.InQuery, openapi.InForm} {
 			_, err := openapi.NewParameter("foo", loc).
 				AllowEmptyValue(true).
-				Do()
+				Build()
 			if !assert.Error(t, err, "allowEmptyValue = true when location = %s should result in error", loc) {
 				return
 			}
@@ -39,7 +39,7 @@ func TestParameterValidate(t *testing.T) {
 	t.Run("type = array and items = nil", func(t *testing.T) {
 		_, err := openapi.NewParameter("foo", openapi.InQuery).
 			Type(openapi.Array).
-			Do()
+			Build()
 		if !assert.Error(t, err, "empty item when type = array should result in error") {
 			return
 		}
@@ -48,7 +48,7 @@ func TestParameterValidate(t *testing.T) {
 		for _, loc := range []openapi.Location{openapi.InPath, openapi.InQuery, openapi.InHeader, openapi.InBody} {
 			_, err := openapi.NewParameter("foo", loc).
 				Type(openapi.File).
-				Do()
+				Build()
 			if !assert.Error(t, err, "loc != formData (%s) when type = file should result in error", loc) {
 				return
 			}
@@ -58,7 +58,7 @@ func TestParameterValidate(t *testing.T) {
 		for _, typ := range []openapi.PrimitiveType{openapi.Object, openapi.Null} {
 			_, err := openapi.NewParameter("foo", openapi.InQuery).
 				Type(typ).
-				Do()
+				Build()
 			if !assert.Error(t, err, "type = %s should result in error", typ) {
 				return
 			}

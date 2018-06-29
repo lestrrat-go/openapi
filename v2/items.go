@@ -66,5 +66,5 @@ func (v *items) ConvertToSchema() (Schema, error) {
 	for iter := v.Extensions(); iter.Next(); {
 		b.Extension(iter.Item())
 	}
-	return b.Do()
+	return b.Build()
 }

@@ -9,7 +9,7 @@ import (
 
 func TestSwaggerValidate(t *testing.T) {
 	t.Run("invalid info", func(t *testing.T) {
-		_, err := openapi.NewSwagger(nil, petsPaths).Do()
+		_, err := openapi.NewSwagger(nil, petsPaths).Build()
 		if !assert.Error(t, err, `info = nil should result in error`) {
 			return
 		}
@@ -18,7 +18,7 @@ func TestSwaggerValidate(t *testing.T) {
 		for _, h := range []string{"example.com", "example.com:8080"} {
 			_, err := openapi.NewSwagger(petsInfo, petsPaths).
 				Host(h).
-				Do()
+				Build()
 			if !assert.NoError(t, err, `valid host %s should NOT result in error`, h) {
 				return
 			}
@@ -28,7 +28,7 @@ func TestSwaggerValidate(t *testing.T) {
 		for _, h := range []string{"https://example.com", "example.com/foo/bar"} {
 			_, err := openapi.NewSwagger(petsInfo, petsPaths).
 				Host(h).
-				Do()
+				Build()
 			if !assert.Error(t, err, `invalid host %s should result in error`, h) {
 				return
 			}
@@ -37,14 +37,14 @@ func TestSwaggerValidate(t *testing.T) {
 	t.Run("invalid basePath", func(t *testing.T) {
 		_, err := openapi.NewSwagger(petsInfo, petsPaths).
 			BasePath("foo").
-			Do()
+			Build()
 		if !assert.Error(t, err, `invalid basePath %s should result in error`, "foo") {
 			return
 		}
 	})
 	t.Run("invalid paths", func(t *testing.T) {
 		_, err := openapi.NewSwagger(petsInfo, nil).
-			Do()
+			Build()
 		if !assert.Error(t, err, `paths = nil should result in error`) {
 			return
 		}

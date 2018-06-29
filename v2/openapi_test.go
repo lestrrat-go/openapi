@@ -37,52 +37,52 @@ var petsPathItem openapi.PathItem
 var petsPaths openapi.Paths
 
 func init() {
-	apiSupport, _ = openapi.NewContact().
+	apiSupport = openapi.NewContact().
 		Name("API Support").
 		URL("http://www.swagger.io/support").
 		Email("support@swagger.io").
-		Do()
+		MustBuild()
 
-	petsLicense, _ = openapi.NewLicense("Apache 2.0").
+	petsLicense = openapi.NewLicense("Apache 2.0").
 		URL("http://www.apache.org/licenses/LICENSE-2.0.html").
-		Do()
+		MustBuild()
 
-	petsInfo, _ = openapi.NewInfo("Swagger Sample App", "1.0.1").
+	petsInfo = openapi.NewInfo("Swagger Sample App", "1.0.1").
 		Description("This is a sample server Petstore server.").
 		TermsOfService("http://swagger.io/terms/").
 		Contact(apiSupport).
 		License(petsLicense).
-		Do()
+		MustBuild()
 
-	petSchema, _ = openapi.NewSchema().
+	petSchema = openapi.NewSchema().
 		Reference("#/definitions/pet").
-		Do()
+		MustBuild()
 
-	petListSchema, _ = openapi.NewSchema().
+	petListSchema = openapi.NewSchema().
 		Type(openapi.Array).
 		Items(petSchema).
-		Do()
+		MustBuild()
 
-	petsGetResponse, _ = openapi.NewResponse("A list of pets.").
+	petsGetResponse = openapi.NewResponse("A list of pets.").
 		Schema(petListSchema).
-		Do()
+		MustBuild()
 
-	petsResponses, _ = openapi.NewResponses().
+	petsResponses = openapi.NewResponses().
 		Response("200", petsGetResponse).
-		Do()
+		MustBuild()
 
-	petsGetOper, _ = openapi.NewOperation(petsResponses).
+	petsGetOper = openapi.NewOperation(petsResponses).
 		Description("Returns all pets from the system that the user has access to").
 		Produces("application/json").
-		Do()
+		MustBuild()
 
-	petsPathItem, _ = openapi.NewPathItem().
+	petsPathItem = openapi.NewPathItem().
 		Get(petsGetOper).
-		Do()
+		MustBuild()
 
-	petsPaths, _ = openapi.NewPaths().
+	petsPaths = openapi.NewPaths().
 		Path("/pets", petsPathItem).
-		Do()
+		MustBuild()
 }
 
 func TestOpenAPI(t *testing.T) {
@@ -151,7 +151,7 @@ func TestParseExtensions(t *testing.T) {
 }
 
 func TestValidate(t *testing.T) {
-	_, err := openapi.NewSwagger(nil,nil).Do()
+	_, err := openapi.NewSwagger(nil,nil).Build()
 	if !assert.Error(t, err, "expected to see an error") {
 		return
 	}

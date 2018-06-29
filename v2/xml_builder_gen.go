@@ -10,14 +10,24 @@ import (
 var _ = errors.Cause
 
 // XMLBuilder is used to build an instance of XML. The user must
-// call `Do()` after providing all the necessary information to
+// call `Build()` after providing all the necessary information to
 // build an instance of XML
 type XMLBuilder struct {
 	target *xml
 }
 
-// Do finalizes the building process for XML and returns the result
-func (b *XMLBuilder) Do(options ...Option) (XML, error) {
+// MustBuild is a convenience function for those time when you know that
+// the result of the builder must be successful
+func (b *XMLBuilder) MustBuild(options ...Option) XML {
+	v, err := b.Build()
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
+// Build finalizes the building process for XML and returns the result
+func (b *XMLBuilder) Build(options ...Option) (XML, error) {
 	validate := true
 	for _, option := range options {
 		switch option.Name() {

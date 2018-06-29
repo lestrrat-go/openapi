@@ -10,14 +10,24 @@ import (
 var _ = errors.Cause
 
 // SecurityRequirementBuilder is used to build an instance of SecurityRequirement. The user must
-// call `Do()` after providing all the necessary information to
+// call `Build()` after providing all the necessary information to
 // build an instance of SecurityRequirement
 type SecurityRequirementBuilder struct {
 	target *securityRequirement
 }
 
-// Do finalizes the building process for SecurityRequirement and returns the result
-func (b *SecurityRequirementBuilder) Do(options ...Option) (SecurityRequirement, error) {
+// MustBuild is a convenience function for those time when you know that
+// the result of the builder must be successful
+func (b *SecurityRequirementBuilder) MustBuild(options ...Option) SecurityRequirement {
+	v, err := b.Build()
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
+// Build finalizes the building process for SecurityRequirement and returns the result
+func (b *SecurityRequirementBuilder) Build(options ...Option) (SecurityRequirement, error) {
 	validate := true
 	for _, option := range options {
 		switch option.Name() {

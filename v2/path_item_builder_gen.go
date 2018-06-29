@@ -10,14 +10,24 @@ import (
 var _ = errors.Cause
 
 // PathItemBuilder is used to build an instance of PathItem. The user must
-// call `Do()` after providing all the necessary information to
+// call `Build()` after providing all the necessary information to
 // build an instance of PathItem
 type PathItemBuilder struct {
 	target *pathItem
 }
 
-// Do finalizes the building process for PathItem and returns the result
-func (b *PathItemBuilder) Do(options ...Option) (PathItem, error) {
+// MustBuild is a convenience function for those time when you know that
+// the result of the builder must be successful
+func (b *PathItemBuilder) MustBuild(options ...Option) PathItem {
+	v, err := b.Build()
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
+// Build finalizes the building process for PathItem and returns the result
+func (b *PathItemBuilder) Build(options ...Option) (PathItem, error) {
 	validate := true
 	for _, option := range options {
 		switch option.Name() {
