@@ -92,7 +92,7 @@ func GenerateCode() error {
 		name := reflect.TypeOf(e).Name()
 		entityTypes[name] = e
 		switch name {
-//		case "schema", "paths", "parameter", "operation", "response":
+		//		case "schema", "paths", "parameter", "operation", "response":
 		default:
 			validators[name] = struct{}{}
 		}
@@ -121,6 +121,10 @@ func GenerateCode() error {
 		if err := generateMutatorsFromEntity(e); err != nil {
 			return errors.Wrap(err, `failed to generate mutators from entity`)
 		}
+
+		if err := generateVisitorsFromEntity(e); err != nil {
+			return errors.Wrap(err, `failed to generate visitors from entity`)
+		}
 	}
 
 	for _, c := range containers {
@@ -135,6 +139,10 @@ func GenerateCode() error {
 
 	if err := generateIteratorsFromEntity(containers); err != nil {
 		return errors.Wrap(err, `failed to generate iterators from entity list`)
+	}
+
+	if err := generateVisitor(entities); err != nil {
+		return errors.Wrap(err, `failed to generate visitor from entity list`)
 	}
 
 	return nil
@@ -253,13 +261,13 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 	var buf bytes.Buffer
 	var dst io.Writer = &buf
 	codegen.WritePreamble(dst, "openapi")
+		codegen.WriteImports(dst, "log", "encoding/json", "strings", "github.com/pkg/errors")
+
+	ifacename := codegen.ExportedName(rv.Type().Name())
 
 	switch rv.Type().Name() {
 	case "paths", "responses":
-		codegen.WriteImports(dst, "log", "strings", "github.com/pkg/errors")
 	default:
-		codegen.WriteImports(dst, "log", "encoding/json", "strings", "github.com/pkg/errors")
-
 		mpname := rv.Type().Name() + "MarshalProxy"
 		upname := rv.Type().Name() + "UnmarshalProxy"
 
@@ -457,6 +465,21 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 	fmt.Fprintf(dst, "\nreturn nil, false")
 	fmt.Fprintf(dst, "\n}")
 
+	fmt.Fprintf(dst, "\n\n// %[1]sFromJSON constructs a %[1]s from JSON buffer. `dst` must", ifacename)
+	fmt.Fprintf(dst, "\n// be a pointer to `%s`", ifacename)
+	fmt.Fprintf(dst, "\nfunc %[1]sFromJSON(buf []byte, dst interface{}) error {", ifacename)
+	fmt.Fprintf(dst, "\nv, ok := dst.(*%s)", ifacename)
+	fmt.Fprintf(dst, "\nif !ok {")
+	fmt.Fprintf(dst, "\nreturn errors.Errorf(`dst needs to be a pointer to %s, but got %%T`, dst)", ifacename)
+	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\nvar tmp %s", rv.Type().Name())
+	fmt.Fprintf(dst, "\nif err := json.Unmarshal(buf, &tmp); err != nil {")
+	fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to unmarshal %s`)", ifacename)
+	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\n*v = &tmp")
+	fmt.Fprintf(dst, "\nreturn nil")
+	fmt.Fprintf(dst, "\n}")
+
 	if err := writeFormattedSource(&buf, filename); err != nil {
 		return errors.Wrap(err, `failed to write result to file`)
 	}
@@ -472,7 +495,7 @@ func generateAccessorsFromEntity(e interface{}) error {
 	var dst io.Writer = &buf
 
 	codegen.WritePreamble(dst, "openapi")
-	codegen.WriteImports(dst, "github.com/pkg/errors")
+	codegen.WriteImports(dst, "github.com/pkg/errors", "context")
 
 	structname := rv.Type().Name()
 
@@ -533,25 +556,9 @@ func generateAccessorsFromEntity(e interface{}) error {
 
 	if isStockValidator(structname) {
 		fmt.Fprintf(dst, "\n\nfunc (v *%s) Validate(recurse bool) error {", structname)
-		fmt.Fprintf(dst, "\nif recurse {")
-		fmt.Fprintf(dst, "\nreturn v.recurseValidate()")
-		fmt.Fprintf(dst, "\n}")
-		fmt.Fprintf(dst, "\nreturn nil")
+		fmt.Fprintf(dst, "\nreturn Visit(context.Background(), newValidator(recurse), v)")
 		fmt.Fprintf(dst, "\n}")
 	}
-
-	fmt.Fprintf(dst, "\n\nfunc (v *%s) recurseValidate() error {", structname)
-	if len(entityFields) > 0 {
-		for _, field := range entityFields {
-			fmt.Fprintf(dst, "\nif elem := v.%s; elem != nil {", field.Name)
-			fmt.Fprintf(dst, "\nif err := elem.Validate(true); err != nil {")
-			fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to validate field %s`)", strconv.Quote(field.Name))
-			fmt.Fprintf(dst, "\n}")
-			fmt.Fprintf(dst, "\n}")
-		}
-	}
-	fmt.Fprintf(dst, "\nreturn nil")
-	fmt.Fprintf(dst, "\n}")
 
 	if err := writeFormattedSource(&buf, filename); err != nil {
 		return errors.Wrap(err, `failed to write result to file`)
@@ -929,27 +936,27 @@ func generateContainer(c interface{}) error {
 		fmt.Fprintf(dst, "\nreturn nil")
 		fmt.Fprintf(dst, "\n}")
 
-    fmt.Fprintf(dst, "\n\n// Validate checks for the values for correctness. If `recurse`")
-    fmt.Fprintf(dst, "\n// is specified, child elements are also validated")
-    fmt.Fprintf(dst, "\nfunc (v *%s) Validate(recurse bool) error {", typeName)
-    elemType := rv.Type().Elem()
-    if elemType.Kind() == reflect.Interface {
-      fmt.Fprintf(dst, "\nfor i, elem := range *v {")
-      fmt.Fprintf(dst, "\nif validator, ok := elem.(Validator); ok {")
-      fmt.Fprintf(dst, "\nif err := validator.Validate(recurse); err != nil {")
-      fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to validate element %%d`, i)")
-      fmt.Fprintf(dst, "\n}")
-      fmt.Fprintf(dst, "\n}")
-      fmt.Fprintf(dst, "\n}")
-    } else if isEntity(codegen.UnexportedName(elemType.Name())) || isContainer(elemType.Name()) {
-      fmt.Fprintf(dst, "\nfor i, elem := range *v {")
-      fmt.Fprintf(dst, "\nif err := elem.Validate(recurse); err != nil {")
-      fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to validate element %%d`, i)")
-      fmt.Fprintf(dst, "\n}")
-      fmt.Fprintf(dst, "\n}")
-    }
-    fmt.Fprintf(dst, "\nreturn nil")
-    fmt.Fprintf(dst, "\n}")
+		fmt.Fprintf(dst, "\n\n// Validate checks for the values for correctness. If `recurse`")
+		fmt.Fprintf(dst, "\n// is specified, child elements are also validated")
+		fmt.Fprintf(dst, "\nfunc (v *%s) Validate(recurse bool) error {", typeName)
+		elemType := rv.Type().Elem()
+		if elemType.Kind() == reflect.Interface {
+			fmt.Fprintf(dst, "\nfor i, elem := range *v {")
+			fmt.Fprintf(dst, "\nif validator, ok := elem.(Validator); ok {")
+			fmt.Fprintf(dst, "\nif err := validator.Validate(recurse); err != nil {")
+			fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to validate element %%d`, i)")
+			fmt.Fprintf(dst, "\n}")
+			fmt.Fprintf(dst, "\n}")
+			fmt.Fprintf(dst, "\n}")
+		} else if isEntity(codegen.UnexportedName(elemType.Name())) || isContainer(elemType.Name()) {
+			fmt.Fprintf(dst, "\nfor i, elem := range *v {")
+			fmt.Fprintf(dst, "\nif err := elem.Validate(recurse); err != nil {")
+			fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to validate element %%d`, i)")
+			fmt.Fprintf(dst, "\n}")
+			fmt.Fprintf(dst, "\n}")
+		}
+		fmt.Fprintf(dst, "\nreturn nil")
+		fmt.Fprintf(dst, "\n}")
 
 		if rv.Type().Elem().Name() != "" && rv.Type().Elem().Kind() == reflect.Interface {
 			fmt.Fprintf(dst, "\n\nfunc (v *%s) UnmarshalJSON(data []byte) error {", typeName)
@@ -1067,8 +1074,8 @@ func writeFormattedSource(buf *bytes.Buffer, filename string) error {
 }
 
 func isStockValidator(s string) bool {
-  _, ok := validators[s]
-  return ok
+	_, ok := validators[s]
+	return ok
 }
 
 func isMap(s string) bool {
@@ -1113,4 +1120,147 @@ func iteratorName(t reflect.Type) string {
 	}
 
 	return strcase.ToCamel(name + "Iterator")
+}
+
+func generateVisitorsFromEntity(e interface{}) error {
+	tv := reflect.TypeOf(e)
+
+	filename := fmt.Sprintf("%s_visitor_gen.go", stringutil.Snake(tv.Name()))
+	log.Printf("Generating %s", filename)
+
+	var entityFields []reflect.StructField
+	for i := 0; i < tv.NumField(); i++ {
+		fv := tv.Field(i)
+		fieldType := fv.Type.Name()
+
+		// keep track of all fields whose type is one of our entity types
+		if fv.Tag.Get("json") != "-" {
+			if isEntity(codegen.UnexportedName(fieldType)) || isContainer(fieldType) {
+				entityFields = append(entityFields, fv)
+			}
+		}
+	}
+
+	ifacename := codegen.ExportedName(tv.Name())
+	structname := codegen.UnexportedName(tv.Name())
+	ctxKey := structname + "VisitorCtxKey"
+
+	var buf bytes.Buffer
+	var dst io.Writer = &buf
+
+	codegen.WritePreamble(dst, "openapi")
+	codegen.WriteImports(dst, "context", "github.com/pkg/errors")
+
+	fmt.Fprintf(dst, "\n\n// %sVisitor is an interface for objects that knows", ifacename)
+	fmt.Fprintf(dst, "\n// how to process %s elements while traversing the OpenAPI structure", ifacename)
+	fmt.Fprintf(dst, "\ntype %sVisitor interface {", ifacename)
+	fmt.Fprintf(dst, "\nVisit%[1]s(context.Context, %[1]s) error", ifacename)
+	fmt.Fprintf(dst, "\n}")
+
+	fmt.Fprintf(dst, "\n\nfunc visit%[1]s(ctx context.Context, elem %[1]s) error {", ifacename)
+	fmt.Fprintf(dst, "\nselect {")
+	fmt.Fprintf(dst, "\ncase <-ctx.Done():")
+	fmt.Fprintf(dst, "\nreturn ctx.Err()")
+	fmt.Fprintf(dst, "\ndefault:")
+	fmt.Fprintf(dst, "\n}")
+
+	fmt.Fprintf(dst, "\n\nif v, ok := ctx.Value(%s{}).(%sVisitor); ok {", ctxKey, ifacename)
+	fmt.Fprintf(dst, "\nif err := v.Visit%s(ctx, elem); err != nil {", ifacename)
+	fmt.Fprintf(dst, "\nif err == ErrVisitAbort {")
+	fmt.Fprintf(dst, "\nreturn nil")
+	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to visit %s element`)", ifacename)
+	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\n}")
+	for _, f := range entityFields {
+		if isMap(f.Type.Name()) {
+			// skip things like map[string]string
+			if isEntity(f.Type.Elem().Name()) {
+				fmt.Fprintf(dst, "\n\nfor iter := elem.%s(); iter.Next(); {", codegen.ExportedName(f.Name))
+				fmt.Fprintf(dst, "\nkey, value := iter.Item()")
+				fmt.Fprintf(dst, "\nif err := visit%s(context.WithValue(ctx, %sKeyVisitorCtxKey{}, key), value); err != nil {", codegen.ExportedName(f.Type.Elem().Name()), codegen.UnexportedName(f.Type.Name()))
+				fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to visit %s element for %s`)", codegen.ExportedName(f.Name), ifacename)
+				fmt.Fprintf(dst, "\n}")
+				fmt.Fprintf(dst, "\n}")
+			}
+		} else if isList(f.Type.Name()) {
+			// skip things like []string
+			if isEntity(f.Type.Elem().Name()) {
+				fmt.Fprintf(dst, "\n\nfor i, iter := 0, elem.%s(); iter.Next(); {", codegen.ExportedName(f.Name))
+				fmt.Fprintf(dst, "\nif err := visit%s(ctx, iter.Item()); err != nil {", codegen.UnexportedName(f.Type.Name()))
+				fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to visit element %%d for %s`, i)", codegen.ExportedName(f.Name), ifacename)
+				fmt.Fprintf(dst, "\n}")
+				fmt.Fprintf(dst, "\ni++")
+				fmt.Fprintf(dst, "\n}")
+			}
+		} else {
+			fmt.Fprintf(dst, "\n\nif child := elem.%s(); child != nil {", codegen.ExportedName(f.Name))
+			fmt.Fprintf(dst, "\nif err := visit%s(ctx, child); err != nil {", codegen.ExportedName(f.Type.Name()))
+			fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to visit %s element for %s`)", codegen.ExportedName(f.Name), ifacename)
+			fmt.Fprintf(dst, "\n}")
+			fmt.Fprintf(dst, "\n}")
+		}
+	}
+	fmt.Fprintf(dst, "\nreturn nil")
+	fmt.Fprintf(dst, "\n}")
+
+	if err := codegen.WriteFormattedToFile(filename, buf.Bytes()); err != nil {
+		codegen.DumpCode(os.Stdout, &buf)
+		return errors.Wrap(err, `failed to write result to file`)
+	}
+	return nil
+}
+
+func generateVisitor(entities []interface{}) error {
+	filename := fmt.Sprintf("visitor_gen.go")
+	log.Printf("Generating %s", filename)
+
+	var buf bytes.Buffer
+	var dst io.Writer = &buf
+
+	codegen.WritePreamble(dst, "openapi")
+	codegen.WriteImports(dst, "context", "github.com/pkg/errors")
+
+	fmt.Fprintf(dst, "\n\nvar ErrVisitAbort = errors.New(`visit aborted (non-error)`)")
+
+	for _, e := range entities {
+		tv := reflect.TypeOf(e)
+		structname := codegen.UnexportedName(tv.Name())
+		fmt.Fprintf(dst, "\n\ntype %sVisitorCtxKey struct{}", structname)
+	}
+
+	fmt.Fprintf(dst, "\n\n// Visit allows you to traverse through the OpenAPI structure")
+	fmt.Fprintf(dst, "\nfunc Visit(ctx context.Context, handler, elem interface{}) error {")
+	for i, e := range entities {
+		tv := reflect.TypeOf(e)
+		ifacename := codegen.ExportedName(tv.Name())
+		structname := codegen.UnexportedName(tv.Name())
+		if i > 0 {
+			fmt.Fprintf(dst, "\n")
+		}
+		fmt.Fprintf(dst, "\nif v, ok := handler.(%sVisitor); ok {", ifacename)
+		fmt.Fprintf(dst, "\nctx = context.WithValue(ctx, %sVisitorCtxKey{}, v)", structname)
+		fmt.Fprintf(dst, "\n}")
+	}
+	fmt.Fprintf(dst, "\n\nreturn visit(ctx, elem)")
+	fmt.Fprintf(dst, "\n}")
+
+	fmt.Fprintf(dst, "\n\nfunc visit(ctx context.Context, elem interface{}) error {")
+	fmt.Fprintf(dst, "\nswitch elem := elem.(type) {")
+	for _, e := range entities {
+		tv := reflect.TypeOf(e)
+		ifacename := codegen.ExportedName(tv.Name())
+		fmt.Fprintf(dst, "\ncase %s:", ifacename)
+		fmt.Fprintf(dst, "\nreturn visit%s(ctx, elem)", ifacename)
+	}
+	fmt.Fprintf(dst, "\ndefault:")
+	fmt.Fprintf(dst, "\nreturn errors.Errorf(`unknown element %%T`, elem)")
+	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\n}")
+
+	if err := codegen.WriteFormattedToFile(filename, buf.Bytes()); err != nil {
+		codegen.DumpCode(os.Stdout, &buf)
+		return errors.Wrap(err, `failed to write result to file`)
+	}
+	return nil
 }

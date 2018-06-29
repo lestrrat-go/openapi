@@ -136,3 +136,18 @@ func (v *header) QueryJSON(path string) (ret interface{}, ok bool) {
 	}
 	return nil, false
 }
+
+// HeaderFromJSON constructs a Header from JSON buffer. `dst` must
+// be a pointer to `Header`
+func HeaderFromJSON(buf []byte, dst interface{}) error {
+	v, ok := dst.(*Header)
+	if !ok {
+		return errors.Errorf(`dst needs to be a pointer to Header, but got %T`, dst)
+	}
+	var tmp header
+	if err := json.Unmarshal(buf, &tmp); err != nil {
+		return errors.Wrap(err, `failed to unmarshal Header`)
+	}
+	*v = &tmp
+	return nil
+}

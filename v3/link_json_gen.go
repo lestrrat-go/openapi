@@ -118,3 +118,18 @@ func (v *link) QueryJSON(path string) (ret interface{}, ok bool) {
 	}
 	return nil, false
 }
+
+// LinkFromJSON constructs a Link from JSON buffer. `dst` must
+// be a pointer to `Link`
+func LinkFromJSON(buf []byte, dst interface{}) error {
+	v, ok := dst.(*Link)
+	if !ok {
+		return errors.Errorf(`dst needs to be a pointer to Link, but got %T`, dst)
+	}
+	var tmp link
+	if err := json.Unmarshal(buf, &tmp); err != nil {
+		return errors.Wrap(err, `failed to unmarshal Link`)
+	}
+	*v = &tmp
+	return nil
+}

@@ -100,3 +100,18 @@ func (v *mediaType) QueryJSON(path string) (ret interface{}, ok bool) {
 	}
 	return nil, false
 }
+
+// MediaTypeFromJSON constructs a MediaType from JSON buffer. `dst` must
+// be a pointer to `MediaType`
+func MediaTypeFromJSON(buf []byte, dst interface{}) error {
+	v, ok := dst.(*MediaType)
+	if !ok {
+		return errors.Errorf(`dst needs to be a pointer to MediaType, but got %T`, dst)
+	}
+	var tmp mediaType
+	if err := json.Unmarshal(buf, &tmp); err != nil {
+		return errors.Wrap(err, `failed to unmarshal MediaType`)
+	}
+	*v = &tmp
+	return nil
+}

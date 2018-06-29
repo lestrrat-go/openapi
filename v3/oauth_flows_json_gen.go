@@ -130,3 +130,18 @@ func (v *oauthFlows) QueryJSON(path string) (ret interface{}, ok bool) {
 	}
 	return nil, false
 }
+
+// OAuthFlowsFromJSON constructs a OAuthFlows from JSON buffer. `dst` must
+// be a pointer to `OAuthFlows`
+func OAuthFlowsFromJSON(buf []byte, dst interface{}) error {
+	v, ok := dst.(*OAuthFlows)
+	if !ok {
+		return errors.Errorf(`dst needs to be a pointer to OAuthFlows, but got %T`, dst)
+	}
+	var tmp oauthFlows
+	if err := json.Unmarshal(buf, &tmp); err != nil {
+		return errors.Wrap(err, `failed to unmarshal OAuthFlows`)
+	}
+	*v = &tmp
+	return nil
+}

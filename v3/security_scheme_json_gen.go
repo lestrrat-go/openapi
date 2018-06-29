@@ -130,3 +130,18 @@ func (v *securityScheme) QueryJSON(path string) (ret interface{}, ok bool) {
 	}
 	return nil, false
 }
+
+// SecuritySchemeFromJSON constructs a SecurityScheme from JSON buffer. `dst` must
+// be a pointer to `SecurityScheme`
+func SecuritySchemeFromJSON(buf []byte, dst interface{}) error {
+	v, ok := dst.(*SecurityScheme)
+	if !ok {
+		return errors.Errorf(`dst needs to be a pointer to SecurityScheme, but got %T`, dst)
+	}
+	var tmp securityScheme
+	if err := json.Unmarshal(buf, &tmp); err != nil {
+		return errors.Wrap(err, `failed to unmarshal SecurityScheme`)
+	}
+	*v = &tmp
+	return nil
+}

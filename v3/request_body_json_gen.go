@@ -94,3 +94,18 @@ func (v *requestBody) QueryJSON(path string) (ret interface{}, ok bool) {
 	}
 	return nil, false
 }
+
+// RequestBodyFromJSON constructs a RequestBody from JSON buffer. `dst` must
+// be a pointer to `RequestBody`
+func RequestBodyFromJSON(buf []byte, dst interface{}) error {
+	v, ok := dst.(*RequestBody)
+	if !ok {
+		return errors.Errorf(`dst needs to be a pointer to RequestBody, but got %T`, dst)
+	}
+	var tmp requestBody
+	if err := json.Unmarshal(buf, &tmp); err != nil {
+		return errors.Wrap(err, `failed to unmarshal RequestBody`)
+	}
+	*v = &tmp
+	return nil
+}

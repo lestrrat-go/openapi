@@ -3,7 +3,11 @@ package openapi
 // This file was automatically generated.
 // DO NOT EDIT MANUALLY. All changes will be lost
 
-import "github.com/pkg/errors"
+import (
+	"context"
+
+	"github.com/pkg/errors"
+)
 
 var _ = errors.Cause
 
@@ -106,57 +110,5 @@ func (v *components) IsUnresolved() bool {
 }
 
 func (v *components) Validate(recurse bool) error {
-	if recurse {
-		return v.recurseValidate()
-	}
-	return nil
-}
-
-func (v *components) recurseValidate() error {
-	if elem := v.schemas; elem != nil {
-		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate field "schemas"`)
-		}
-	}
-	if elem := v.responses; elem != nil {
-		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate field "responses"`)
-		}
-	}
-	if elem := v.parameters; elem != nil {
-		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate field "parameters"`)
-		}
-	}
-	if elem := v.examples; elem != nil {
-		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate field "examples"`)
-		}
-	}
-	if elem := v.requestBodies; elem != nil {
-		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate field "requestBodies"`)
-		}
-	}
-	if elem := v.headers; elem != nil {
-		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate field "headers"`)
-		}
-	}
-	if elem := v.securitySchemes; elem != nil {
-		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate field "securitySchemes"`)
-		}
-	}
-	if elem := v.links; elem != nil {
-		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate field "links"`)
-		}
-	}
-	if elem := v.callbacks; elem != nil {
-		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate field "callbacks"`)
-		}
-	}
-	return nil
+	return Visit(context.Background(), newValidator(recurse), v)
 }

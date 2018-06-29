@@ -212,3 +212,18 @@ func (v *pathItem) QueryJSON(path string) (ret interface{}, ok bool) {
 	}
 	return nil, false
 }
+
+// PathItemFromJSON constructs a PathItem from JSON buffer. `dst` must
+// be a pointer to `PathItem`
+func PathItemFromJSON(buf []byte, dst interface{}) error {
+	v, ok := dst.(*PathItem)
+	if !ok {
+		return errors.Errorf(`dst needs to be a pointer to PathItem, but got %T`, dst)
+	}
+	var tmp pathItem
+	if err := json.Unmarshal(buf, &tmp); err != nil {
+		return errors.Wrap(err, `failed to unmarshal PathItem`)
+	}
+	*v = &tmp
+	return nil
+}

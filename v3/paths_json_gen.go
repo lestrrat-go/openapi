@@ -4,6 +4,7 @@ package openapi
 // DO NOT EDIT MANUALLY. All changes will be lost
 
 import (
+	"encoding/json"
 	"log"
 	"strings"
 
@@ -11,6 +12,7 @@ import (
 )
 
 var _ = log.Printf
+var _ = json.Unmarshal
 var _ = errors.Cause
 
 func (v *paths) QueryJSON(path string) (ret interface{}, ok bool) {
@@ -42,4 +44,19 @@ func (v *paths) QueryJSON(path string) (ret interface{}, ok bool) {
 		return target, true
 	}
 	return nil, false
+}
+
+// PathsFromJSON constructs a Paths from JSON buffer. `dst` must
+// be a pointer to `Paths`
+func PathsFromJSON(buf []byte, dst interface{}) error {
+	v, ok := dst.(*Paths)
+	if !ok {
+		return errors.Errorf(`dst needs to be a pointer to Paths, but got %T`, dst)
+	}
+	var tmp paths
+	if err := json.Unmarshal(buf, &tmp); err != nil {
+		return errors.Wrap(err, `failed to unmarshal Paths`)
+	}
+	*v = &tmp
+	return nil
 }

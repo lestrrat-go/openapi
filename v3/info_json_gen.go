@@ -126,3 +126,18 @@ func (v *info) QueryJSON(path string) (ret interface{}, ok bool) {
 	}
 	return nil, false
 }
+
+// InfoFromJSON constructs a Info from JSON buffer. `dst` must
+// be a pointer to `Info`
+func InfoFromJSON(buf []byte, dst interface{}) error {
+	v, ok := dst.(*Info)
+	if !ok {
+		return errors.Errorf(`dst needs to be a pointer to Info, but got %T`, dst)
+	}
+	var tmp info
+	if err := json.Unmarshal(buf, &tmp); err != nil {
+		return errors.Wrap(err, `failed to unmarshal Info`)
+	}
+	*v = &tmp
+	return nil
+}

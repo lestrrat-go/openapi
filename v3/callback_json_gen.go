@@ -91,3 +91,18 @@ func (v *callback) QueryJSON(path string) (ret interface{}, ok bool) {
 	}
 	return nil, false
 }
+
+// CallbackFromJSON constructs a Callback from JSON buffer. `dst` must
+// be a pointer to `Callback`
+func CallbackFromJSON(buf []byte, dst interface{}) error {
+	v, ok := dst.(*Callback)
+	if !ok {
+		return errors.Errorf(`dst needs to be a pointer to Callback, but got %T`, dst)
+	}
+	var tmp callback
+	if err := json.Unmarshal(buf, &tmp); err != nil {
+		return errors.Wrap(err, `failed to unmarshal Callback`)
+	}
+	*v = &tmp
+	return nil
+}

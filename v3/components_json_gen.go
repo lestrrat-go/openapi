@@ -128,3 +128,18 @@ func (v *components) QueryJSON(path string) (ret interface{}, ok bool) {
 	}
 	return nil, false
 }
+
+// ComponentsFromJSON constructs a Components from JSON buffer. `dst` must
+// be a pointer to `Components`
+func ComponentsFromJSON(buf []byte, dst interface{}) error {
+	v, ok := dst.(*Components)
+	if !ok {
+		return errors.Errorf(`dst needs to be a pointer to Components, but got %T`, dst)
+	}
+	var tmp components
+	if err := json.Unmarshal(buf, &tmp); err != nil {
+		return errors.Wrap(err, `failed to unmarshal Components`)
+	}
+	*v = &tmp
+	return nil
+}

@@ -3,7 +3,11 @@ package openapi
 // This file was automatically generated.
 // DO NOT EDIT MANUALLY. All changes will be lost
 
-import "github.com/pkg/errors"
+import (
+	"context"
+
+	"github.com/pkg/errors"
+)
 
 var _ = errors.Cause
 
@@ -38,17 +42,5 @@ func (v *serverVariable) IsUnresolved() bool {
 }
 
 func (v *serverVariable) Validate(recurse bool) error {
-	if recurse {
-		return v.recurseValidate()
-	}
-	return nil
-}
-
-func (v *serverVariable) recurseValidate() error {
-	if elem := v.enum; elem != nil {
-		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate field "enum"`)
-		}
-	}
-	return nil
+	return Visit(context.Background(), newValidator(recurse), v)
 }

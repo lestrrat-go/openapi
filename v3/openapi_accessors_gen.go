@@ -3,7 +3,11 @@ package openapi
 // This file was automatically generated.
 // DO NOT EDIT MANUALLY. All changes will be lost
 
-import "github.com/pkg/errors"
+import (
+	"context"
+
+	"github.com/pkg/errors"
+)
 
 var _ = errors.Cause
 
@@ -60,47 +64,5 @@ func (v *openAPI) IsUnresolved() bool {
 }
 
 func (v *openAPI) Validate(recurse bool) error {
-	if recurse {
-		return v.recurseValidate()
-	}
-	return nil
-}
-
-func (v *openAPI) recurseValidate() error {
-	if elem := v.info; elem != nil {
-		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate field "info"`)
-		}
-	}
-	if elem := v.servers; elem != nil {
-		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate field "servers"`)
-		}
-	}
-	if elem := v.paths; elem != nil {
-		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate field "paths"`)
-		}
-	}
-	if elem := v.components; elem != nil {
-		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate field "components"`)
-		}
-	}
-	if elem := v.security; elem != nil {
-		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate field "security"`)
-		}
-	}
-	if elem := v.tags; elem != nil {
-		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate field "tags"`)
-		}
-	}
-	if elem := v.externalDocs; elem != nil {
-		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate field "externalDocs"`)
-		}
-	}
-	return nil
+	return Visit(context.Background(), newValidator(recurse), v)
 }

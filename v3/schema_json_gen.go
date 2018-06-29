@@ -298,3 +298,18 @@ func (v *schema) QueryJSON(path string) (ret interface{}, ok bool) {
 	}
 	return nil, false
 }
+
+// SchemaFromJSON constructs a Schema from JSON buffer. `dst` must
+// be a pointer to `Schema`
+func SchemaFromJSON(buf []byte, dst interface{}) error {
+	v, ok := dst.(*Schema)
+	if !ok {
+		return errors.Errorf(`dst needs to be a pointer to Schema, but got %T`, dst)
+	}
+	var tmp schema
+	if err := json.Unmarshal(buf, &tmp); err != nil {
+		return errors.Wrap(err, `failed to unmarshal Schema`)
+	}
+	*v = &tmp
+	return nil
+}

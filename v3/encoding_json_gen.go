@@ -98,3 +98,18 @@ func (v *encoding) QueryJSON(path string) (ret interface{}, ok bool) {
 	}
 	return nil, false
 }
+
+// EncodingFromJSON constructs a Encoding from JSON buffer. `dst` must
+// be a pointer to `Encoding`
+func EncodingFromJSON(buf []byte, dst interface{}) error {
+	v, ok := dst.(*Encoding)
+	if !ok {
+		return errors.Errorf(`dst needs to be a pointer to Encoding, but got %T`, dst)
+	}
+	var tmp encoding
+	if err := json.Unmarshal(buf, &tmp); err != nil {
+		return errors.Wrap(err, `failed to unmarshal Encoding`)
+	}
+	*v = &tmp
+	return nil
+}

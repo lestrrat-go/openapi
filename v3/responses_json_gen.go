@@ -4,6 +4,7 @@ package openapi
 // DO NOT EDIT MANUALLY. All changes will be lost
 
 import (
+	"encoding/json"
 	"log"
 	"strings"
 
@@ -11,6 +12,7 @@ import (
 )
 
 var _ = log.Printf
+var _ = json.Unmarshal
 var _ = errors.Cause
 
 func (v *responses) QueryJSON(path string) (ret interface{}, ok bool) {
@@ -44,4 +46,19 @@ func (v *responses) QueryJSON(path string) (ret interface{}, ok bool) {
 		return target, true
 	}
 	return nil, false
+}
+
+// ResponsesFromJSON constructs a Responses from JSON buffer. `dst` must
+// be a pointer to `Responses`
+func ResponsesFromJSON(buf []byte, dst interface{}) error {
+	v, ok := dst.(*Responses)
+	if !ok {
+		return errors.Errorf(`dst needs to be a pointer to Responses, but got %T`, dst)
+	}
+	var tmp responses
+	if err := json.Unmarshal(buf, &tmp); err != nil {
+		return errors.Wrap(err, `failed to unmarshal Responses`)
+	}
+	*v = &tmp
+	return nil
 }

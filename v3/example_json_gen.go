@@ -92,3 +92,18 @@ func (v *example) QueryJSON(path string) (ret interface{}, ok bool) {
 	}
 	return nil, false
 }
+
+// ExampleFromJSON constructs a Example from JSON buffer. `dst` must
+// be a pointer to `Example`
+func ExampleFromJSON(buf []byte, dst interface{}) error {
+	v, ok := dst.(*Example)
+	if !ok {
+		return errors.Errorf(`dst needs to be a pointer to Example, but got %T`, dst)
+	}
+	var tmp example
+	if err := json.Unmarshal(buf, &tmp); err != nil {
+		return errors.Wrap(err, `failed to unmarshal Example`)
+	}
+	*v = &tmp
+	return nil
+}

@@ -3,7 +3,11 @@ package openapi
 // This file was automatically generated.
 // DO NOT EDIT MANUALLY. All changes will be lost
 
-import "github.com/pkg/errors"
+import (
+	"context"
+
+	"github.com/pkg/errors"
+)
 
 var _ = errors.Cause
 
@@ -26,12 +30,5 @@ func (v *paths) IsUnresolved() bool {
 }
 
 func (v *paths) Validate(recurse bool) error {
-	if recurse {
-		return v.recurseValidate()
-	}
-	return nil
-}
-
-func (v *paths) recurseValidate() error {
-	return nil
+	return Visit(context.Background(), newValidator(recurse), v)
 }

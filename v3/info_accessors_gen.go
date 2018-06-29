@@ -3,7 +3,11 @@ package openapi
 // This file was automatically generated.
 // DO NOT EDIT MANUALLY. All changes will be lost
 
-import "github.com/pkg/errors"
+import (
+	"context"
+
+	"github.com/pkg/errors"
+)
 
 var _ = errors.Cause
 
@@ -40,22 +44,5 @@ func (v *info) IsUnresolved() bool {
 }
 
 func (v *info) Validate(recurse bool) error {
-	if recurse {
-		return v.recurseValidate()
-	}
-	return nil
-}
-
-func (v *info) recurseValidate() error {
-	if elem := v.contact; elem != nil {
-		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate field "contact"`)
-		}
-	}
-	if elem := v.license; elem != nil {
-		if err := elem.Validate(true); err != nil {
-			return errors.Wrap(err, `failed to validate field "license"`)
-		}
-	}
-	return nil
+	return Visit(context.Background(), newValidator(recurse), v)
 }

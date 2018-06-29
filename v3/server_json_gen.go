@@ -92,3 +92,18 @@ func (v *server) QueryJSON(path string) (ret interface{}, ok bool) {
 	}
 	return nil, false
 }
+
+// ServerFromJSON constructs a Server from JSON buffer. `dst` must
+// be a pointer to `Server`
+func ServerFromJSON(buf []byte, dst interface{}) error {
+	v, ok := dst.(*Server)
+	if !ok {
+		return errors.Errorf(`dst needs to be a pointer to Server, but got %T`, dst)
+	}
+	var tmp server
+	if err := json.Unmarshal(buf, &tmp); err != nil {
+		return errors.Wrap(err, `failed to unmarshal Server`)
+	}
+	*v = &tmp
+	return nil
+}

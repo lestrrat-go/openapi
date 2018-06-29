@@ -162,3 +162,18 @@ func (v *openAPI) QueryJSON(path string) (ret interface{}, ok bool) {
 	}
 	return nil, false
 }
+
+// OpenAPIFromJSON constructs a OpenAPI from JSON buffer. `dst` must
+// be a pointer to `OpenAPI`
+func OpenAPIFromJSON(buf []byte, dst interface{}) error {
+	v, ok := dst.(*OpenAPI)
+	if !ok {
+		return errors.Errorf(`dst needs to be a pointer to OpenAPI, but got %T`, dst)
+	}
+	var tmp openAPI
+	if err := json.Unmarshal(buf, &tmp); err != nil {
+		return errors.Wrap(err, `failed to unmarshal OpenAPI`)
+	}
+	*v = &tmp
+	return nil
+}

@@ -80,3 +80,18 @@ func (v *securityRequirement) QueryJSON(path string) (ret interface{}, ok bool) 
 	}
 	return nil, false
 }
+
+// SecurityRequirementFromJSON constructs a SecurityRequirement from JSON buffer. `dst` must
+// be a pointer to `SecurityRequirement`
+func SecurityRequirementFromJSON(buf []byte, dst interface{}) error {
+	v, ok := dst.(*SecurityRequirement)
+	if !ok {
+		return errors.Errorf(`dst needs to be a pointer to SecurityRequirement, but got %T`, dst)
+	}
+	var tmp securityRequirement
+	if err := json.Unmarshal(buf, &tmp); err != nil {
+		return errors.Wrap(err, `failed to unmarshal SecurityRequirement`)
+	}
+	*v = &tmp
+	return nil
+}
