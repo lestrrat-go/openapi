@@ -1188,7 +1188,7 @@ func generateVisitorsFromEntity(e interface{}) error {
 			if isEntity(f.Type.Elem().Name()) {
 				fmt.Fprintf(dst, "\n\nfor i, iter := 0, elem.%s(); iter.Next(); {", codegen.ExportedName(f.Name))
 				fmt.Fprintf(dst, "\nif err := visit%s(ctx, iter.Item()); err != nil {", codegen.UnexportedName(f.Type.Name()))
-				fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to visit element %%d for %s`, i)", codegen.ExportedName(f.Name), ifacename)
+				fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to visit element %%d for %s`, i)", ifacename)
 				fmt.Fprintf(dst, "\n}")
 				fmt.Fprintf(dst, "\ni++")
 				fmt.Fprintf(dst, "\n}")
