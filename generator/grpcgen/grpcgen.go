@@ -359,7 +359,7 @@ func compileMessage(ctx *genCtx, schema openapi.Schema) (Type, error) {
 		items, err := openapi.NewSchema().
 			Type(openapi.Array).
 			Items(schema.Items()).
-			Do()
+			Build()
 		if err != nil {
 			return nil, errors.Wrap(err, `failed to create new schema for items`)
 		}
@@ -367,7 +367,7 @@ func compileMessage(ctx *genCtx, schema openapi.Schema) (Type, error) {
 		schema, err = openapi.NewSchema().
 			Type(openapi.Object).
 			Property("items", items).
-			Do()
+			Build()
 		if err != nil {
 			return nil, errors.Wrap(err, `failed to create new schema wrapping array`)
 		}
