@@ -52,6 +52,18 @@ func (val *validator) VisitSwagger(ctx context.Context, v Swagger) error {
 	return nil
 }
 
+func (val *validator) VisitInfo(ctx context.Context, v Info) error {
+	if v.Title() == "" {
+		return errors.New(`missing required field "title"`)
+	}
+
+	if v.Version() == "" {
+		return errors.New(`missing required field "version"`)
+	}
+
+	return nil
+}
+
 func (val *validator) VisitOperation(ctx context.Context, v Operation) error {
 	if v.Responses() == nil {
 		return errors.New(`missing required field "responses"`)
