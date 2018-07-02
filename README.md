@@ -9,8 +9,11 @@ openapi
 
 # Status
 
-* v2 is currently being worked on (as of Jun 2018)
-* v3 was created first, but because of that has problems that has since been fixed in v2
+* v2/v3 generally works
+* can generate simple gRPC protobuf definition
+* can generate simple Go REST client
+* can generate simple ES6/flow REST client
+* can lint v2/v3 documents (note: validation rules are still not 100% implemented)
 
 # Programmatically Build an OpenAPI spec
 
@@ -48,9 +51,21 @@ structure is immutable once the tree is created, and in doing so we can
 automatically memoizing some of the information in the components towards the
 inner scope.
 
+# Validation / Lint
+
+`oalint` command is available to lint your OpenAPI files. Compile using `go build ./cmd/oalint/main.go`
+
+```
+oalint -file=/path/to/v2spec.yaml -format=yaml
+```
+
+```
+oalint -file=/path/to/v3spec.yaml -format=yaml -openapi-version=3
+```
+
 # Code Generation
 
-`oagen` command is available to generate code. Compile using `go build ./cmd/oagen/oagen.go`
+`oagen` command is available to generate code. Compile using `go build ./cmd/oagen/main.go`
 
 ## Protobuf (gRPC)
 
