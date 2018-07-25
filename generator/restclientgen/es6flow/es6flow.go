@@ -423,8 +423,12 @@ func formatCall(ctx *Context, dst io.Writer, call *compiler.Call) error {
 	if len(call.Responses()) == 0 {
 		fmt.Fprintf(dst, "\nreturn Promise.resolve(new RESTResponse(response.status))")
 	} else {
-		fmt.Fprintf(dst, "\nreturn Promise.resolve(new RESTResponse(response.status, response.json()))")
+		fmt.Fprintf(dst, "\nif (response.headers.get('Content-Type').match(/^application\\/json/i)) {")
+		fmt.Fprintf(dst, "\nreturn Promise.resolve(new RESTResponse(response.status, response.json()));")
+		fmt.Fprintf(dst, "\n}")
+		fmt.Fprintf(dst, "\nreturn Promise.resolve(new RESTResponse(500, \"Unhandled response type \" + response.headers.get('Content-Type')));")
 	}
+
 	fmt.Fprintf(dst, "\n});")
 	fmt.Fprintf(dst, "\nreturn promise;")
 	fmt.Fprintf(dst, "\n}")
