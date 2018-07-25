@@ -5,12 +5,17 @@ import "github.com/lestrrat-go/openapi/internal/option"
 type Option = option.Interface
 
 const (
+	optkeyClientName = "clientName"
 	optkeyDefaultServiceName = "serviceName"
 	optkeyDirectory = "directory"
 	optkeyExportNew = "exportNew"
 	optkeyPackageName = "packageName"
 	optkeyTarget = "target"
 )
+
+func WithClientName(s string) Option {
+	return option.New(optkeyClientName, s)
+}
 
 func WithDir(s string) Option {
 	return option.New(optkeyDirectory, s)

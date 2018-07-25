@@ -10,6 +10,7 @@ import (
 
 type Context struct {
 	client             *compiler.ClientDefinition
+	clientName         string
 	compiling          map[string]struct{}
 	dir                string
 	packageName        string
@@ -17,7 +18,6 @@ type Context struct {
 	resolver           openapi.Resolver
 	root               openapi.Swagger
 	types              map[string]typeDefinition
-	exportNew          bool
 	consumes           []string
 	produces           []string
 }

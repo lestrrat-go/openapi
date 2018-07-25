@@ -27,10 +27,13 @@ func esType(s string) string {
 }
 
 func Generate(spec openapi.Swagger, options ...Option) error {
+	var clientName string
 	var dir string
 	var defaultServiceName string
 	for _, option := range options {
 		switch option.Name() {
+		case optkeyClientName:
+			clientName = option.Value().(string)
 		case optkeyDefaultServiceName:
 			defaultServiceName = option.Value().(string)
 		case optkeyDirectory:
@@ -58,6 +61,7 @@ func Generate(spec openapi.Swagger, options ...Option) error {
 
 	ctx := Context{
 		compiling:          make(map[string]struct{}),
+		clientName:         clientName,
 		dir:                dir,
 		defaultServiceName: defaultServiceName,
 		resolver:           openapi.NewResolver(spec),
@@ -228,7 +232,7 @@ func formatClient(ctx *Context, dst io.Writer, cl *compiler.ClientDefinition) er
 		fmt.Fprintf(dst, "\nimport %s from './services/%s'", codegen.ClassName(name), codegen.FileName(strings.TrimSuffix(name, "Service")))
 	}
 
-	fmt.Fprintf(dst, "\n\nexport default class Client {")
+	fmt.Fprintf(dst, "\n\nexport default class %s {", ctx.clientName)
 	for _, name := range ctx.client.ServiceNames() {
 		fmt.Fprintf(dst, "\n%s: %s;", codegen.FieldName(name), codegen.ClassName(name))
 	}

@@ -75,6 +75,7 @@ type restClientCmd struct {
 	exportNew   bool
 	packageName string
 	serviceName string
+	clientName  string
 	target      string
 }
 
@@ -180,7 +181,8 @@ func doRestClient(args []string) error {
 	fs.StringVar(&cmd.packageName, "package", "", "package name of the new library (only applicable if target=go)")
 	fs.StringVar(&cmd.serviceName, "service", "", "default service name for unspecified operations")
 	fs.StringVar(&cmd.target, "target", "go", "target runtime to generate")
-	fs.BoolVar(&cmd.exportNew, "export-new", true, "control if New() should be exported")
+	fs.BoolVar(&cmd.exportNew, "export-new", true, "control if New() should be exported (only for Go client)")
+	fs.StringVar(&cmd.clientName, "client-name", "Client", "name of Client class (only for ES6 client)")
 	if err := fs.Parse(args); err != nil {
 		if err == flag.ErrHelp {
 			return nil
@@ -208,6 +210,8 @@ func doRestClient(args []string) error {
 
 	options = append(options, restclientgen.WithTarget(cmd.target))
 	options = append(options, restclientgen.WithExportNew(cmd.exportNew))
+	options = append(options, restclientgen.WithClientName(cmd.clientName))
+
 	if v := cmd.dir; v != "" {
 		options = append(options, restclientgen.WithDir(v))
 	}
