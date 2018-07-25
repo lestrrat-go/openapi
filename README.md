@@ -69,7 +69,7 @@ oalint -file=/path/to/v3spec.yaml -format=yaml -openapi-version=3
 
 ## Protobuf (gRPC)
 
-Work is still pending. Currently can generate some protobuf declaration.
+Generate a protobuf (gRPC) definition file from OpenAPI spec. This feature has not been extensively tested, but in most simple cases, it should just work. Look into openapi2proto for prior arts.
 
 ```
 oagen protobuf \
