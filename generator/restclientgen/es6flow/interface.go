@@ -3,14 +3,14 @@ package es6flow
 import (
 	"mime"
 
+	"github.com/lestrrat-go/openapi/generator/restclientgen/compiler"
 	openapi "github.com/lestrrat-go/openapi/v2"
 	"github.com/pkg/errors"
 )
 
 type Context struct {
-	client             *Client
+	client             *compiler.ClientDefinition
 	compiling          map[string]struct{}
-	currentCall        *Call
 	dir                string
 	packageName        string
 	defaultServiceName string

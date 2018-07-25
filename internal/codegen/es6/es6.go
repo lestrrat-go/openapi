@@ -45,7 +45,7 @@ func DumpCode(dst io.Writer, src io.Reader) {
 }
 
 func WritePreamble(dst io.Writer, pkg string) error {
-	fmt.Fprintf(dst, "\n// @flow")
+	fmt.Fprintf(dst, "// @flow")
 	fmt.Fprintf(dst, "\n\n// This file was automatically generated.")
 	fmt.Fprintf(dst, "\n// DO NOT EDIT MANUALLY. All changes will be lost\n")
 	return nil

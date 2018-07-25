@@ -2,7 +2,6 @@ package es6flow
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -13,17 +12,23 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/iancoleman/strcase"
+	"github.com/lestrrat-go/openapi/generator/restclientgen/compiler"
 	codegen "github.com/lestrrat-go/openapi/internal/codegen/es6"
 	openapi "github.com/lestrrat-go/openapi/v2"
 	"github.com/pkg/errors"
 )
 
+func esType(s string) string {
+	switch {
+	case strings.HasPrefix(s, "[]"):
+		return "Array<" + s[2:] + ">"
+	}
+	return s
+}
+
 func Generate(spec openapi.Swagger, options ...Option) error {
 	var dir string
-	var packageName string
 	var defaultServiceName string
-	exportNew := true
 	for _, option := range options {
 		switch option.Name() {
 		case optkeyDefaultServiceName:
@@ -37,18 +42,8 @@ func Generate(spec openapi.Swagger, options ...Option) error {
 		dir = "restclient"
 	}
 
-	if packageName == "" {
-		// Use the last component in the path
-		i := strings.LastIndexByte(dir, os.PathSeparator)
-		if i < 0 {
-			packageName = dir
-		} else {
-			packageName = dir[i+1:]
-		}
-	}
-
 	if defaultServiceName == "" {
-		defaultServiceName = packageName
+		defaultServiceName = "restclient"
 	}
 
 	if _, err := os.Stat(dir); err != nil {
@@ -56,27 +51,19 @@ func Generate(spec openapi.Swagger, options ...Option) error {
 			return errors.Wrapf(err, `failed to create directory %s`, dir)
 		}
 	}
+	client, err := compiler.Compile(spec, defaultServiceName)
+	if err != nil {
+		return errors.Wrap(err, `failed to compile spec`)
+	}
 
 	ctx := Context{
 		compiling:          make(map[string]struct{}),
 		dir:                dir,
-		packageName:        packageName,
 		defaultServiceName: defaultServiceName,
-		exportNew:          exportNew,
 		resolver:           openapi.NewResolver(spec),
 		root:               spec,
-		client:             &Client{services: make(map[string]*Service), types: make(map[string]Type)},
+		client:             client,
 		types:              make(map[string]typeDefinition),
-	}
-
-	consumes, err := canonicalConsumesList(spec.Consumes())
-	if err != nil {
-		return errors.Wrap(err, `failed to parse global "consumes" list`)
-	}
-	ctx.consumes = consumes
-
-	if err := compileClient(&ctx); err != nil {
-		return errors.Wrap(err, `failed to compile restclient`)
 	}
 
 	// declare types
@@ -86,6 +73,10 @@ func Generate(spec openapi.Swagger, options ...Option) error {
 
 	if err := writeTypesFile(&ctx); err != nil {
 		return errors.Wrap(err, `failed to write options file`)
+	}
+
+	if err := writeTypesClientOptions(&ctx); err != nil {
+		return errors.Wrap(err, `failed to write client options file`)
 	}
 
 	if err := writeServiceFiles(&ctx); err != nil {
@@ -122,13 +113,33 @@ func writeResponseFile(ctx *Context) error {
 	var dst io.Writer = &buf
 	codegen.WritePreamble(dst, ctx.packageName)
 
-	fmt.Fprintf(dst, "\n\nexport default class Response {")
+	fmt.Fprintf(dst, "\n\nexport default class RESTResponse {")
 	fmt.Fprintf(dst, "\ncode :number")
 	fmt.Fprintf(dst, "\ndata :any")
-  fmt.Fprintf(dst, "\nconstructor(code: number, data: any) {")
+	fmt.Fprintf(dst, "\nconstructor(code: number, data: any) {")
 	fmt.Fprintf(dst, "\nthis.code = code;")
 	fmt.Fprintf(dst, "\nthis.data = data;")
 	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\n}")
+
+	if err := codegen.WriteFormattedToFile(fn, buf.Bytes()); err != nil {
+		codegen.DumpCode(os.Stdout, bytes.NewReader(buf.Bytes()))
+		return errors.Wrapf(err, `failed to write to %s`, fn)
+	}
+	return nil
+}
+
+func writeTypesClientOptions(ctx *Context) error {
+	fn := filepath.Join(ctx.dir, "types", "client_options.js")
+	log.Printf("Generating %s", fn)
+
+	var buf bytes.Buffer
+	var dst io.Writer = &buf
+	codegen.WritePreamble(dst, ctx.packageName)
+
+	fmt.Fprintf(dst, "\n\nexport type ClientOptions = {")
+	fmt.Fprintf(dst, "\nmodifyOptions: (RequestOptions) => RequestOptions;")
+	fmt.Fprintf(dst, "\nheaders?: {string: [string]};")
 	fmt.Fprintf(dst, "\n}")
 
 	if err := codegen.WriteFormattedToFile(fn, buf.Bytes()); err != nil {
@@ -145,15 +156,6 @@ func writeTypesFile(ctx *Context) error {
 	var buf bytes.Buffer
 	var dst io.Writer = &buf
 	codegen.WritePreamble(dst, ctx.packageName)
-
-	fmt.Fprintf(dst, "\n\nexport class Response {")
-	fmt.Fprintf(dst, "\ncode :number")
-	fmt.Fprintf(dst, "\ndata :any")
-  fmt.Fprintf(dst, "\nconstructor(code: number, data: any) {")
-	fmt.Fprintf(dst, "\nthis.code = code;")
-	fmt.Fprintf(dst, "\nthis.data = data;")
-	fmt.Fprintf(dst, "\n}")
-	fmt.Fprintf(dst, "\n}")
 
 	var typDefs []typeDefinition
 	for _, typ := range ctx.types {
@@ -199,20 +201,15 @@ func writeClientFile(ctx *Context) error {
 }
 
 func writeServiceFiles(ctx *Context) error {
-	var serviceNames []string
-	for name := range ctx.client.services {
-		serviceNames = append(serviceNames, name)
-	}
-	sort.Strings(serviceNames)
-
-	for _, name := range serviceNames {
+	services := ctx.client.Services()
+	for _, name := range ctx.client.ServiceNames() {
 		// Remove the "service" from the filename
 		fn := strings.TrimSuffix(name, "Service")
 		fn = filepath.Join(ctx.dir, "services", codegen.FileName(fn)+".js")
 		log.Printf("Generating %s", fn)
 
 		var buf bytes.Buffer
-		if err := formatService(ctx, &buf, ctx.client.services[name]); err != nil {
+		if err := formatService(ctx, &buf, services[name]); err != nil {
 			return errors.Wrap(err, `failed to format service code`)
 		}
 
@@ -224,85 +221,21 @@ func writeServiceFiles(ctx *Context) error {
 	return nil
 }
 
-func formatClient(ctx *Context, dst io.Writer, cl *Client) error {
+func formatClient(ctx *Context, dst io.Writer, cl *compiler.ClientDefinition) error {
 	codegen.WritePreamble(dst, ctx.packageName)
-	fmt.Fprintf(dst, "\n\n")
-	var serviceNames []string
-	for name := range cl.services {
-		serviceNames = append(serviceNames, name)
-	}
-	sort.Strings(serviceNames)
-
-	/*
-		fmt.Fprintf(dst, "\n\ntype Marshaler interface {")
-		fmt.Fprintf(dst, "\nMarshal(interface{}) ([]byte, error)")
-		fmt.Fprintf(dst, "\n}")
-
-		fmt.Fprintf(dst, "\n\ntype MarshalFunc func(interface{}) ([]byte, error)")
-		fmt.Fprintf(dst, "\nfunc (f MarshalFunc) Marshal(v interface{}) ([]byte, error) {")
-		fmt.Fprintf(dst, "\nreturn f(v)")
-		fmt.Fprintf(dst, "\n}")
-
-		fmt.Fprintf(dst, "\n\n// Response is the interface to wrap all possible")
-		fmt.Fprintf(dst, "\n// responses. The actual data returned from the server can")
-		fmt.Fprintf(dst, "\n// be accessed through the Data() method.")
-		fmt.Fprintf(dst, "\ntype Response interface {")
-		fmt.Fprintf(dst, "\nStatusCode() int")
-		fmt.Fprintf(dst, "\nData() interface{}")
-		fmt.Fprintf(dst, "\n}")
-
-		fmt.Fprintf(dst, "\n\ntype response struct {")
-		fmt.Fprintf(dst, "\ncode int")
-		fmt.Fprintf(dst, "\ndata interface{}")
-		fmt.Fprintf(dst, "\n}")
-
-		fmt.Fprintf(dst, "\n\nfunc (r *response) StatusCode() int {")
-		fmt.Fprintf(dst, "\nreturn r.code")
-		fmt.Fprintf(dst, "\n}")
-
-		fmt.Fprintf(dst, "\n\nfunc (r *response) Data() interface{} {")
-		fmt.Fprintf(dst, "\nreturn r.data")
-		fmt.Fprintf(dst, "\n}")
-
-		fmt.Fprintf(dst, "\n\nfunc encodeCallPayload(marshalers map[string]Marshaler, mtype string, payload interface{}) (io.Reader, error) {")
-		fmt.Fprintf(dst, "\nmarshaler, ok := marshalers[mtype]")
-		fmt.Fprintf(dst, "\nif !ok {")
-		fmt.Fprintf(dst, "\nreturn nil, errors.Errorf(`missing marshaler for request content type %s`, mtype)")
-		fmt.Fprintf(dst, "\n}")
-		fmt.Fprintf(dst, "\n\nencoded, err := marshaler.Marshal(payload)")
-		fmt.Fprintf(dst, "\nif err != nil {")
-		fmt.Fprintf(dst, "\nreturn nil, errors.Wrap(err, `failed to marshal payload`)")
-		fmt.Fprintf(dst, "\n}")
-		fmt.Fprintf(dst, "\nreturn bytes.NewBuffer(encoded), nil")
-		fmt.Fprintf(dst, "\n}")
-
-		fmt.Fprintf(dst, "\n\ntype Client struct {")
-		for _, name := range serviceNames {
-			fmt.Fprintf(dst, "\n%s *%s", codegen.UnexportedName(name), name)
-		}
-		fmt.Fprintf(dst, "\n}")
-
-		// There are cases where we don't want to export New(): e.g.
-		// you want to put more custom logic around the creation of
-		// a new client object.
-		// In such cases, use the WithExportNew option
-		newFuncName := "New"
-		if !ctx.exportNew {
-			newFuncName = "newClient"
-		}
-	*/
-	for _, name := range serviceNames {
+	fmt.Fprintf(dst, "\nimport type { ClientOptions } from './types/client_options.js';")
+	for _, name := range ctx.client.ServiceNames() {
 		fmt.Fprintf(dst, "\nimport %s from './services/%s'", codegen.ClassName(name), codegen.FileName(strings.TrimSuffix(name, "Service")))
 	}
 
 	fmt.Fprintf(dst, "\n\nexport default class Client {")
-	for _, name := range serviceNames {
+	for _, name := range ctx.client.ServiceNames() {
 		fmt.Fprintf(dst, "\n%s: %s;", codegen.FieldName(name), codegen.ClassName(name))
 	}
 
-	fmt.Fprintf(dst, "\n\nconstructor(server: string) {")
-	for _, name := range serviceNames {
-		fmt.Fprintf(dst, "\nthis.%s = new %s(server);", codegen.FieldName(name), codegen.ClassName(name))
+	fmt.Fprintf(dst, "\n\nconstructor(server: string, options: ?ClientOptions) {")
+	for _, name := range ctx.client.ServiceNames() {
+		fmt.Fprintf(dst, "\nthis.%s = new %s(server, options);", codegen.FieldName(name), codegen.ClassName(name))
 	}
 	fmt.Fprintf(dst, "\n}")
 	fmt.Fprintf(dst, "\n}")
@@ -310,33 +243,243 @@ func formatClient(ctx *Context, dst io.Writer, cl *Client) error {
 	return nil
 }
 
-func formatService(ctx *Context, dst io.Writer, svc *Service) error {
-	log.Printf(" * Generating Service %s", svc.name)
+func formatService(ctx *Context, dst io.Writer, svc *compiler.Service) error {
+	log.Printf(" * Generating Service %s", svc.Name())
 	codegen.WritePreamble(dst, ctx.packageName)
 
-	sort.Slice(svc.calls, func(i, j int) bool {
-		return svc.calls[i].name < svc.calls[j].name
-	})
+	fmt.Fprintf(dst, "\n\nimport RESTResponse from '../types/response';")
+	fmt.Fprintf(dst, "\n\nimport type { ClientOptions } from '../types/client_options';")
 
-	fmt.Fprintf(dst, "\n\nimport Response from '../types/response'")
+	for _, call := range svc.Calls() {
+		if err := formatCall(ctx, dst, call); err != nil {
+			return errors.Wrapf(err, `failed to format call %s`, call.Name())
+		}
+	}
 
-	for _, call := range svc.calls {
-		var allFields []*Field
-		allFields = append(append(allFields, call.requireds...), call.optionals...)
-		sort.Slice(allFields, func(i, j int) bool {
-			return allFields[i].name < allFields[j].name
-		})
+	fmt.Fprintf(dst, "\n\nexport default class %s {", svc.Name())
+	fmt.Fprintf(dst, "\nserver: string;")
+	fmt.Fprintf(dst, "\noptions: ?ClientOptions;")
+	fmt.Fprintf(dst, "\n\nconstructor(server: string, options: ?ClientOptions) {")
+	fmt.Fprintf(dst, "\nthis.server = server;")
+	fmt.Fprintf(dst, "\nthis.options = options;")
+	fmt.Fprintf(dst, "\n}")
+	for _, call := range svc.Calls() {
+		fmt.Fprintf(dst, "\n\n%s (", codegen.MethodName(call.Method()))
 
-		if call.bodyType != nil {
+		requireds := call.Requireds()
+		for i, field := range requireds {
+			fmt.Fprintf(dst, "%s: %s", codegen.FieldName(field.Name()), jsType(field.Type()))
+			if i < len(requireds)-1 {
+				fmt.Fprintf(dst, ", ")
+			}
+		}
+
+		fmt.Fprintf(dst, ") :%s {", codegen.ClassName(call.Name()))
+		fmt.Fprintf(dst, "\nlet call = new %s(this.server, this.options", codegen.ClassName(call.Name()))
+		for _, field := range requireds {
+			fmt.Fprintf(dst, ", %s", codegen.FieldName(field.Name()))
+		}
+		fmt.Fprintf(dst, ");")
+		fmt.Fprintf(dst, "\nreturn call;")
+		fmt.Fprintf(dst, "\n}")
+	}
+	fmt.Fprintf(dst, "\n}")
+	return nil
+}
+
+func jsType(s string) string {
+	if strings.HasPrefix(s, "[]") {
+		return "Array<" + s[2:] + ">"
+	}
+	return s
+}
+
+func formatCall(ctx *Context, dst io.Writer, call *compiler.Call) error {
+	for _, typ := range []compiler.Type{call.Body(), call.Path(), call.Query(), call.Header()} {
+		if typ == nil {
+			continue
+		}
+
+		if err := formatCallPayload(ctx, dst, call, typ); err != nil {
+			return errors.Wrap(err, `failed to declare call body`)
+		}
+	}
+
+	fmt.Fprintf(dst, "\n\nclass %s {", codegen.ClassName(call.Name()))
+	fmt.Fprintf(dst, "\n_contentType :string;")
+	fmt.Fprintf(dst, "\n_options :?ClientOptions;")
+	fmt.Fprintf(dst, "\n_server :string;")
+	if bodyType := call.Body(); bodyType != nil {
+		fmt.Fprintf(dst, "\n_body :%s;", jsType(bodyType.Name()))
+	}
+	if queryType := call.Query(); queryType != nil {
+		fmt.Fprintf(dst, "\n_query :%s", queryType.Name())
+	}
+	if pathType := call.Path(); pathType != nil {
+		fmt.Fprintf(dst, "\n_path :%s", pathType.Name())
+	}
+
+	fmt.Fprintf(dst, "\n\nconstructor(server :string, options: ?ClientOptions")
+	if requireds := call.Requireds(); len(requireds) > 0 {
+		for _, field := range requireds {
+			fmt.Fprintf(dst, ", %s: %s", codegen.FieldName(field.Name()), jsType(field.Type()))
+		}
+	}
+	fmt.Fprintf(dst, ") {")
+	fmt.Fprintf(dst, "\nthis._options = options;")
+	fmt.Fprintf(dst, "\nthis._server = server;")
+	if requireds := call.Requireds(); len(requireds) > 0 {
+		for _, field := range requireds {
+			fmt.Fprintf(dst, "\nthis._%[1]s.%[2]s = %[2]s", field.ContainerName(), codegen.FieldName(field.Name()))
+		}
+	}
+	fmt.Fprintf(dst, "\n}")
+
+	if optionals := call.Optionals(); len(optionals) > 0 {
+		for _, field := range optionals {
+			fmt.Fprintf(dst, "\n\n%s(v: %s) :%s{", codegen.MethodName(field.Name()), jsType(field.Type()), codegen.ClassName(call.Name()))
+			fmt.Fprintf(dst, "\nthis._%s.%s = v;", field.ContainerName(), codegen.FieldName(field.Name()))
+			fmt.Fprintf(dst, "\nreturn this;")
+			fmt.Fprintf(dst, "\n}")
+		}
+	}
+
+	fmt.Fprintf(dst, "\n\nasync do(): Promise<RESTResponse> {")
+
+	if call.Path() == nil {
+		fmt.Fprintf(dst, "\nconst path :string = %s;", strconv.Quote(call.RequestPath()))
+	} else {
+		fmt.Fprintf(dst, "\nlet path :string = %s;", strconv.Quote(call.RequestPath()))
+		if pp, ok := call.Path().(*compiler.Struct); ok {
+			for _, param := range pp.Fields() {
+				fmt.Fprintf(dst, "\npath = path.replace(\"{%s}\", this._path.%s);", param.Name(), codegen.FieldName(param.Name()))
+			}
+		}
+	}
+
+	fmt.Fprintf(dst, "\n\nlet url = this._server + path;")
+	if call.Query() != nil {
+		fmt.Fprintf(dst, "\nlet query :Array<string> = [];")
+		// XXX currently this code doesn't handle complex query params
+		if pp, ok := call.Path().(*compiler.Struct); ok {
+			for _, param := range pp.Fields() {
+				fmt.Fprintf(dst, "\nif (this.%[1]s !== null && this.%[1]s !== undefined) {", codegen.FieldName(param.Name()))
+				if strings.HasPrefix(param.Type(), "Array<") {
+					fmt.Fprintf(dst, "query.push(this.%s.map(v => '%s=' + encodeURIComponent(v)).join('&'))", codegen.FieldName(param.Name()), param.Name())
+				} else {
+					fmt.Fprintf(dst, "query.push('%s=' + encodeURIComponent(this.%s))", param.Name(), codegen.FieldName(param.Name()))
+				}
+				fmt.Fprintf(dst, "\n}")
+			}
+		}
+		fmt.Fprintf(dst, "\nif (query.length > 0) {")
+		fmt.Fprintf(dst, "\nurl = url + '?' + query.join('&');")
+		fmt.Fprintf(dst, "\n}")
+	}
+	fmt.Fprintf(dst, ";")
+
+	if call.Body() != nil {
+		fmt.Fprintf(dst, "\n\nlet contentType = this._contentType;")
+		fmt.Fprintf(dst, "\nif (contentType == '') {")
+		fmt.Fprintf(dst, "\ncontentType = %s;", strconv.Quote(call.Consumes()[0]))
+		fmt.Fprintf(dst, "\n}")
+
+		fmt.Fprintf(dst, "\n\nlet mime = contentType;")
+		fmt.Fprintf(dst, "\nlet seploc = mime.indexOf(';');")
+		fmt.Fprintf(dst, "\nif (seploc > -1) {")
+		fmt.Fprintf(dst, "\nmime = mime.substr(seploc);")
+		fmt.Fprintf(dst, "\n}")
+
+		fmt.Fprintf(dst, "\n\nlet body :string | FormData")
+		fmt.Fprintf(dst, "\nswitch (mime) {")
+		fmt.Fprintf(dst, "\ncase 'application/json':")
+		fmt.Fprintf(dst, "\nbody = this._body._json();")
+		fmt.Fprintf(dst, "\nbreak;")
+		fmt.Fprintf(dst, "\ncase 'application/x-www-form-urlencoded':")
+		fmt.Fprintf(dst, "\nbody = this._body._form();")
+		fmt.Fprintf(dst, "\nbreak;")
+		fmt.Fprintf(dst, "\ndefault:")
+		fmt.Fprintf(dst, "\nreturn Promise.resolve(new RESTResponse(500, {error: 'unsupported content-type ' + mime}))")
+		fmt.Fprintf(dst, "\n}")
+	}
+
+	fmt.Fprintf(dst, "\nlet options = {")
+	fmt.Fprintf(dst, "\nmethod: %s,", strconv.Quote(call.Verb()))
+	if call.Body() != nil {
+		fmt.Fprintf(dst, "\nheaders: {")
+		fmt.Fprintf(dst, "\n'Content-Type': contentType")
+		fmt.Fprintf(dst, "\n},")
+		fmt.Fprintf(dst, "\nbody:  body")
+	}
+	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\nif (this._options !== null && this._options !== undefined) {")
+	fmt.Fprintf(dst, "\nif (this._options.modifyOptions !== null && this._options.modifyOptions !== undefined) {")
+	fmt.Fprintf(dst, "\noptions = this._options.modifyOptions(options);")
+	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\n}")
+
+	fmt.Fprintf(dst, "\nlet promise = fetch(url, options).")
+	fmt.Fprintf(dst, "\nthen(response => {")
+	if len(call.Responses()) == 0 {
+		fmt.Fprintf(dst, "\nreturn Promise.resolve(new RESTResponse(response.status))")
+	} else {
+		fmt.Fprintf(dst, "\nreturn Promise.resolve(new RESTResponse(response.status, response.json()))")
+	}
+	fmt.Fprintf(dst, "\n});")
+	fmt.Fprintf(dst, "\nreturn promise;")
+	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\n}")
+
+	return nil
+}
+
+func formatCallPayload(ctx *Context, dst io.Writer, call *compiler.Call, typ compiler.Type) error {
+	fields := typ.(*compiler.Struct).Fields()
+	fmt.Fprintf(dst, "\n\nclass %s {", codegen.ClassName(typ.Name()))
+	for _, field := range fields {
+		fmt.Fprintf(dst, "\n%s: %s;", codegen.FieldName(field.Name()), esType(field.Type()))
+	}
+
+	fmt.Fprintf(dst, "\n\n_json(): string {")
+	fmt.Fprintf(dst, "\nlet object = {")
+	for i, field := range fields {
+		fmt.Fprintf(dst, "\n%s: this.%s", field.Name(), codegen.FieldName(field.Name()))
+		if i < len(fields)-1 {
+			fmt.Fprintf(dst, ",")
+		}
+	}
+	fmt.Fprintf(dst, "\n};")
+	fmt.Fprintf(dst, "\nreturn JSON.stringify(object);")
+	fmt.Fprintf(dst, "\n}")
+
+	fmt.Fprintf(dst, "\n\n_form(): FormData {")
+	fmt.Fprintf(dst, "\nlet form = new FormData();")
+	for _, field := range fields {
+		if strings.HasPrefix(field.Type(), "[]") {
+			fmt.Fprintf(dst, "\nthis.%s.forEach(v => form.append(%s, String(v)));", codegen.FieldName(field.Name()), strconv.Quote(field.Name()))
+		} else {
+			fmt.Fprintf(dst, "\nform.append(%s, String(this.%s));", strconv.Quote(field.Name()), codegen.FieldName(field.Name()))
+		}
+	}
+	fmt.Fprintf(dst, "\nreturn form;")
+	fmt.Fprintf(dst, "\n}")
+
+	fmt.Fprintf(dst, "\n}")
+	return nil
+}
+
+/*
+
+		if call.Body() != nil {
 			var bodyFields []*Field
-			for _, field := range allFields {
+			for _, field := range call.AllFields() {
 				if !field.inBody {
 					continue
 				}
 				bodyFields = append(bodyFields, field)
 			}
 
-			fmt.Fprintf(dst, "\n\nclass %s {", codegen.ClassName(call.bodyType.Name()))
+			fmt.Fprintf(dst, "\n\nclass %s {", codegen.ClassName(call.Body().Name()))
 			for _, field := range bodyFields {
 				fmt.Fprintf(dst, "\n%s: %s;", codegen.FieldName(field.name), field.typ)
 			}
@@ -368,159 +511,10 @@ func formatService(ctx *Context, dst io.Writer, svc *Service) error {
 			fmt.Fprintf(dst, "\n}")
 		}
 
-		fmt.Fprintf(dst, "\n\nclass %s {", codegen.ClassName(call.name))
-		fmt.Fprintf(dst, "\n_contentType :string")
-		fmt.Fprintf(dst, "\n_server :string")
-		for _, field := range allFields {
-			if field.inBody {
-				continue
-			}
-			fmt.Fprintf(dst, "\n%s: %s;", codegen.FieldName(field.name), field.typ)
-		}
-		if call.bodyType != nil {
-			fmt.Fprintf(dst, "\nbody: %s;", call.bodyType.Name())
-		}
-
-		fmt.Fprintf(dst, "\n\nconstructor(server :string")
-		for _, field := range call.requireds {
-			fmt.Fprintf(dst, ", %s: %s", codegen.FieldName(field.name), field.typ)
-		}
-		fmt.Fprintf(dst, ") {")
-		fmt.Fprintf(dst, "\nthis._server = server;")
-		for _, field := range call.requireds {
-			if field.inBody {
-				fmt.Fprintf(dst, "\nthis.body.%[1]s = %[1]s", codegen.FieldName(field.name))
-			} else {
-				fmt.Fprintf(dst, "\nthis.%[1]s = %[1]s", codegen.FieldName(field.name))
-			}
-		}
-		fmt.Fprintf(dst, "\n}")
-
-		for _, field := range call.optionals {
-			fmt.Fprintf(dst, "\n\n%s(v: %s) :%s{", codegen.MethodName(field.name), field.typ, codegen.ClassName(call.name))
-			if field.inBody {
-				fmt.Fprintf(dst, "\nthis.body.%s = v;", codegen.FieldName(field.name))
-			} else {
-				fmt.Fprintf(dst, "\nthis.%s = v;", codegen.FieldName(field.name))
-			}
-			fmt.Fprintf(dst, "\nreturn this;")
-			fmt.Fprintf(dst, "\n}")
-		}
-
-		fmt.Fprintf(dst, "\n\nasync do(sync :boolean = true) :Response | Promise<Response> {")
-		if len(call.pathparams) == 0 {
-			fmt.Fprintf(dst, "\nconst path :string = %s;", strconv.Quote(call.path))
-		} else {
-			fmt.Fprintf(dst, "\nlet path :string = %s;", strconv.Quote(call.path))
-			for _, param := range call.pathparams {
-				fmt.Fprintf(dst, "\npath = path.replace(\"{%s}\", this.%s);", param.name, codegen.FieldName(param.name))
-			}
-		}
-
-		fmt.Fprintf(dst, "\n\nlet url = this._server + path")
-		if len(call.queryparams) > 0 {
-			fmt.Fprintf(dst, " + '?' + ")
-			// XXX currently this code doesn't handle complex query params
-			for i, param := range call.queryparams {
-				if strings.HasPrefix(param.typ, "Array<") {
-					fmt.Fprintf(dst, "this.%s.map(v => '%s=' + encodeURIComponent(v)).join('&')", codegen.FieldName(param.name), param.name)
-				} else {
-					fmt.Fprintf(dst, "'%s=' + encodeURIComponent(this.%s)", param.name, codegen.FieldName(param.name))
-				}
-				if i < len(call.queryparams)-1 {
-					fmt.Fprintf(dst, " + '&'")
-				}
-			}
-		}
-		fmt.Fprintf(dst, ";")
-
-		if call.bodyType != nil {
-			fmt.Fprintf(dst, "\n\nlet contentType = this._contentType;")
-			fmt.Fprintf(dst, "\nif (contentType == '') {")
-			fmt.Fprintf(dst, "\ncontentType = %s;", strconv.Quote(call.consumes[0]))
-			fmt.Fprintf(dst, "\n}")
-
-			fmt.Fprintf(dst, "\n\nlet mime = contentType;")
-			fmt.Fprintf(dst, "\nlet seploc = mime.indexOf(';');")
-			fmt.Fprintf(dst, "\nif (seploc > -1) {")
-			fmt.Fprintf(dst, "\nmime = mime.substr(seploc);")
-			fmt.Fprintf(dst, "\n}")
-
-			fmt.Fprintf(dst, "\n\nlet body :string | FormData")
-			fmt.Fprintf(dst, "\nswitch (mime) {")
-			fmt.Fprintf(dst, "\ncase 'application/json':")
-			fmt.Fprintf(dst, "\nbody = this.body._json();")
-			fmt.Fprintf(dst, "\nbreak;")
-			fmt.Fprintf(dst, "\ncase 'application/x-www-form-urlencoded':")
-			fmt.Fprintf(dst, "\nbody = this.body._form();")
-			fmt.Fprintf(dst, "\nbreak;")
-			fmt.Fprintf(dst, "\ndefault:")
-			fmt.Fprintf(dst, "\nreturn new Response(500, {error: 'unsupported content-type ' + mime})")
-			fmt.Fprintf(dst, "\n}")
-		}
-
-		fmt.Fprintf(dst, "\nlet options = {")
-		fmt.Fprintf(dst, "\nmethod: %s,", strconv.Quote(call.verb))
-		if call.bodyType != nil {
-			fmt.Fprintf(dst, "\nheaders: {")
-			fmt.Fprintf(dst, "\n'Content-Type': contentType")
-			fmt.Fprintf(dst, "\n},")
-			fmt.Fprintf(dst, "\nbody:  body")
-		}
-		fmt.Fprintf(dst, "\n}")
-
-		fmt.Fprintf(dst, "\nlet promise = fetch(url, options).")
-		fmt.Fprintf(dst, "\nthen(response => {")
-		fmt.Fprintf(dst, "\nreturn new Response(response.status, response.json())")
-		fmt.Fprintf(dst, "\n});")
-		fmt.Fprintf(dst, "\nif (sync) {")
-		fmt.Fprintf(dst, "\nreturn await promise;")
-		fmt.Fprintf(dst, "\n}")
-		fmt.Fprintf(dst, "\nreturn promise;")
-		fmt.Fprintf(dst, "\n}")
-
-		fmt.Fprintf(dst, "\n}")
-	}
-
-	fmt.Fprintf(dst, "\n\nexport default class %s {", svc.name)
-	fmt.Fprintf(dst, "\nserver: string;")
-	fmt.Fprintf(dst, "\n\nconstructor(server: string) {")
-	fmt.Fprintf(dst, "\nthis.server = server;")
-	fmt.Fprintf(dst, "\n}")
-	for _, call := range svc.calls {
-		fmt.Fprintf(dst, "\n\n%s (", call.method)
-
-		for i, field := range call.requireds {
-			fmt.Fprintf(dst, "%s: %s", codegen.FieldName(field.name), field.typ)
-			if i < len(call.requireds)-1 {
-				fmt.Fprintf(dst, ", ")
-			}
-		}
-
-		fmt.Fprintf(dst, ") :%s {", codegen.ClassName(call.name))
-		fmt.Fprintf(dst, "\nlet call = new %s(this.server", codegen.ClassName(call.name))
-		for _, field := range call.requireds {
-			fmt.Fprintf(dst, ", %s", codegen.FieldName(field.name))
-		}
-		fmt.Fprintf(dst, ");")
-		fmt.Fprintf(dst, "\nreturn call;")
-		fmt.Fprintf(dst, "\n}")
-	}
-	fmt.Fprintf(dst, "\n}")
-
-	/*
-		sort.Slice(svc.calls, func(i, j int) bool {
-			return svc.calls[i].name < svc.calls[j].name
-		})
-
-		for _, call := range svc.calls {
-			if err := formatCall(dst, svc.name, call); err != nil {
-				return errors.Wrap(err, `failed to format call`)
-			}
-		}
-	*/
 	return nil
 }
+
+*/
 
 func (v *Struct) WriteCode(dst io.Writer) error {
 	fmt.Fprintf(dst, "\nexport type %s = {", v.name)
@@ -540,6 +534,7 @@ func (v *Struct) WriteCode(dst io.Writer) error {
 	return nil
 }
 
+/*
 func compileClient(ctx *Context) error {
 	for piter := ctx.root.Paths().Paths(); piter.Next(); {
 		_, pi := piter.Item()
@@ -589,11 +584,21 @@ func compileCall(ctx *Context, oper openapi.Operation) error {
 
 	for respiter := oper.Responses().Responses(); respiter.Next(); {
 		_, resp := respiter.Item()
+		log.Printf("resp.StatusCode = %s", resp.StatusCode())
+		if resp.StatusCode() != "200" {
+			log.Printf("---> skipping response for %s", call.path)
+			continue
+		}
+		json.NewEncoder(os.Stdout).Encode(resp)
 		typ, err := compileResponseType(ctx, resp)
 		if err != nil {
 			return errors.Wrap(err, `failed to compile response type`)
 		}
-
+		if typ == "" {
+			log.Printf("---> skipping response for %s (no type)", call.path)
+			continue
+		}
+		log.Printf("---> appending response for %s (%s)", call.path, typ)
 		call.responses = append(call.responses, &Response{
 			code: resp.StatusCode(),
 			typ:  typ,
@@ -659,7 +664,7 @@ func compileCall(ctx *Context, oper openapi.Operation) error {
 		case openapi.InBody:
 			// sanity check (although this should have already been taken care
 			// of in Validate())
-			if call.bodyType != nil {
+			if call.Body() != nil {
 				return errors.New(`multiple body elements found in parameters`)
 			}
 
@@ -1086,3 +1091,4 @@ type openapiTypeFormater interface {
 	openapiTyper
 	openapiFormater
 }
+*/
