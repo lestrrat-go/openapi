@@ -80,6 +80,8 @@ func Snake(s string) string {
 		s = buf.String()
 	}
 
+	// grr, apparently strcase doesn't handle foo-bar-baz (the "-"s)
+	s = strings.Replace(s, "-", " ", -1)
 	s = strcase.ToSnake(s)
 
 	// Except...

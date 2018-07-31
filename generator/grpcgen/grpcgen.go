@@ -32,7 +32,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/iancoleman/strcase"
 	"github.com/lestrrat-go/openapi/internal/codegen/common"
-	codegen "github.com/lestrrat-go/openapi/internal/codegen/golang"
+	codegen "github.com/lestrrat-go/openapi/internal/codegen/grpc"
 	openapi "github.com/lestrrat-go/openapi/v2"
 	"github.com/pkg/errors"
 )
@@ -232,7 +232,7 @@ func compileGlobalDefinitions(ctx *genCtx) error {
 			return errors.Errorf(`expected global definition to compile into a message, got %T`, typ)
 		}
 
-		m.name = codegen.ExportedName(name)
+		m.name = codegen.MessageName(name)
 		ctx.proto.AddMessage(m)
 		ctx.RegisterMessage("#/definitions/"+name, m)
 	}
@@ -446,7 +446,7 @@ func compileTypeWithName(ctx *genCtx, src openapi.SchemaConverter, name string) 
 					return
 				}
 				if m, ok := result.(*Message); ok {
-					m.name = codegen.ExportedName(strings.TrimPrefix(ref, "#/definitions/"))
+					m.name = codegen.MessageName(strings.TrimPrefix(ref, "#/definitions/"))
 					m.reference = ref
 					ctx.log("* Adding message %s (global)", m.Name())
 					ctx.RegisterMessage(ref, m)
@@ -466,7 +466,7 @@ func compileTypeWithName(ctx *genCtx, src openapi.SchemaConverter, name string) 
 		ctx.log(" -----> %#v", typ)
 		if !registerGlobal {
 			if m, ok := typ.(*Message); ok {
-				m.name = codegen.ExportedName(name)
+				m.name = codegen.MessageName(name)
 				ctx.log("* Adding message %s", m.Name())
 				ctx.parent.AddMessage(m)
 			}
@@ -492,9 +492,11 @@ func compileField(ctx *genCtx, name string, s openapi.Schema) (*Field, error) {
 		return nil, errors.Wrap(err, `failed to compile field`)
 	}
 
+	// name must be normalized to something snake_case
+	log.Printf("field name %s", codegen.FieldName(name))
 	return &Field{
 		id:   1,
-		name: name,
+		name: codegen.FieldName(name),
 		typ:  typ,
 	}, nil
 }
@@ -532,7 +534,7 @@ func compileRPCParameters(ctx *genCtx, name string, iter *openapi.ParameterListI
 
 		m.fields = append(m.fields, &Field{
 			id:   id,
-			name: param.Name(),
+			name: codegen.FieldName(param.Name()),
 			typ:  typ,
 			body: param.In() == openapi.InBody,
 		})
@@ -715,9 +717,6 @@ func formatMessage(ctx *genCtx, dst io.Writer, msg *Message) {
 
 		for _, name := range messageNames {
 			submsg := msg.messages[name]
-			/*			if i > 0 {
-						fmt.Fprintf(&buf, "\n\n")
-					}*/
 			formatMessage(ctx, &buf, submsg)
 		}
 		copyIndent(dst, &buf)
