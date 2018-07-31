@@ -34,9 +34,30 @@ func visitSchema(ctx context.Context, elem Schema) error {
 		}
 	}
 
+	for i, iter := 0, elem.AllOf(); iter.Next(); {
+		if err := visitSchema(ctx, iter.Item()); err != nil {
+			return errors.Wrapf(err, `failed to visit element %d for Schema`, i)
+		}
+		i++
+	}
+
 	if child := elem.Items(); child != nil {
 		if err := visitSchema(ctx, child); err != nil {
 			return errors.Wrap(err, `failed to visit Items element for Schema`)
+		}
+	}
+
+	for iter := elem.Properties(); iter.Next(); {
+		key, value := iter.Item()
+		if err := visitSchema(context.WithValue(ctx, schemaMapKeyVisitorCtxKey{}, key), value); err != nil {
+			return errors.Wrap(err, `failed to visit Properties element for Schema`)
+		}
+	}
+
+	for iter := elem.AdditionaProperties(); iter.Next(); {
+		key, value := iter.Item()
+		if err := visitSchema(context.WithValue(ctx, schemaMapKeyVisitorCtxKey{}, key), value); err != nil {
+			return errors.Wrap(err, `failed to visit AdditionaProperties element for Schema`)
 		}
 	}
 

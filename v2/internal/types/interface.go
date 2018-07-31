@@ -248,7 +248,7 @@ type Responses interface {
 
 type responses struct {
 	defaultValue Response    `json:"default,omitempty"`
-	responses    ResponseMap `json:"-" mutator:"-"`
+	responses    ResponseMap `json:"-" mutator:"-" visit:"true"`
 }
 
 type Response interface {

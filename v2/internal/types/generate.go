@@ -186,7 +186,6 @@ func iteratorName(t reflect.Type) string {
 	// have declared wrapper containers for. Use the
 	// naming schemes
 	var name string = t.Name()
-	log.Printf("name -> %s", name)
 	if !isContainer(name) { // && !isEntity(t.Elem().Name()) {
 		name = typname(t.Elem())
 		if strings.HasPrefix(name, "[]") {
@@ -1391,19 +1390,6 @@ func generateVisitorsFromEntity(e interface{}) error {
 	filename := fmt.Sprintf("%s_visitor_gen.go", stringutil.Snake(tv.Name()))
 	log.Printf("Generating %s", filename)
 
-	var entityFields []reflect.StructField
-	for i := 0; i < tv.NumField(); i++ {
-		fv := tv.Field(i)
-		fieldType := fv.Type.Name()
-
-		// keep track of all fields whose type is one of our entity types
-		if fv.Tag.Get("json") != "-" {
-			if isEntity(codegen.UnexportedName(fieldType)) || isContainer(fieldType) {
-				entityFields = append(entityFields, fv)
-			}
-		}
-	}
-
 	ifacename := codegen.ExportedName(tv.Name())
 	structname := codegen.UnexportedName(tv.Name())
 	ctxKey := structname + "VisitorCtxKey"
@@ -1419,6 +1405,34 @@ func generateVisitorsFromEntity(e interface{}) error {
 	fmt.Fprintf(dst, "\ntype %sVisitor interface {", ifacename)
 	fmt.Fprintf(dst, "\nVisit%[1]s(context.Context, %[1]s) error", ifacename)
 	fmt.Fprintf(dst, "\n}")
+
+	type entityField struct {
+		Name string
+		Type reflect.Type
+	}
+	var entityFields []entityField
+
+	// If it's a struct, find the element types from the StructField
+	switch tv.Kind() {
+	case reflect.Struct:
+		for i := 0; i < tv.NumField(); i++ {
+			fv := tv.Field(i)
+			fieldType := fv.Type.Name()
+
+			// keep track of all fields whose type is one of our entity types
+			if fv.Tag.Get("visit") == "true" || fv.Tag.Get("json") != "-" {
+				if isEntity(codegen.UnexportedName(fieldType)) || isContainer(fieldType) {
+					entityFields = append(entityFields, entityField{Type: fv.Type, Name: fv.Name})
+				}
+			}
+		}
+	default:
+		entityFields = append(entityFields, entityField{Type: tv, Name: strings.TrimSuffix(tv.Name(), "List") + "s"})
+	}
+
+if ifacename == "Responses" {
+	log.Printf("%#v", entityFields)
+}
 
 	switch ifacename {
 	case "Paths":
@@ -1441,7 +1455,7 @@ func generateVisitorsFromEntity(e interface{}) error {
 		for _, f := range entityFields {
 			if isMap(f.Type.Name()) {
 				// skip things like map[string]string
-				if isEntity(f.Type.Elem().Name()) {
+				if isEntity(codegen.UnexportedName(f.Type.Elem().Name())) {
 					fmt.Fprintf(dst, "\n\nfor iter := elem.%s(); iter.Next(); {", codegen.ExportedName(f.Name))
 					fmt.Fprintf(dst, "\nkey, value := iter.Item()")
 					fmt.Fprintf(dst, "\nif err := visit%s(context.WithValue(ctx, %sKeyVisitorCtxKey{}, key), value); err != nil {", codegen.ExportedName(f.Type.Elem().Name()), codegen.UnexportedName(f.Type.Name()))
@@ -1451,9 +1465,9 @@ func generateVisitorsFromEntity(e interface{}) error {
 				}
 			} else if isList(f.Type.Name()) {
 				// skip things like []string
-				if isEntity(f.Type.Elem().Name()) {
+				if isEntity(codegen.UnexportedName(f.Type.Elem().Name())) {
 					fmt.Fprintf(dst, "\n\nfor i, iter := 0, elem.%s(); iter.Next(); {", codegen.ExportedName(f.Name))
-					fmt.Fprintf(dst, "\nif err := visit%s(ctx, iter.Item()); err != nil {", codegen.ExportedName(f.Type.Name()))
+					fmt.Fprintf(dst, "\nif err := visit%s(ctx, iter.Item()); err != nil {", codegen.ExportedName(f.Type.Elem().Name()))
 					fmt.Fprintf(dst, "\nreturn errors.Wrapf(err, `failed to visit element %%d for %s`, i)", ifacename)
 					fmt.Fprintf(dst, "\n}")
 					fmt.Fprintf(dst, "\ni++")
@@ -1498,6 +1512,7 @@ func generateVisitor(entities []interface{}) error {
 
 	fmt.Fprintf(dst, "\n\n// Visit allows you to traverse through the OpenAPI structure")
 	fmt.Fprintf(dst, "\nfunc Visit(ctx context.Context, handler, elem interface{}) error {")
+
 	for i, e := range entities {
 		tv := reflect.TypeOf(e)
 		ifacename := codegen.ExportedName(tv.Name())

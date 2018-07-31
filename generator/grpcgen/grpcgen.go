@@ -20,6 +20,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -406,6 +407,7 @@ func compileType(ctx *genCtx, src openapi.SchemaConverter) (result Type, err err
 // appropriate type for it.
 func compileTypeWithName(ctx *genCtx, src openapi.SchemaConverter, name string) (result Type, err error) {
 	schema, err := src.ConvertToSchema()
+	json.NewEncoder(os.Stdout).Encode(schema)
 	if err != nil {
 		return nil, errors.Wrapf(err, `failed to extract schema out of %T`, src)
 	}
@@ -647,7 +649,7 @@ func copyIndent(dst io.Writer, src io.Reader) {
 	for scanner.Scan() {
 		n++
 		txt := scanner.Text()
-		if n == 1 && txt == ""  {
+		if n == 1 && txt == "" {
 			continue
 		}
 
@@ -713,9 +715,9 @@ func formatMessage(ctx *genCtx, dst io.Writer, msg *Message) {
 
 		for _, name := range messageNames {
 			submsg := msg.messages[name]
-/*			if i > 0 {
-				fmt.Fprintf(&buf, "\n\n")
-			}*/
+			/*			if i > 0 {
+						fmt.Fprintf(&buf, "\n\n")
+					}*/
 			formatMessage(ctx, &buf, submsg)
 		}
 		copyIndent(dst, &buf)

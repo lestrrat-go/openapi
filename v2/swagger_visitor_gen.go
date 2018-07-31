@@ -46,6 +46,41 @@ func visitSwagger(ctx context.Context, elem Swagger) error {
 		}
 	}
 
+	for iter := elem.Parameters(); iter.Next(); {
+		key, value := iter.Item()
+		if err := visitParameter(context.WithValue(ctx, parameterMapKeyVisitorCtxKey{}, key), value); err != nil {
+			return errors.Wrap(err, `failed to visit Parameters element for Swagger`)
+		}
+	}
+
+	for iter := elem.Responses(); iter.Next(); {
+		key, value := iter.Item()
+		if err := visitResponse(context.WithValue(ctx, responseMapKeyVisitorCtxKey{}, key), value); err != nil {
+			return errors.Wrap(err, `failed to visit Responses element for Swagger`)
+		}
+	}
+
+	for iter := elem.SecurityDefinitions(); iter.Next(); {
+		key, value := iter.Item()
+		if err := visitSecurityScheme(context.WithValue(ctx, securitySchemeMapKeyVisitorCtxKey{}, key), value); err != nil {
+			return errors.Wrap(err, `failed to visit SecurityDefinitions element for Swagger`)
+		}
+	}
+
+	for i, iter := 0, elem.Security(); iter.Next(); {
+		if err := visitSecurityRequirement(ctx, iter.Item()); err != nil {
+			return errors.Wrapf(err, `failed to visit element %d for Swagger`, i)
+		}
+		i++
+	}
+
+	for i, iter := 0, elem.Tags(); iter.Next(); {
+		if err := visitTag(ctx, iter.Item()); err != nil {
+			return errors.Wrapf(err, `failed to visit element %d for Swagger`, i)
+		}
+		i++
+	}
+
 	if child := elem.ExternalDocs(); child != nil {
 		if err := visitExternalDocumentation(ctx, child); err != nil {
 			return errors.Wrap(err, `failed to visit ExternalDocs element for Swagger`)

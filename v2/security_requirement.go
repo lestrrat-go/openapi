@@ -2,7 +2,6 @@ package openapi
 
 import (
 	"encoding/json"
-	"log"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -13,7 +12,6 @@ func (v *securityRequirement) setName(s string) {
 }
 
 func (v *securityRequirement) UnmarshalJSON(data []byte) error {
-	log.Printf("data = %s", data)
 	var m map[string]interface{}
 	if err := json.Unmarshal(data, &m); err != nil {
 		return errors.Wrap(err, `failed to unmarshal JSON data`)

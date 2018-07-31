@@ -39,5 +39,12 @@ func visitResponse(ctx context.Context, elem Response) error {
 			return errors.Wrap(err, `failed to visit Schema element for Response`)
 		}
 	}
+
+	for iter := elem.Headers(); iter.Next(); {
+		key, value := iter.Item()
+		if err := visitHeader(context.WithValue(ctx, headerMapKeyVisitorCtxKey{}, key), value); err != nil {
+			return errors.Wrap(err, `failed to visit Headers element for Response`)
+		}
+	}
 	return nil
 }

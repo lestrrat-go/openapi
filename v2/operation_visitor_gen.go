@@ -40,10 +40,24 @@ func visitOperation(ctx context.Context, elem Operation) error {
 		}
 	}
 
+	for i, iter := 0, elem.Parameters(); iter.Next(); {
+		if err := visitParameter(ctx, iter.Item()); err != nil {
+			return errors.Wrapf(err, `failed to visit element %d for Operation`, i)
+		}
+		i++
+	}
+
 	if child := elem.Responses(); child != nil {
 		if err := visitResponses(ctx, child); err != nil {
 			return errors.Wrap(err, `failed to visit Responses element for Operation`)
 		}
+	}
+
+	for i, iter := 0, elem.Security(); iter.Next(); {
+		if err := visitSecurityRequirement(ctx, iter.Item()); err != nil {
+			return errors.Wrapf(err, `failed to visit element %d for Operation`, i)
+		}
+		i++
 	}
 	return nil
 }

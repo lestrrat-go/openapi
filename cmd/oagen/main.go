@@ -134,10 +134,11 @@ func doProtobuf(args []string) error {
 	}
 	defer f.Close()
 
-	parsed, err := openapi.ParseYAML(f)
+	parsed, err := openapi.ParseYAML(f, openapi.WithValidate(true))
 	if err != nil {
 		return errors.Wrapf(err, `failed to parse openapi spec in %s`, fn)
 	}
+
 	spec = parsed
 
 	var options []grpcgen.Option

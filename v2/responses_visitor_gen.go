@@ -39,5 +39,12 @@ func visitResponses(ctx context.Context, elem Responses) error {
 			return errors.Wrap(err, `failed to visit Default element for Responses`)
 		}
 	}
+
+	for iter := elem.Responses(); iter.Next(); {
+		key, value := iter.Item()
+		if err := visitResponse(context.WithValue(ctx, responseMapKeyVisitorCtxKey{}, key), value); err != nil {
+			return errors.Wrap(err, `failed to visit Responses element for Responses`)
+		}
+	}
 	return nil
 }

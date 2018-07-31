@@ -75,5 +75,12 @@ func visitPathItem(ctx context.Context, elem PathItem) error {
 			return errors.Wrap(err, `failed to visit Patch element for PathItem`)
 		}
 	}
+
+	for i, iter := 0, elem.Parameters(); iter.Next(); {
+		if err := visitParameter(ctx, iter.Item()); err != nil {
+			return errors.Wrapf(err, `failed to visit element %d for PathItem`, i)
+		}
+		i++
+	}
 	return nil
 }
