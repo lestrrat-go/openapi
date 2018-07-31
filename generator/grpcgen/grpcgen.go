@@ -696,8 +696,13 @@ func formatAnnotation(ctx *genCtx, dst io.Writer, rpc *RPC) {
 	fmt.Fprintf(&buf, "\n%s: %s", strings.ToLower(rpc.verb), strconv.Quote(rpc.path))
 
 	if m, ok := rpc.in.(*Message); ok {
-		if len(m.fields) == 1 && m.fields[0].body {
-			fmt.Fprintf(&buf, "\nbody: %s", strconv.Quote(m.fields[0].name))
+		// There should be only one field with "in: body". This has been
+		// checked with the parser's validation
+		for _, f := range m.fields {
+			if f.body {
+				fmt.Fprintf(&buf, "\nbody: %s", strconv.Quote(f.name))
+				break
+			}
 		}
 	}
 	copyIndent(dst, &buf)
