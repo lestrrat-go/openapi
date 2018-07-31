@@ -14,6 +14,26 @@ var _ = errors.Cause
 
 var ErrVisitAbort = errors.New(`visit aborted (non-error)`)
 
+type exampleMapKeyVisitorCtxKey struct{}
+
+type headerMapKeyVisitorCtxKey struct{}
+
+type interfaceMapKeyVisitorCtxKey struct{}
+
+type parameterMapKeyVisitorCtxKey struct{}
+
+type pathItemMapKeyVisitorCtxKey struct{}
+
+type responseMapKeyVisitorCtxKey struct{}
+
+type schemaMapKeyVisitorCtxKey struct{}
+
+type scopesMapKeyVisitorCtxKey struct{}
+
+type securitySchemeMapKeyVisitorCtxKey struct{}
+
+type stringMapKeyVisitorCtxKey struct{}
+
 type swaggerVisitorCtxKey struct{}
 
 type infoVisitorCtxKey struct{}

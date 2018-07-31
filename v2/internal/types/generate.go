@@ -1430,10 +1430,6 @@ func generateVisitorsFromEntity(e interface{}) error {
 		entityFields = append(entityFields, entityField{Type: tv, Name: strings.TrimSuffix(tv.Name(), "List") + "s"})
 	}
 
-if ifacename == "Responses" {
-	log.Printf("%#v", entityFields)
-}
-
 	switch ifacename {
 	case "Paths":
 	default:
@@ -1503,6 +1499,14 @@ func generateVisitor(entities []interface{}) error {
 	codegen.WriteImports(dst, "context", "github.com/pkg/errors")
 
 	fmt.Fprintf(dst, "\n\nvar ErrVisitAbort = errors.New(`visit aborted (non-error)`)")
+
+	for _, c := range containers {
+		tv := reflect.TypeOf(c)
+		if isMap(tv.Name()) {
+			structname := codegen.UnexportedName(tv.Name())
+			fmt.Fprintf(dst, "\n\ntype %sKeyVisitorCtxKey struct{}", structname)
+		}
+	}
 
 	for _, e := range entities {
 		tv := reflect.TypeOf(e)
