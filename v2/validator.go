@@ -2,6 +2,7 @@ package openapi
 
 import (
 	"context"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -53,12 +54,28 @@ func (val *validator) VisitSwagger(ctx context.Context, v Swagger) error {
 }
 
 func (val *validator) VisitInfo(ctx context.Context, v Info) error {
+	// https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#infoObject
 	if v.Title() == "" {
 		return errors.New(`missing required field "title"`)
 	}
 
 	if v.Version() == "" {
 		return errors.New(`missing required field "version"`)
+	}
+
+	return nil
+}
+
+func (val *validator) VisitLicense(ctx context.Context, v License) error {
+	// https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#licenseObject
+	if v.Name() == "" {
+		return errors.New(`missing required field "name"`)
+	}
+
+	if uv := v.URL(); uv != "" {
+		if _, err := url.Parse(uv); err != nil {
+			return errors.Wrap(err, `field "url" must be a valid URL`)
+		}
 	}
 
 	return nil

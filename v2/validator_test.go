@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestInfoValidate(t *testing.T) {
+func TestValidateInfo(t *testing.T) {
 	t.Run("Complete info", func(t *testing.T) {
 		const src = `{
 "title": "Swagger Sample App",
@@ -81,3 +81,46 @@ func TestInfoValidate(t *testing.T) {
 	})
 }
 
+func TestValidateLicense(t *testing.T) {
+	t.Run("Complete license", func(t *testing.T) {
+		const src = `{
+  "name": "Apache 2.0",
+  "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+}`
+		var v openapi.License
+		if !assert.NoError(t, openapi.LicenseFromJSON([]byte(src), &v), "reading from JSON should succeed") {
+			return
+		}
+
+		if !assert.NoError(t, v.Validate(true), "validation should succeed") {
+			return
+		}
+	})
+	t.Run("Missing name", func(t *testing.T) {
+		const src = `{
+  "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+}`
+		var v openapi.License
+		if !assert.NoError(t, openapi.LicenseFromJSON([]byte(src), &v), "reading from JSON should succeed") {
+			return
+		}
+		if !assert.Error(t, v.Validate(true), "validation should fail") {
+			return
+		}
+	})
+	t.Run("Invalid url", func(t *testing.T) {
+		// Boy, it's incredibly hard to find a URL pattern that actually fails to
+		// parse. Here we just grab something from https://golang.org/src/net/url/url_test.go
+		const src = `{
+  "name": "API Support",
+  "url": "http://us\ner:pass\nword@foo.com/"
+}`
+		var v openapi.License
+		if !assert.NoError(t, openapi.LicenseFromJSON([]byte(src), &v), "reading from JSON should succeed") {
+			return
+		}
+		if !assert.Error(t, v.Validate(true), "validation should fail") {
+			return
+		}
+	})
+}
