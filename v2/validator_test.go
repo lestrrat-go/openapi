@@ -141,3 +141,30 @@ func TestValidatePaths(t *testing.T) {
 	})
 }
 
+func TestValidatePathItem(t *testing.T) {
+	t.Run("Duplicate parameters", func(t *testing.T) {
+		const src = `{
+	"parameters": [
+		{
+			"type": "string",
+			"name": "foo",
+			"in": "query"
+		},
+		{
+			"type": "string",
+			"name": "foo",
+			"in": "query"
+		}
+	]
+}`
+		var v openapi.PathItem
+		if !assert.NoError(t, openapi.PathItemFromJSON([]byte(src), &v), "reading from JSON should succeed") {
+			return
+		}
+		if !assert.Error(t, v.Validate(true), "validation should fail") {
+			return
+		}
+	})
+}
+
+
