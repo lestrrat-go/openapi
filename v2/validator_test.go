@@ -124,3 +124,20 @@ func TestValidateLicense(t *testing.T) {
 		}
 	})
 }
+
+func TestValidatePaths(t *testing.T) {
+	t.Run("Invalid path pattern", func(t *testing.T) {
+		const src = `{
+	"relative/path": {
+	}
+}`
+		var v openapi.Paths
+		if !assert.NoError(t, openapi.PathsFromJSON([]byte(src), &v), "reading from JSON should succeed") {
+			return
+		}
+		if !assert.Error(t, v.Validate(true), "validation should fail") {
+			return
+		}
+	})
+}
+

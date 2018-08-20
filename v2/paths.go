@@ -18,6 +18,21 @@ func (v *paths) addPathItem(path string, item PathItem) {
 type pathItemKeyVisitorKey struct{}
 
 func visitPaths(ctx context.Context, v Paths) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	if visitor, ok := ctx.Value(pathsVisitorCtxKey{}).(PathsVisitor); ok {
+		if err := visitor.VisitPaths(ctx, v); err != nil {
+			if err == ErrVisitAbort {
+				return nil
+			}
+			return errors.Wrap(err, `failed to visit Paths element`)
+		}
+	}
+
 	for iter := v.Paths(); iter.Next(); {
 		path, item := iter.Item()
 		if err := visitPathItem(context.WithValue(ctx, pathItemKeyVisitorKey{}, path), item); err != nil {

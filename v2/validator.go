@@ -81,6 +81,16 @@ func (val *validator) VisitLicense(ctx context.Context, v License) error {
 	return nil
 }
 
+func (val *validator) VisitPaths(ctx context.Context, v Paths) error {
+	for iter := v.Paths(); iter.Next(); {
+		key, _ := iter.Item()
+		if !strings.HasPrefix(key, "/") {
+			return errors.Errorf(`invalid path item key "%s" (paths must start with a slash)`, key)
+		}
+	}
+	return nil
+}
+
 func (val *validator) VisitOperation(ctx context.Context, v Operation) error {
 	if v.Responses() == nil {
 		return errors.New(`missing required field "responses"`)
