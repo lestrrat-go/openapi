@@ -65,5 +65,5 @@ func (v *info) Extensions() *ExtensionsIterator {
 }
 
 func (v *info) Validate(recurse bool) error {
-	return Visit(context.Background(), newValidator(recurse), v)
+	return newValidator(recurse).Validate(context.Background(), v)
 }

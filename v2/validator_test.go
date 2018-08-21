@@ -165,6 +165,33 @@ func TestValidatePathItem(t *testing.T) {
 			return
 		}
 	})
+	t.Run("Duplicate operationIds", func(t *testing.T) {
+		const src = `{
+	"get": {
+		"operationId": "foo",
+		"responses": {
+			"200": {
+				"description": "successful response"
+			}
+		}
+	},
+	"post": {
+		"operationId": "foo",
+		"responses": {
+			"200": {
+				"description": "successful response"
+			}
+		}
+	}
+}`
+		var v openapi.PathItem
+		if !assert.NoError(t, openapi.PathItemFromJSON([]byte(src), &v), "reading from JSON should succeed") {
+			return
+		}
+		if !assert.Error(t, v.Validate(true), "validation should fail") {
+			return
+		}
+	})
 }
 
 

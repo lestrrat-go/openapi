@@ -765,7 +765,7 @@ func generateAccessorsFromEntity(e interface{}) error {
 
 	if isStockValidator(structname) {
 		fmt.Fprintf(dst, "\n\nfunc (v *%s) Validate(recurse bool) error {", structname)
-		fmt.Fprintf(dst, "\nreturn Visit(context.Background(), newValidator(recurse), v)")
+		fmt.Fprintf(dst, "\nreturn newValidator(recurse).Validate(context.Background(), v)")
 		fmt.Fprintf(dst, "\n}")
 	}
 

@@ -14,8 +14,19 @@ type validator struct {
 	recurse bool
 }
 
+var recursiveValidator = &validator{recurse: true}
+var shallowValidator   = &validator{recurse: false}
+
 func newValidator(recurse bool) *validator {
-	return &validator{recurse: recurse}
+	if recurse {
+		return recursiveValidator
+	}
+	return shallowValidator
+}
+
+func (v *validator) Validate(ctx context.Context, target interface{}) error {
+	ctx = context.WithValue(ctx, operationsIdMapKey{}, make(map[string]struct{}))
+	return Visit(ctx, v, target)
 }
 
 var rxHostPortOnly = regexp.MustCompile(`^[^:/]+(:\d+)?$`)
@@ -93,19 +104,35 @@ func (val *validator) VisitPaths(ctx context.Context, v Paths) error {
 
 func (val *validator) VisitPathItem(ctx context.Context, v PathItem) error {
 	// https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#pathItemObject
-	seen := make(map[string]struct{})
+	seenParams := make(map[string]struct{})
 	for iter := v.Parameters(); iter.Next(); {
 		param := iter.Item()
 		key := param.Name() + "\000" + string(param.In())
-		if _, ok := seen[key]; ok {
+		if _, ok := seenParams[key]; ok {
 			return errors.Errorf(`duplicate path item name = "%s", location = %s"`, param.Name(), param.In())
 		}
-		seen[key] = struct{}{}
+		seenParams[key] = struct{}{}
 	}
 	return nil
 }
 
+type operationsIdMapKey struct{}
+
 func (val *validator) VisitOperation(ctx context.Context, v Operation) error {
+	// https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#operationObject
+	// Check for duplicate operation ids. As the operationId field is
+	// NOT required by the spec, we ignore empty ids
+	if operID := v.OperationID(); operID != "" {
+		if seenopsIface := ctx.Value(operationsIdMapKey{}); seenopsIface != nil {
+			if seenops, ok := seenopsIface.(map[string]struct{}); ok {
+				if _, ok := seenops[operID]; ok {
+					return errors.Errorf(`duplicate operation ID: %s`, operID)
+				}
+				seenops[operID] = struct{}{}
+			}
+		}
+	}
+
 	if v.Responses() == nil {
 		return errors.New(`missing required field "responses"`)
 	}
