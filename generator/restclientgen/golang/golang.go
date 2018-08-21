@@ -492,7 +492,9 @@ func formatCall(dst io.Writer, svcName string, call *compiler.Call) error {
 				fmt.Fprintf(dst, "\nv.Add(%s, ", strconv.Quote(query.Name()))
 				switch query.Type() {
 				case "int64":
-					fmt.Fprintf(dst, "strconv.FormatInt(call.query.%s, 10)", query.Name())
+					fmt.Fprintf(dst, "strconv.FormatInt(call.query.%s, 10)", codegen.ExportedName(query.Name()))
+				case "bool":
+					fmt.Fprintf(dst, "strconv.FormatBool(call.query.%s)", codegen.ExportedName(query.Name()))
 				default:
 					fmt.Fprintf(dst, "call.query.%s", query.Hints().GoName)
 				}
