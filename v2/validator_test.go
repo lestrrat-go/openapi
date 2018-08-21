@@ -194,4 +194,18 @@ func TestValidatePathItem(t *testing.T) {
 	})
 }
 
+func TestValidateExternalDocumentation(t *testing.T) {
+	t.Run("Missing url", func(t *testing.T) {
+		const src = `{
+	"description": "hello, world"
+}`
+		var v openapi.ExternalDocumentation
+		if !assert.NoError(t, openapi.ExternalDocumentationFromJSON([]byte(src), &v), "reading from JSON should succeed") {
+			return
+		}
+		if !assert.Error(t, v.Validate(true), "validation should fail") {
+			return
+		}
+	})
+}
 

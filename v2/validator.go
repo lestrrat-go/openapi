@@ -226,3 +226,12 @@ func (val *validator) VisitSchema(ctx context.Context, v Schema) error {
 
 	return nil
 }
+
+func (val *validator) VisitExternalDocumentation(ctx context.Context, v ExternalDocumentation) error {
+	if v.URL() == "" {
+		return errors.New(`invalid external documentation: missing url`)
+	}
+
+	return nil
+}
+
