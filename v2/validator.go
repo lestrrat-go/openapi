@@ -15,7 +15,7 @@ type validator struct {
 }
 
 var recursiveValidator = &validator{recurse: true}
-var shallowValidator   = &validator{recurse: false}
+var shallowValidator = &validator{recurse: false}
 
 func newValidator(recurse bool) *validator {
 	if recurse {
@@ -102,17 +102,25 @@ func (val *validator) VisitPaths(ctx context.Context, v Paths) error {
 	return nil
 }
 
-func (val *validator) VisitPathItem(ctx context.Context, v PathItem) error {
-	// https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#pathItemObject
+func checkUniqueParameters(v interface{ Parameters() *ParameterListIterator }) error {
 	seenParams := make(map[string]struct{})
 	for iter := v.Parameters(); iter.Next(); {
 		param := iter.Item()
 		key := param.Name() + "\000" + string(param.In())
 		if _, ok := seenParams[key]; ok {
-			return errors.Errorf(`duplicate path item name = "%s", location = %s"`, param.Name(), param.In())
+			return errors.Errorf(`duplicate parameter (name = "%s", location = %s")`, param.Name(), param.In())
 		}
 		seenParams[key] = struct{}{}
 	}
+	return nil
+}
+
+func (val *validator) VisitPathItem(ctx context.Context, v PathItem) error {
+	// https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#pathItemObject
+	if err := checkUniqueParameters(v); err != nil {
+		return errors.Wrap(err, `invalid path item`)
+	}
+
 	return nil
 }
 
@@ -135,6 +143,10 @@ func (val *validator) VisitOperation(ctx context.Context, v Operation) error {
 
 	if v.Responses() == nil {
 		return errors.New(`missing required field "responses"`)
+	}
+
+	if err := checkUniqueParameters(v); err != nil {
+		return errors.Wrap(err, `invalid operation`)
 	}
 
 	inMap := make(map[Location][]string) // map of parameter location to param name
