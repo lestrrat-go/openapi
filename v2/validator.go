@@ -196,7 +196,7 @@ func (val *validator) VisitParameter(ctx context.Context, v Parameter) error {
 	case String, Number, Integer, Boolean:
 	case Array:
 		if v.Items() == nil {
-			return errors.Errorf(`invalid paramter: for {type: array}, "items" field must be specified`)
+			return errors.Errorf(`invalid parameter: for {type: array}, "items" field must be specified`)
 		}
 	case File:
 		if v.In() != InForm {
@@ -235,3 +235,23 @@ func (val *validator) VisitExternalDocumentation(ctx context.Context, v External
 	return nil
 }
 
+func (val *validator) VisitItems(ctx context.Context, v Items) error {
+	switch v.Type() {
+	case String, Number, Integer, Boolean:
+	case Array:
+		if v.Items() == nil {
+			return errors.Errorf(`invalid item: for {type: array}, "items" field must be specified`)
+		}
+	default:
+		return errors.Errorf(`invalid item: type must be one of "string", "number", "integer", "boolean", or "array" (got %s)`, v.Type())
+	}
+
+	if cf := v.CollectionFormat(); cf != "" {
+		switch cf {
+		case CSV, SSV, TSV, Pipes:
+		default:
+			return errors.Errorf(`invalid item: collectionFormat must be one of "csv", "ssv", "tsv", or "pipes" (got %s)`, v.CollectionFormat())
+		}
+	}
+	return nil
+}
