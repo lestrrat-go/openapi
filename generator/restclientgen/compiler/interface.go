@@ -1,8 +1,6 @@
 package compiler
 
 import (
-	"fmt"
-	"io"
 	"sort"
 
 	openapi "github.com/lestrrat-go/openapi/v2"
@@ -12,14 +10,12 @@ type compileCtx struct {
 	client             *ClientDefinition
 	compiling          map[string]struct{}
 	currentCall        *Call
-	dir                string
-	packageName        string
+	isCompiling        map[interface{}]struct{}
+	isResolving        map[interface{}]struct{}
 	defaultServiceName string
 	resolver           openapi.Resolver
 	root               openapi.Swagger
-	exportNew          bool
 	consumes           []string
-	produces           []string
 	security           map[string]openapi.SecurityScheme
 }
 
@@ -39,78 +35,21 @@ type ClientDefinition struct {
 type Type interface {
 	Name() string
 	SetName(string)
+	ResolveIncomplete(ctx *compileCtx) (Type, error)
 }
+
+type Incomplete string
 
 type Builtin string
 
-func (b Builtin) Name() string {
-	return string(b)
-}
-
-func (b Builtin) SetName(s string) {
-	panic("oops?")
-}
-
 type Array struct {
 	name string
-	elem string
-}
-
-func (a *Array) Elem() string {
-	return a.elem
+	elem Type
 }
 
 type Struct struct {
 	name   string
 	fields []*Field
-}
-
-func (s *Struct) Name() string {
-	return s.name
-}
-
-func (s *Struct) Fields() []*Field {
-	return s.fields
-}
-
-func (a *Array) SetName(s string) {
-	a.name = s
-}
-
-func isBuiltinType(s string) bool {
-	switch s {
-	case "string",
-		"int", "int8", "int16", "int32", "int64",
-		"uint", "uint8", "uint16", "uint32", "uint64",
-		"float32", "float64", "byte", "rune", "bool":
-		return true
-	default:
-		return false
-	}
-}
-
-func (a *Array) Name() string {
-	if a.name == "" {
-		if isBuiltinType(a.elem) {
-			return "[]" + a.elem
-		} else {
-			return "[]*" + a.elem
-		}
-	}
-	return a.name
-}
-
-func (v *Struct) SetName(s string) {
-	v.name = s
-}
-
-func (v *Struct) WriteCode(dst io.Writer) error {
-	fmt.Fprintf(dst, "\ntype %s struct {", v.name)
-	for _, field := range v.fields {
-		fmt.Fprintf(dst, "\n%s %s `%s`", field.hints.GoName, field.typ, field.hints.GoTag)
-	}
-	fmt.Fprintf(dst, "\n}")
-	return nil
 }
 
 func (c *ClientDefinition) Definitions() map[string]TypeDefinition {
@@ -163,7 +102,6 @@ type Call struct {
 	requestPath      string
 	verb             string
 	consumes         []string
-	produces         []string
 	allFields        []*Field // only populated after a success compile
 	requireds        []*Field
 	optionals        []*Field
@@ -196,7 +134,7 @@ type Hints struct {
 type Field struct {
 	name     string // raw name
 	hints    Hints
-	typ      string
+	typ      Type
 	required bool
 	in       openapi.Location
 }
@@ -210,7 +148,7 @@ func (f *Field) Name() string {
 }
 
 func (f *Field) Type() string {
-	return f.typ
+	return f.typ.Name()
 }
 
 func (f *Field) In() openapi.Location {

@@ -24,6 +24,8 @@ func Compile(spec openapi.OpenAPI, defaultServiceName string) (*ClientDefinition
 	ctx := &compileCtx{
 		compiling:          make(map[string]struct{}),
 		defaultServiceName: defaultServiceName,
+		isCompiling:        make(map[interface{}]struct{}),
+		isResolving:        make(map[interface{}]struct{}),
 		resolver:           openapi.NewResolver(spec),
 		root:               spec,
 		client: &ClientDefinition{
@@ -48,6 +50,10 @@ func Compile(spec openapi.OpenAPI, defaultServiceName string) (*ClientDefinition
 		return nil, errors.Wrap(err, `failed to compile client`)
 	}
 
+	if err := ctx.resolveIncomplete(ctx.client); err != nil {
+		return nil, errors.Wrap(err, `failed to resolve incomplete types`)
+	}
+
 	for _, svc := range ctx.client.services {
 		sort.Slice(svc.calls, func(i, j int) bool {
 			return svc.calls[i].name < svc.calls[j].name
@@ -70,10 +76,53 @@ func Compile(spec openapi.OpenAPI, defaultServiceName string) (*ClientDefinition
 			sort.Slice(call.allFields, func(i, j int) bool {
 				return call.allFields[i].Name() < call.allFields[j].Name()
 			})
-
 		}
 	}
+
 	return ctx.client, nil
+}
+
+func (ctx *compileCtx) IsCompiling(v interface{}) bool {
+	_, ok := ctx.isCompiling[v]
+	return ok
+}
+
+func (ctx *compileCtx) MarkAsCompiling(v interface{}) func() {
+	ctx.isCompiling[v] = struct{}{}
+	return func() {
+		delete(ctx.isCompiling, v)
+	}
+}
+
+func (ctx *compileCtx) IsResolving(v interface{}) bool {
+	_, ok := ctx.isResolving[v]
+	return ok
+}
+
+func (ctx *compileCtx) MarkAsResolving(v interface{}) func() {
+	ctx.isResolving[v] = struct{}{}
+	return func() {
+		delete(ctx.isResolving, v)
+	}
+}
+
+func (ctx *compileCtx) resolveIncomplete(c *ClientDefinition) error {
+	for _, def := range c.definitions {
+		typ, err := def.Type.ResolveIncomplete(ctx)
+		if err != nil {
+			return errors.Wrap(err, `failed to resolve incomplete type in TypeDefinition`)
+		}
+		def.Type = typ
+	}
+
+	for name, typ := range c.types {
+		typ, err := typ.ResolveIncomplete(ctx)
+		if err != nil {
+			return errors.Wrap(err, `failed to resolve incomplete type in types`)
+		}
+		c.types[name] = typ
+	}
+	return nil
 }
 
 func compileGlobalDefaults(ctx *compileCtx) error {
@@ -199,6 +248,15 @@ func resolveReference(ctx *compileCtx, ref string, decodeFunc func([]byte) error
 	return nil
 }
 
+func lookupReferencedType(ctx *compileCtx, path string) (Type, bool) {
+	typdef, ok := ctx.client.definitions[path]
+	if !ok {
+		return nil, false
+	}
+
+	return typdef.Type, true
+}
+
 func registerType(ctx *compileCtx, path string, t Type, where string) {
 	if t.Name() == "" {
 		panic("anonymous type")
@@ -215,10 +273,6 @@ func registerType(ctx *compileCtx, path string, t Type, where string) {
 		Context: where,
 	}
 	ctx.client.types[t.Name()] = t
-}
-
-type openapiItemser interface {
-	Items() openapi.Items
 }
 
 func compileBuiltin(ctx *compileCtx, schema openapiTypeFormater) (Type, error) {
@@ -257,7 +311,7 @@ func compileArray(ctx *compileCtx, schema interface{}) (Type, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to compile array schema`)
 	}
-	return &Array{elem: subtyp.Name()}, nil
+	return &Array{elem: subtyp}, nil
 }
 
 func compileParameterToProperty(parentBuilder *openapi.SchemaBuilder, param openapi.Parameter) error {
@@ -286,7 +340,7 @@ func compileStruct(ctx *compileCtx, schema openapi.Schema) (Type, error) {
 				GoName: golang.ExportedName(name),
 				GoTag:  fmt.Sprintf(`json:"%s"`, name),
 			},
-			typ:      fieldMsg.Name(),
+			typ:      fieldMsg,
 			required: schema.IsRequiredProperty(name),
 		})
 	}
@@ -335,6 +389,17 @@ func compileSchema(ctx *compileCtx, schema openapi.Schema) (t Type, err error) {
 	}
 
 	if ref := schema.Reference(); ref != "" {
+		if typ, ok := lookupReferencedType(ctx, ref); ok {
+			return typ, nil
+		}
+
+		if ctx.IsCompiling(ref) {
+			return Incomplete(ref), nil
+		}
+
+		cancel := ctx.MarkAsCompiling(ref)
+		defer cancel()
+
 		var news openapi.Schema
 		fun := func(buf []byte) error {
 			return openapi.SchemaFromJSON(buf, &news)
@@ -466,7 +531,7 @@ func compileParameterType(ctx *compileCtx, param openapi.Parameter) (Type, error
 				return nil, errors.Wrap(err, `failed to compile array parameter`)
 			}
 
-			return &Array{elem: typ.Name()}, nil
+			return &Array{elem: typ}, nil
 		case openapi.Object:
 			typ, err := compileSchema(ctx, schema)
 			if err != nil {
