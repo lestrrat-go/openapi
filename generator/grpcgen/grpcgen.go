@@ -111,11 +111,13 @@ func Generate(ctx context.Context, spec openapi.OpenAPI, options ...Option) erro
 	*/
 
 	c := &genCtx{
-		Context:  ctx,
-		annotate: annotate,
-		dst:      dst,
-		resolver: resolver,
-		root:     spec,
+		Context:     ctx,
+		annotate:    annotate,
+		dst:         dst,
+		isCompiling: map[string]struct{}{},
+		isResolving: map[interface{}]struct{}{},
+		resolver:    resolver,
+		root:        spec,
 		proto: &Protobuf{
 			packageName:   packageName,
 			globalOptions: globalOptions,
@@ -141,6 +143,30 @@ func (ctx *genCtx) RegisterMessage(path string, typ Type) {
 func (ctx *genCtx) LookupType(path string) (Type, bool) {
 	typ, ok := ctx.types[path]
 	return typ, ok
+}
+
+func (ctx *genCtx) IsResolving(v interface{}) bool {
+	_, ok := ctx.isResolving[v]
+	return ok
+}
+
+func (ctx *genCtx) MarkAsResolving(v interface{}) func() {
+	ctx.isResolving[v] = struct{}{}
+	return func() {
+		delete(ctx.isResolving, v)
+	}
+}
+
+func (ctx *genCtx) IsCompiling(path string) bool {
+	_, ok := ctx.isCompiling[path]
+	return ok
+}
+
+func (ctx *genCtx) MarkAsCompiling(path string) func() {
+	ctx.isCompiling[path] = struct{}{}
+	return func() {
+		delete(ctx.isCompiling, path)
+	}
 }
 
 func grpcMethodName(oper openapi.Operation) string {
@@ -207,6 +233,8 @@ func compileGlobalDefinitions(ctx *genCtx) error {
 	done := ctx.Start("* Compiling Global Definitions")
 	defer done()
 
+	var messages []*Message
+	var names []string
 	for defiter := ctx.root.Definitions(); defiter.Next(); {
 		name, thing := defiter.Item()
 
@@ -221,7 +249,11 @@ func compileGlobalDefinitions(ctx *genCtx) error {
 			continue
 		}
 
-		ctx.log("* Compiling #/definitions/%s", name)
+		ref := "#/definitions/" + name
+		ctx.log("* Compiling Top Level definition %s", ref)
+		cancel := ctx.MarkAsCompiling(ref)
+		defer cancel()
+
 		typ, err := compileMessage(ctx, tmp)
 		if err != nil {
 			return errors.Wrapf(err, `failed to compile message #/definitions/%s`, name)
@@ -233,8 +265,25 @@ func compileGlobalDefinitions(ctx *genCtx) error {
 		}
 
 		m.name = codegen.MessageName(name)
-		ctx.proto.AddMessage(m)
+		names = append(names, name)
+		messages = append(messages, m)
 		ctx.RegisterMessage("#/definitions/"+name, m)
+	}
+
+	// Resolve incomplete types in the list
+	for i, msg := range messages {
+		ctx.log("Resolving incomplete types within #/definitions/%s", names[i])
+		typ, err := msg.ResolveIncomplete(ctx)
+		if err != nil {
+			return errors.Wrapf(err, `failed to resolve incomplete types for #/definitions/%s`, names[i])
+		}
+
+		m, ok := typ.(*Message)
+		if !ok {
+			return errors.Errorf(`expected resolved definition to be a message, got %T`, typ)
+		}
+
+		ctx.proto.AddMessage(m)
 	}
 	return nil
 }
@@ -412,16 +461,26 @@ func compileTypeWithName(ctx *genCtx, src openapi.SchemaConverter, name string) 
 		return nil, errors.Wrapf(err, `failed to extract schema out of %T`, src)
 	}
 
-	done := ctx.Start("* Compiling Type %s", schema.Type())
-	defer done()
-
 	var registerGlobal bool
 	if ref := schema.Reference(); ref != "" {
+		done := ctx.Start("* Compiling Reference %s", ref)
+		defer done()
+
 		typ, ok := ctx.LookupType(ref)
 		if ok {
 			ctx.log("* Reference %s already compileted to %s", ref, typ.Name())
 			return typ, nil
 		}
+
+		// If we had successfully compiled this reference, we would
+		// have found it in the previous LookupType call. if we haven't
+		// completed compiling it, we would see it in this next lookup
+		if ctx.IsCompiling(ref) {
+			ctx.log("* Circular dependency detected")
+			return Incomplete(ref), nil
+		}
+		cancel := ctx.MarkAsCompiling(ref)
+		defer cancel()
 
 		thing, err := ctx.resolver.Resolve(ref)
 		if err != nil {
@@ -454,6 +513,9 @@ func compileTypeWithName(ctx *genCtx, src openapi.SchemaConverter, name string) 
 			}()
 		}
 	}
+
+	done := ctx.Start("* Compiling Type %s", schema.Type())
+	defer done()
 
 	switch schema.Type() {
 	case openapi.String, openapi.Number, openapi.Boolean:
@@ -493,7 +555,6 @@ func compileField(ctx *genCtx, name string, s openapi.Schema) (*Field, error) {
 	}
 
 	// name must be normalized to something snake_case
-	log.Printf("field name %s", codegen.FieldName(name))
 	return &Field{
 		id:   1,
 		name: codegen.FieldName(name),

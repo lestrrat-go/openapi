@@ -26,14 +26,16 @@ type messageContainer interface {
 
 type genCtx struct {
 	context.Context
-	annotate bool
-	dst      io.Writer
-	indent   string
-	types    map[string]Type
-	resolver openapi.Resolver
-	root     openapi.OpenAPI
-	proto    *Protobuf
-	parent   messageContainer
+	annotate    bool
+	dst         io.Writer
+	isCompiling map[string]struct{}
+	isResolving map[interface{}]struct{}
+	indent      string
+	types       map[string]Type
+	resolver    openapi.Resolver
+	root        openapi.OpenAPI
+	proto       *Protobuf
+	parent      messageContainer
 }
 
 type Protobuf struct {
@@ -47,6 +49,7 @@ type Protobuf struct {
 
 type Type interface {
 	Name() string
+	ResolveIncomplete(*genCtx) (Type, error)
 }
 
 type Builtin string
@@ -82,3 +85,7 @@ type RPC struct {
 	verb        string
 	description string
 }
+
+// Incomplete is a type that can only be fulfilled once all of the
+// definitions have been compiled
+type Incomplete string
