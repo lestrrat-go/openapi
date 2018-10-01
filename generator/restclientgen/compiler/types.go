@@ -1,9 +1,6 @@
 package compiler
 
 import (
-	"fmt"
-	"io"
-
 	"github.com/pkg/errors"
 )
 
@@ -20,13 +17,15 @@ func (b Builtin) ResolveIncomplete(ctx *compileCtx) (Type, error) {
 }
 
 func (a *Array) Name() string {
-	if a.name == "" {
-		if isBuiltinType(a.elem.Name()) {
-			return "[]" + a.elem.Name()
-		} else {
-			return "[]*" + a.elem.Name()
+	/*
+		if a.name == "" {
+			if isBuiltinType(a.elem.Name()) {
+				return "[]" + a.elem.Name()
+			} else {
+				return "[]*" + a.elem.Name()
+			}
 		}
-	}
+	*/
 	return a.name
 }
 
@@ -81,16 +80,6 @@ func (v *Struct) ResolveIncomplete(ctx *compileCtx) (Type, error) {
 		cancel()
 	}
 	return v, nil
-}
-
-func (v *Struct) WriteCode(dst io.Writer) error {
-	fmt.Fprintf(dst, "\ntype %s struct {", v.name)
-	for _, field := range v.fields {
-		typ := field.typ.Name()
-		fmt.Fprintf(dst, "\n%s %s `%s`", field.hints.GoName, typ, field.hints.GoTag)
-	}
-	fmt.Fprintf(dst, "\n}")
-	return nil
 }
 
 func isBuiltinType(s string) bool {

@@ -524,32 +524,32 @@ func compileParameterType(ctx *compileCtx, param openapi.Parameter) (Type, error
 	if param.In() == openapi.InBody {
 		schema := param.Schema() // presence of this element should be guaranteed by calling validate
 		// If this is an array type, we create a []T  instead of type T struct { something []X }
+
+		var typ Type
 		switch schema.Type() {
 		case openapi.Array:
-			typ, err := compileSchema(ctx, schema.Items())
+			compiledTyp, err := compileSchema(ctx, schema.Items())
 			if err != nil {
 				return nil, errors.Wrap(err, `failed to compile array parameter`)
 			}
-
-			return &Array{elem: typ}, nil
+			typ = &Array{elem: compiledTyp}
 		case openapi.Object:
-			typ, err := compileSchema(ctx, schema)
+			compiledTyp, err := compileSchema(ctx, schema)
 			if err != nil {
 				return nil, errors.Wrap(err, `failed to compile object parameter`)
 			}
-
-			if typ.Name() == "" {
-				typ.SetName(golang.ExportedName(ctx.currentCall.name + "_" + param.Name()))
-			}
-
-			registerType(ctx, fmt.Sprintf("#/generated/%s", typ.Name()), typ, ctx.currentCall.name+" parameter")
-
-			return typ, nil
+			typ = compiledTyp
 		case openapi.String:
 			return compileBuiltin(ctx, schema)
 		default:
 			return nil, errors.Errorf(`unhandled parameter type %s`, strconv.Quote(string(schema.Type())))
 		}
+
+		if typ.Name() == "" {
+			typ.SetName(golang.ExportedName(ctx.currentCall.name + "_" + param.Name()))
+		}
+		registerType(ctx, fmt.Sprintf("#/generated/%s", typ.Name()), typ, ctx.currentCall.name+" parameter")
+		return typ, nil
 	}
 
 	switch param.Type() {
@@ -659,6 +659,7 @@ func compileCallParameters(ctx *compileCtx, oper openapi.Operation, call *Call) 
 			setLocation(typ, openapi.InBody)
 			extractFields(call, typ)
 			call.body = typ
+			registerType(ctx, fmt.Sprintf("#/generated/%s", typ.Name()), typ, call.name+" body")
 		default:
 			return errors.Errorf(`invalid location in parmaeter: %s`, param.In())
 		}

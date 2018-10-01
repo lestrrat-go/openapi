@@ -18,6 +18,23 @@ import (
 	"github.com/pkg/errors"
 )
 
+func goType(typ compiler.Type) string {
+	if name := typ.Name(); name != "" {
+		return name
+	}
+
+	switch typ := typ.(type) {
+	case *compiler.Array:
+		var prefix = "[]"
+		if !isBuiltinType(typ.Elem()) {
+			prefix = prefix + "*"
+		}
+		return prefix +typ.Elem()
+	default:
+		return "couldNotDeduce"
+	}
+}
+
 func Generate(spec openapi.Swagger, options ...Option) error {
 	var dir string
 	var packageName string
@@ -71,10 +88,6 @@ func Generate(spec openapi.Swagger, options ...Option) error {
 		exportNew:   exportNew,
 		client:      client,
 	}
-	if err := writeTypesFile(&ctx); err != nil {
-		return errors.Wrap(err, `failed to write options file`)
-	}
-
 	// define options
 	if err := writeOptionsFile(&ctx); err != nil {
 		return errors.Wrap(err, `failed to write options file`)
@@ -86,6 +99,10 @@ func Generate(spec openapi.Swagger, options ...Option) error {
 
 	if err := writeServiceFiles(&ctx); err != nil {
 		return errors.Wrap(err, `failed to generate service code`)
+	}
+
+	if err := writeTypesFile(&ctx); err != nil {
+		return errors.Wrap(err, `failed to write options file`)
 	}
 
 	return nil
@@ -115,7 +132,12 @@ func writeTypesFile(ctx *Context) error {
 			fmt.Fprintf(dst, "\n\ntype %s []%s", t.Name(), t.Elem())
 		case *compiler.Struct:
 			fmt.Fprintf(dst, "\n\n// %s represents the data structure defined in %s", typ.Name(), typDef.Context)
-			t.WriteCode(dst)
+			fmt.Fprintf(dst, "\ntype %s struct {", t.Name())
+			for _, field := range t.Fields() {
+				hints := field.Hints()
+				fmt.Fprintf(dst, "\n%s %s `%s`", hints.GoName, goType(field.Type()), hints.GoTag)
+			}
+			fmt.Fprintf(dst, "\n}")
 		}
 	}
 
@@ -379,7 +401,7 @@ func formatCall(dst io.Writer, svcName string, call *compiler.Call) error {
 	log.Printf("      * Generating constructor")
 	fmt.Fprintf(dst, "\n\nfunc (svc *%s) %s(", svcName, call.Method())
 	for i, field := range call.Requireds() {
-		fmt.Fprintf(dst, "%s %s", codegen.UnexportedName(field.Hints().GoName), field.Type())
+		fmt.Fprintf(dst, "%s %s", codegen.UnexportedName(field.Hints().GoName), goType(field.Type()))
 		if i < len(call.Requireds())-1 {
 			fmt.Fprintf(dst, ", ")
 		}
@@ -401,8 +423,8 @@ func formatCall(dst io.Writer, svcName string, call *compiler.Call) error {
 
 	for _, optional := range call.Optionals() {
 		log.Printf("      * Generating optional method for %s", codegen.ExportedName(optional.Name()))
-		if strings.HasPrefix(optional.Type(), "[]") {
-			fmt.Fprintf(dst, "\n\nfunc (call *%s) %s(v ...%s) *%s {", call.Name(), codegen.ExportedName(optional.Name()), strings.TrimPrefix(optional.Type(), "[]"), call.Name())
+		if gotyp := goType(optional.Type()); strings.HasPrefix(gotyp, "[]") {
+			fmt.Fprintf(dst, "\n\nfunc (call *%s) %s(v ...%s) *%s {", call.Name(), codegen.ExportedName(optional.Name()), strings.TrimPrefix(gotyp, "[]"), call.Name())
 			fmt.Fprintf(dst, "\ncall.%[1]s.%[2]s = append(call.%[1]s.%[2]s, v...)", optional.ContainerName(), codegen.ExportedName(optional.Name()))
 			fmt.Fprintf(dst, "\nreturn call")
 			fmt.Fprintf(dst, "\n}")
@@ -470,7 +492,7 @@ func formatCall(dst io.Writer, svcName string, call *compiler.Call) error {
 	if call.Path() != nil {
 		for _, field := range call.Path().(*compiler.Struct).Fields() {
 			fmt.Fprintf(dst, "\npath = strings.Replace(path, `{%s}`, ", field.Name())
-			switch field.Type() {
+			switch goType(field.Type()) {
 			case "int64":
 				fmt.Fprintf(dst, "strconv.FormatInt(call.path.%s, 10)", codegen.ExportedName(field.Name()))
 			default:
@@ -484,13 +506,14 @@ func formatCall(dst io.Writer, svcName string, call *compiler.Call) error {
 		fmt.Fprintf(dst, "\nv := url.Values{}")
 		for _, query := range call.Query().(*compiler.Struct).Fields() {
 			// XXX This needs to be more robust
-			if query.Type() == "[]string" {
+			gotyp := goType(query.Type())
+			if gotyp == "[]string" {
 				fmt.Fprintf(dst, "\nfor _, param := range call.query.%s {", query.Hints().GoName)
 				fmt.Fprintf(dst, "\nv.Add(%s, param)", strconv.Quote(query.Name()))
 				fmt.Fprintf(dst, "\n}")
 			} else {
 				fmt.Fprintf(dst, "\nv.Add(%s, ", strconv.Quote(query.Name()))
-				switch query.Type() {
+				switch gotyp {
 				case "int64":
 					fmt.Fprintf(dst, "strconv.FormatInt(call.query.%s, 10)", codegen.ExportedName(query.Name()))
 				case "bool":

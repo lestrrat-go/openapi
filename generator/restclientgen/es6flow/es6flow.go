@@ -18,12 +18,17 @@ import (
 	"github.com/pkg/errors"
 )
 
-func esType(s string) string {
-	switch {
-	case strings.HasPrefix(s, "[]"):
-		return "Array<" + s[2:] + ">"
+func esType(typ compiler.Type) string {
+	if name := typ.Name(); name != "" {
+		return name
 	}
-	return s
+
+	switch typ := typ.(type) {
+	case *compiler.Array:
+		return "Array<" + typ.Elem() + ">"
+	default:
+		return "couldNotDeduce"
+	}
 }
 
 func Generate(spec openapi.Swagger, options ...Option) error {
@@ -272,7 +277,7 @@ func formatService(ctx *Context, dst io.Writer, svc *compiler.Service) error {
 
 		requireds := call.Requireds()
 		for i, field := range requireds {
-			fmt.Fprintf(dst, "%s: %s", codegen.FieldName(field.Name()), jsType(field.Type()))
+			fmt.Fprintf(dst, "%s: %s", codegen.FieldName(field.Name()), esType(field.Type()))
 			if i < len(requireds)-1 {
 				fmt.Fprintf(dst, ", ")
 			}
@@ -299,6 +304,8 @@ func jsType(s string) string {
 }
 
 func formatCall(ctx *Context, dst io.Writer, call *compiler.Call) error {
+	log.Printf("formatCall for %s", call.Name())
+
 	for _, typ := range []compiler.Type{call.Body(), call.Path(), call.Query(), call.Header()} {
 		if typ == nil {
 			continue
@@ -314,7 +321,7 @@ func formatCall(ctx *Context, dst io.Writer, call *compiler.Call) error {
 	fmt.Fprintf(dst, "\n_options :?ClientOptions;")
 	fmt.Fprintf(dst, "\n_server :string;")
 	if bodyType := call.Body(); bodyType != nil {
-		fmt.Fprintf(dst, "\n_body :%s;", jsType(bodyType.Name()))
+		fmt.Fprintf(dst, "\n_body :%s; // %#v", jsType(bodyType.Name()), bodyType)
 	}
 	if queryType := call.Query(); queryType != nil {
 		fmt.Fprintf(dst, "\n_query :%s", queryType.Name())
@@ -326,7 +333,7 @@ func formatCall(ctx *Context, dst io.Writer, call *compiler.Call) error {
 	fmt.Fprintf(dst, "\n\nconstructor(server :string, options: ?ClientOptions")
 	if requireds := call.Requireds(); len(requireds) > 0 {
 		for _, field := range requireds {
-			fmt.Fprintf(dst, ", %s: %s", codegen.FieldName(field.Name()), jsType(field.Type()))
+			fmt.Fprintf(dst, ", %s: %s", codegen.FieldName(field.Name()), esType(field.Type()))
 		}
 	}
 	fmt.Fprintf(dst, ") {")
@@ -341,7 +348,7 @@ func formatCall(ctx *Context, dst io.Writer, call *compiler.Call) error {
 
 	if optionals := call.Optionals(); len(optionals) > 0 {
 		for _, field := range optionals {
-			fmt.Fprintf(dst, "\n\n%s(v: %s) :%s{", codegen.MethodName(field.Name()), jsType(field.Type()), codegen.ClassName(call.Name()))
+			fmt.Fprintf(dst, "\n\n%s(v: %s) :%s{", codegen.MethodName(field.Name()), esType(field.Type()), codegen.ClassName(call.Name()))
 			fmt.Fprintf(dst, "\nthis._%s.%s = v;", field.ContainerName(), codegen.FieldName(field.Name()))
 			fmt.Fprintf(dst, "\nreturn this;")
 			fmt.Fprintf(dst, "\n}")
@@ -368,7 +375,7 @@ func formatCall(ctx *Context, dst io.Writer, call *compiler.Call) error {
 		if pp, ok := call.Path().(*compiler.Struct); ok {
 			for _, param := range pp.Fields() {
 				fmt.Fprintf(dst, "\nif (this.%[1]s !== null && this.%[1]s !== undefined) {", codegen.FieldName(param.Name()))
-				if strings.HasPrefix(param.Type(), "Array<") {
+				if strings.HasPrefix(esType(param.Type()), "Array<") {
 					fmt.Fprintf(dst, "query.push(this.%s.map(v => '%s=' + encodeURIComponent(v)).join('&'))", codegen.FieldName(param.Name()), param.Name())
 				} else {
 					fmt.Fprintf(dst, "query.push('%s=' + encodeURIComponent(this.%s))", param.Name(), codegen.FieldName(param.Name()))
@@ -442,36 +449,48 @@ func formatCall(ctx *Context, dst io.Writer, call *compiler.Call) error {
 }
 
 func formatCallPayload(ctx *Context, dst io.Writer, call *compiler.Call, typ compiler.Type) error {
-	fields := typ.(*compiler.Struct).Fields()
 	fmt.Fprintf(dst, "\n\nclass %s {", codegen.ClassName(typ.Name()))
-	for _, field := range fields {
-		fmt.Fprintf(dst, "\n%s: %s;", codegen.FieldName(field.Name()), esType(field.Type()))
-	}
+	switch typ := typ.(type) {
+	case *compiler.Array:
+		fmt.Fprintf(dst, "\nelements: %s;", typ.Elem())
+		fmt.Fprintf(dst, "\n\n_json(): %s {", typ.Elem())
+		fmt.Fprintf(dst, "\nreturn JSON.stringify(this.elements);")
+		fmt.Fprintf(dst, "\n}")
 
-	fmt.Fprintf(dst, "\n\n_json(): string {")
-	fmt.Fprintf(dst, "\nlet object = {")
-	for i, field := range fields {
-		fmt.Fprintf(dst, "\n%s: this.%s", field.Name(), codegen.FieldName(field.Name()))
-		if i < len(fields)-1 {
-			fmt.Fprintf(dst, ",")
+		fmt.Fprintf(dst, "\n\n_form(): FormData {")
+		fmt.Fprintf(dst, "\nlet form = new FormData();")
+		fmt.Fprintf(dst, "\nthis.elements.forEach(v => form.append(%s, String(v)));", codegen.FieldName(typ.Name()))
+		fmt.Fprintf(dst, "\n}")
+	case *compiler.Struct:
+		fields := typ.Fields()
+		for _, field := range fields {
+			fmt.Fprintf(dst, "\n%s: %s; // %#v", codegen.FieldName(field.Name()), esType(field.Type()), field)
 		}
-	}
-	fmt.Fprintf(dst, "\n};")
-	fmt.Fprintf(dst, "\nreturn JSON.stringify(object);")
-	fmt.Fprintf(dst, "\n}")
 
-	fmt.Fprintf(dst, "\n\n_form(): FormData {")
-	fmt.Fprintf(dst, "\nlet form = new FormData();")
-	for _, field := range fields {
-		if strings.HasPrefix(field.Type(), "[]") {
-			fmt.Fprintf(dst, "\nthis.%s.forEach(v => form.append(%s, String(v)));", codegen.FieldName(field.Name()), strconv.Quote(field.Name()))
-		} else {
-			fmt.Fprintf(dst, "\nform.append(%s, String(this.%s));", strconv.Quote(field.Name()), codegen.FieldName(field.Name()))
+		fmt.Fprintf(dst, "\n\n_json(): string {")
+		fmt.Fprintf(dst, "\nlet object = {")
+		for i, field := range fields {
+			fmt.Fprintf(dst, "\n%s: this.%s", field.Name(), codegen.FieldName(field.Name()))
+			if i < len(fields)-1 {
+				fmt.Fprintf(dst, ",")
+			}
 		}
-	}
-	fmt.Fprintf(dst, "\nreturn form;")
-	fmt.Fprintf(dst, "\n}")
+		fmt.Fprintf(dst, "\n};")
+		fmt.Fprintf(dst, "\nreturn JSON.stringify(object);")
+		fmt.Fprintf(dst, "\n}")
 
+		fmt.Fprintf(dst, "\n\n_form(): FormData {")
+		fmt.Fprintf(dst, "\nlet form = new FormData();")
+		for _, field := range fields {
+			if strings.HasPrefix(esType(field.Type()), "Array<") {
+				fmt.Fprintf(dst, "\nthis.%s.forEach(v => form.append(%s, String(v)));", codegen.FieldName(field.Name()), strconv.Quote(field.Name()))
+			} else {
+				fmt.Fprintf(dst, "\nform.append(%s, String(this.%s));", strconv.Quote(field.Name()), codegen.FieldName(field.Name()))
+			}
+		}
+		fmt.Fprintf(dst, "\nreturn form;")
+		fmt.Fprintf(dst, "\n}")
+	}
 	fmt.Fprintf(dst, "\n}")
 	return nil
 }

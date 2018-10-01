@@ -147,8 +147,8 @@ func (f *Field) Name() string {
 	return f.name
 }
 
-func (f *Field) Type() string {
-	return f.typ.Name()
+func (f *Field) Type() Type {
+	return f.typ
 }
 
 func (f *Field) In() openapi.Location {
