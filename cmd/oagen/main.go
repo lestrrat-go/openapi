@@ -5,6 +5,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -100,7 +101,7 @@ func _main() error {
 	}
 }
 
-func doProtobuf(args []string) error {
+func doProtobuf(args []string) (err error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -109,7 +110,7 @@ func doProtobuf(args []string) error {
 	fs := flag.NewFlagSet("protobuf", flag.ContinueOnError)
 	fs.Var(&cmd.globalOptions, "global-option", "key=value pair of global options")
 	fs.StringVar(&cmd.packageName, "package", "", "package name to use in protobuf declaration")
-	fs.StringVar(&cmd.output, "output", "output.proto", "protobuf file to write result")
+	fs.StringVar(&cmd.output, "output", "", "protobuf file to write result")
 	fs.BoolVar(&cmd.annotate, "annotate", true, "place google.api.http annotation")
 	if err := fs.Parse(args); err != nil {
 		if err == flag.ErrHelp {
@@ -143,14 +144,25 @@ func doProtobuf(args []string) error {
 
 	var options []grpcgen.Option
 
-	tmpfile, err := ioutil.TempFile("", cmd.output)
-	if err != nil {
-		return errors.Wrap(err, `failed to create temporary file`)
+	var dst io.Writer
+	if cmd.output == "" {
+		dst = os.Stdout
+	} else {
+		tmpfile, err := ioutil.TempFile("", cmd.output)
+		if err != nil {
+			return errors.Wrap(err, `failed to create temporary file`)
+		}
+		defer func() {
+			if e := os.Rename(tmpfile.Name(), cmd.output); e != nil {
+				err = errors.Wrapf(e, `failed to rename temporary file %s to %s`, tmpfile.Name(), cmd.output)
+			}
+		}()
+		defer tmpfile.Close()
+		defer os.Remove(tmpfile.Name())
+		dst = tmpfile
 	}
-	defer tmpfile.Close()
-	defer os.Remove(tmpfile.Name())
 
-	options = append(options, grpcgen.WithDestination(tmpfile))
+	options = append(options, grpcgen.WithDestination(dst))
 	options = append(options, grpcgen.WithAnnotation(cmd.annotate))
 	options = append(options, grpcgen.WithPackageName(cmd.packageName))
 	for key, value := range cmd.globalOptions {
@@ -168,10 +180,8 @@ func doProtobuf(args []string) error {
 		}
 	}
 
-	if err := os.Rename(tmpfile.Name(), cmd.output); err != nil {
-		return errors.Wrapf(err, `failed to rename temporary file %s to %s`, tmpfile.Name(), cmd.output)
+	if cmd.output == "" {
 	}
-
 	return nil
 }
 
