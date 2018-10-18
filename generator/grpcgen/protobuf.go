@@ -1,6 +1,8 @@
 package grpcgen
 
-import "github.com/pkg/errors"
+import (
+	"github.com/pkg/errors"
+)
 
 func (v *Protobuf) AddImport(lib string) {
 	v.imports[lib] = struct{}{}
@@ -123,7 +125,7 @@ func (v Incomplete) Name() string {
 }
 
 func (v Incomplete) ResolveIncomplete(ctx *genCtx) (Type, error) {
-	if typ, ok :=ctx.LookupType(string(v)); ok {
+	if typ, ok := ctx.LookupType(string(v)); ok {
 		return typ, nil
 	}
 	return nil, errors.Errorf(`invalid ref: %s`, v)

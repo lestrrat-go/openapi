@@ -25,6 +25,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -142,6 +143,14 @@ func (ctx *genCtx) RegisterMessage(path string, typ Type) {
 
 func (ctx *genCtx) LookupType(path string) (Type, bool) {
 	typ, ok := ctx.types[path]
+	if ok {
+		// We need to clone this, otherwise we have problems
+		// by consumers who may want to modify this value
+		rv := reflect.ValueOf(typ)
+		copy := reflect.New(rv.Elem().Type())
+		copy.Elem().Set(rv.Elem())
+		typ = copy.Interface().(Type)
+	}
 	return typ, ok
 }
 
@@ -254,20 +263,27 @@ func compileGlobalDefinitions(ctx *genCtx) error {
 		cancel := ctx.MarkAsCompiling(ref)
 		defer cancel()
 
-		typ, err := compileMessage(ctx, tmp)
-		if err != nil {
-			return errors.Wrapf(err, `failed to compile message #/definitions/%s`, name)
-		}
+		// If this is a message type (object), then we compile it as such.
+		// Otherwise the user is simply using it as a way to reuse components,
+		// so we ignore it
+		if tmp.Type() != openapi.Object {
+			ctx.log(`* referenced schema is not an object, not compiling as protobuf message`)
+		} else {
+			typ, err := compileMessage(ctx, tmp)
+			if err != nil {
+				return errors.Wrapf(err, `failed to compile message #/definitions/%s`, name)
+			}
 
-		m, ok := typ.(*Message)
-		if !ok {
-			return errors.Errorf(`expected global definition to compile into a message, got %T`, typ)
-		}
+			m, ok := typ.(*Message)
+			if !ok {
+				return errors.Errorf(`expected global definition to compile into a message, got %T`, typ)
+			}
 
-		m.name = codegen.MessageName(name)
-		names = append(names, name)
-		messages = append(messages, m)
-		ctx.RegisterMessage("#/definitions/"+name, m)
+			m.name = codegen.MessageName(name)
+			names = append(names, name)
+			messages = append(messages, m)
+			ctx.RegisterMessage("#/definitions/"+name, m)
+		}
 	}
 
 	// Resolve incomplete types in the list
@@ -401,6 +417,20 @@ func compileMessage(ctx *genCtx, schema openapi.Schema) (Type, error) {
 	done := ctx.Start("* Compiling Message")
 	defer done()
 
+	if ref := schema.Reference(); ref != "" {
+		typ, ok := ctx.LookupType(ref)
+		if ok {
+			ctx.log("* Reference %s already compiled to %s", ref, typ.Name())
+			return typ, nil
+		}
+
+		var tmp openapi.Schema
+		if err := common.RoundTripDecode(&tmp, typ, openapi.SchemaFromJSON); err != nil {
+			return nil, errors.Wrapf(err, `expected openapi.Schema %s, got %T`, ref, typ)
+		}
+		schema = tmp
+	}
+
 	// it better be an object
 	switch schema.Type() {
 	case openapi.Object:
@@ -422,7 +452,7 @@ func compileMessage(ctx *genCtx, schema openapi.Schema) (Type, error) {
 			return nil, errors.Wrap(err, `failed to create new schema wrapping array`)
 		}
 	default:
-		return nil, errors.Errorf(`compileMessage: expected type "object", got %s`, schema.Type())
+		return nil, errors.Errorf(`compileMessage: expected type "array" or "object", got %s`, schema.Type())
 	}
 
 	var m Message
@@ -468,7 +498,7 @@ func compileTypeWithName(ctx *genCtx, src openapi.SchemaConverter, name string) 
 
 		typ, ok := ctx.LookupType(ref)
 		if ok {
-			ctx.log("* Reference %s already compileted to %s", ref, typ.Name())
+			ctx.log("* Reference %s already compiled to %s", ref, typ.Name())
 			return typ, nil
 		}
 
@@ -487,30 +517,29 @@ func compileTypeWithName(ctx *genCtx, src openapi.SchemaConverter, name string) 
 			return nil, errors.Wrapf(err, `failed to resolve reference %s`, ref)
 		}
 
-		// Are we sure this should always resolve to a schema?
 		var tmp openapi.Schema
 		if err := common.RoundTripDecode(&tmp, thing, openapi.SchemaFromJSON); err != nil {
 			return nil, errors.Errorf(`expected reference %s to resolve to a Schema`, ref)
 		}
-
+		registerGlobal = true
 		schema = tmp
-
-		if strings.HasPrefix(ref, "#/definitions/") {
-			// If this refers to a global definition but the previous LookupType
-			// failed, this can only mean that we encountered a global definition
-			// that refers to another global definition.
-			registerGlobal = true
-			defer func() {
-				if err != nil {
-					return
-				}
-				if m, ok := result.(*Message); ok {
-					m.name = codegen.MessageName(strings.TrimPrefix(ref, "#/definitions/"))
-					m.reference = ref
-					ctx.log("* Adding message %s (global)", m.Name())
-					ctx.RegisterMessage(ref, m)
-				}
-			}()
+		if schema.Type() == openapi.Object {
+			if strings.HasPrefix(ref, "#/definitions/") {
+				// If this refers to a global definition but the previous LookupType
+				// failed, this can only mean that we encountered a global definition
+				// that refers to another global definition.
+				defer func() {
+					if err != nil {
+						return
+					}
+					if m, ok := result.(*Message); ok {
+						m.name = codegen.MessageName(strings.TrimPrefix(ref, "#/definitions/"))
+						m.reference = ref
+						ctx.log("* Adding message %s (global)", m.Name())
+						ctx.RegisterMessage(ref, m)
+					}
+				}()
+			}
 		}
 	}
 
@@ -617,7 +646,7 @@ func compileRPC(ctx *genCtx, oper openapi.Operation) (*RPC, error) {
 		rpc.description = desc
 	}
 
-	done := ctx.Start("* Compiling %s", rpc.name)
+	done := ctx.Start("* Compiling RPC %s", rpc.name)
 	defer done()
 
 	paramiter := oper.Parameters()
@@ -627,7 +656,10 @@ func compileRPC(ctx *genCtx, oper openapi.Operation) (*RPC, error) {
 			return nil, errors.Wrap(err, `failed to compile request parameters into message`)
 		}
 		rpc.in = msg
-		ctx.proto.AddMessage(msg)
+
+		if _, ok := ctx.proto.LookupMessage(msg.name); !ok {
+			ctx.proto.AddMessage(msg)
+		}
 	}
 
 	for resiter := oper.Responses().Responses(); resiter.Next(); {
@@ -650,8 +682,10 @@ func compileRPC(ctx *genCtx, oper openapi.Operation) (*RPC, error) {
 				return nil, errors.Wrapf(err, `failed to compile response message for %s (code = %s)`, oper.PathItem().Path(), code)
 			}
 			msg := typ.(*Message)
-			msg.name = name
-			ctx.proto.AddMessage(msg)
+			if _, ok := ctx.proto.LookupMessage(name); !ok {
+				msg.name = name
+				ctx.proto.AddMessage(msg)
+			}
 
 			rpc.out = msg
 			break
