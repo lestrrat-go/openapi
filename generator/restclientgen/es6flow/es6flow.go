@@ -96,19 +96,20 @@ func Generate(spec openapi.Swagger, options ...Option) error {
 		return errors.Wrap(err, `failed to generate client code`)
 	}
 
-	if err := RunFlow(); err != nil {
+	if err := runFlow(&ctx); err != nil {
 		return errors.Wrap(err, `failed to run "npm run flow"`)
 	}
 
 	return nil
 }
 
-func RunFlow() error {
+func runFlow(ctx *Context) error {
 	cmd := exec.Command("npm", "run", "flow")
+	cmd.Dir = ctx.dir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		return errors.Wrap(err, `failed to eecute "flow" tool`)
+		return errors.Wrap(err, `failed to execute "flow" tool`)
 	}
 
 	return nil
@@ -321,13 +322,16 @@ func formatCall(ctx *Context, dst io.Writer, call *compiler.Call) error {
 	fmt.Fprintf(dst, "\n_options :?ClientOptions;")
 	fmt.Fprintf(dst, "\n_server :string;")
 	if bodyType := call.Body(); bodyType != nil {
-		fmt.Fprintf(dst, "\n_body :%s; // %#v", jsType(bodyType.Name()), bodyType)
+		fmt.Fprintf(dst, "\n_body :%s;", jsType(bodyType.Name()))
 	}
 	if queryType := call.Query(); queryType != nil {
 		fmt.Fprintf(dst, "\n_query :%s", queryType.Name())
 	}
 	if pathType := call.Path(); pathType != nil {
 		fmt.Fprintf(dst, "\n_path :%s", pathType.Name())
+	}
+	if headerType := call.Header(); headerType != nil {
+		fmt.Fprintf(dst, "\n_header :%s", headerType.Name())
 	}
 
 	fmt.Fprintf(dst, "\n\nconstructor(server :string, options: ?ClientOptions")
@@ -464,13 +468,13 @@ func formatCallPayload(ctx *Context, dst io.Writer, call *compiler.Call, typ com
 	case *compiler.Struct:
 		fields := typ.Fields()
 		for _, field := range fields {
-			fmt.Fprintf(dst, "\n%s: %s; // %#v", codegen.FieldName(field.Name()), esType(field.Type()), field)
+			fmt.Fprintf(dst, "\n%s: %s;", codegen.FieldName(field.Name()), esType(field.Type()))
 		}
 
 		fmt.Fprintf(dst, "\n\n_json(): string {")
 		fmt.Fprintf(dst, "\nlet object = {")
 		for i, field := range fields {
-			fmt.Fprintf(dst, "\n%s: this.%s", field.Name(), codegen.FieldName(field.Name()))
+			fmt.Fprintf(dst, "\n%s: this.%s", strconv.Quote(field.Name()), codegen.FieldName(field.Name()))
 			if i < len(fields)-1 {
 				fmt.Fprintf(dst, ",")
 			}
