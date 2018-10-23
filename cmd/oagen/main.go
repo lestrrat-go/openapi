@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"sort"
@@ -101,7 +102,7 @@ func _main() error {
 	}
 }
 
-func doProtobuf(args []string) (err error) {
+func doProtobuf(args []string) (_err error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -152,13 +153,16 @@ func doProtobuf(args []string) (err error) {
 		if err != nil {
 			return errors.Wrap(err, `failed to create temporary file`)
 		}
-		defer func() {
-			if e := os.Rename(tmpfile.Name(), cmd.output); e != nil {
-				err = errors.Wrapf(e, `failed to rename temporary file %s to %s`, tmpfile.Name(), cmd.output)
-			}
-		}()
 		defer tmpfile.Close()
 		defer os.Remove(tmpfile.Name())
+		log.Printf("Writing result to temporary file %s", tmpfile.Name())
+		defer func() {
+			if e := os.Rename(tmpfile.Name(), cmd.output); e != nil {
+				_err = errors.Wrapf(e, `failed to rename temporary file %s to %s`, tmpfile.Name(), cmd.output)
+				return
+			}
+			log.Printf("Successfully renamed %s to %s", tmpfile.Name(), cmd.output)
+		}()
 		dst = tmpfile
 	}
 
