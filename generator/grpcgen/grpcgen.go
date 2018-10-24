@@ -144,12 +144,16 @@ func (ctx *genCtx) RegisterMessage(path string, typ Type) {
 func (ctx *genCtx) LookupType(path string) (Type, bool) {
 	typ, ok := ctx.types[path]
 	if ok {
-		// We need to clone this, otherwise we have problems
-		// by consumers who may want to modify this value
+		// If this is a pointer we need to clone this,
+		// otherwise we have problems by consumers who
+		// may want to modify this value
 		rv := reflect.ValueOf(typ)
-		copy := reflect.New(rv.Elem().Type())
-		copy.Elem().Set(rv.Elem())
-		typ = copy.Interface().(Type)
+		switch rv.Kind() {
+		case reflect.Ptr, reflect.Interface:
+			copy := reflect.New(rv.Elem().Type())
+			copy.Elem().Set(rv.Elem())
+			typ = copy.Interface().(Type)
+		}
 	}
 	return typ, ok
 }
@@ -268,6 +272,12 @@ func compileGlobalDefinitions(ctx *genCtx) error {
 		// so we ignore it
 		if tmp.Type() != openapi.Object {
 			ctx.log(`* referenced schema is not an object, not compiling as protobuf message`)
+			typ, err := compileType(ctx, tmp)
+			if err != nil {
+				return errors.Wrapf(err, `failed to compile definition #/definitions/%s`, name)
+			}
+
+			ctx.RegisterMessage("#/definitions/"+name, typ)
 		} else {
 			typ, err := compileMessage(ctx, tmp)
 			if err != nil {
@@ -617,7 +627,7 @@ func compileRPCParameters(ctx *genCtx, name string, iter *openapi.ParameterListI
 			typ, err = compileType(ctx, param)
 		}
 		if err != nil {
-			return nil, errors.Wrap(err, `failed to deduce gRPC type`)
+			return nil, errors.Wrapf(err, `failed to deduce gRPC type for parameter %s`, strconv.Quote(param.Name()))
 		}
 
 		// if this type was not a builtin, we need to register it
