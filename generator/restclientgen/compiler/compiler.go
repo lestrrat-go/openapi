@@ -412,7 +412,12 @@ func compileSchema(ctx *compileCtx, schema openapi.Schema) (t Type, err error) {
 		defer func() {
 			if strings.HasPrefix(ref, "#/definitions/") {
 				n := golang.ExportedName(strings.TrimPrefix(ref, "#/definitions/"))
-				t.SetName(n)
+				// we shall only name things if it's possible to do so
+				// TODO: make a separate type that allows us to distinquish
+				// Builtin
+				if _, ok := t.(Builtin); !ok {
+					t.SetName(n)
+				}
 			}
 			registerType(ctx, ref, t, ref)
 		}()

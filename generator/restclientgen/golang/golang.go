@@ -429,7 +429,7 @@ func formatCall(dst io.Writer, svcName string, call *compiler.Call) error {
 			fmt.Fprintf(dst, "\nreturn call")
 			fmt.Fprintf(dst, "\n}")
 		} else {
-			fmt.Fprintf(dst, "\n\nfunc (call *%s) %s(v %s) *%s {", call.Name(), stringutil.Camel(optional.Name()), optional.Type(), call.Name())
+			fmt.Fprintf(dst, "\n\nfunc (call *%s) %s(v %s) *%s {", call.Name(), stringutil.Camel(optional.Name()), optional.Type().Name(), call.Name())
 			fmt.Fprintf(dst, "\ncall.%s.%s = v", optional.ContainerName(), codegen.ExportedName(optional.Name()))
 			fmt.Fprintf(dst, "\nreturn call")
 			fmt.Fprintf(dst, "\n}")

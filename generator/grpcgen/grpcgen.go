@@ -408,12 +408,23 @@ func compileBuiltin(ctx *genCtx, s openapi.Schema) (Type, error) {
 		return Builtin("bool"), nil
 	case openapi.String:
 		return Builtin(s.Type()), nil
-	case openapi.Integer:
-		switch s.Format() {
-		case "int64":
-			return Builtin("int64"), nil
+	case openapi.Number:
+		switch f := s.Format(); f {
+		case openapi.Float, openapi.Double:
+			return Builtin(f), nil
+		case "":
+			return Builtin(openapi.Float), nil
 		default:
-			return Builtin("int"), nil
+			return nil, errors.Errorf(`invalid number format %s`, f)
+		}
+	case openapi.Integer:
+		switch f := s.Format(); f {
+		case openapi.Int64, openapi.Int32:
+			return Builtin(f), nil
+		case "":
+			return Builtin(openapi.Int32), nil
+		default:
+			return nil, errors.Errorf(`invalid integer format %s`, f)
 		}
 	default:
 		return nil, errors.Errorf(`unknown builtin %s`, s.Type())
@@ -557,7 +568,7 @@ func compileTypeWithName(ctx *genCtx, src openapi.SchemaConverter, name string) 
 	defer done()
 
 	switch schema.Type() {
-	case openapi.String, openapi.Number, openapi.Boolean:
+	case openapi.String, openapi.Number, openapi.Boolean, openapi.Integer:
 		return compileBuiltin(ctx, schema)
 	case openapi.Object:
 		typ, err := compileMessage(ctx, schema)
