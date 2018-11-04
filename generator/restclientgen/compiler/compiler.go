@@ -263,6 +263,9 @@ func registerType(ctx *compileCtx, path string, t Type, where string) {
 	if t.Name() == "" {
 		panic("anonymous type")
 	}
+	if _, ok := t.(Builtin); ok {
+		return
+	}
 
 	if _, ok := ctx.client.types[t.Name()]; ok {
 		return

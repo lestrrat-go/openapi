@@ -164,6 +164,35 @@ func writeTypesClientOptions(ctx *Context) error {
 	return nil
 }
 
+func allTypes(ctx *Context) []compiler.TypeDefinition {
+	// find all calls in all services, and exclude them from type
+	// definitions in this file
+	payloads:= make(map[string]struct{})
+	for _, svc := range ctx.client.Services() {
+		for _, call := range svc.Calls() {
+			for _, typ := range []compiler.Type{call.Body(), call.Path(), call.Query(), call.Header()} {
+				if typ == nil {
+					continue
+				}
+
+				payloads[typ.Name()] = struct{}{}
+			}
+		}
+	}
+
+	var typDefs []compiler.TypeDefinition
+	for _, typ := range ctx.client.Definitions() {
+		if _, ok := payloads[typ.Type.Name()]; ok {
+			continue
+		}
+		typDefs = append(typDefs, typ)
+	}
+	sort.Slice(typDefs, func(i, j int) bool {
+		return typDefs[i].Type.Name() < typDefs[j].Type.Name()
+	})
+	return typDefs
+}
+
 func writeTypesFile(ctx *Context) error {
 	fn := filepath.Join(ctx.dir, "types.js")
 	log.Printf("Generating %s", fn)
@@ -172,17 +201,7 @@ func writeTypesFile(ctx *Context) error {
 	var dst io.Writer = &buf
 	codegen.WritePreamble(dst, ctx.packageName)
 
-	var typDefs []compiler.TypeDefinition
-	for _, typ := range ctx.client.Definitions() {
-		typDefs = append(typDefs, typ)
-	}
-	sort.Slice(typDefs, func(i, j int) bool {
-		return typDefs[i].Type.Name() < typDefs[j].Type.Name()
-	})
-
-	log.Printf("  * %d types to define", len(typDefs))
-
-	for _, typDef := range typDefs {
+	for _, typDef := range allTypes(ctx) {
 		typ := typDef.Type
 		log.Printf("   * Generating definition for %s", typ.Name())
 		switch t := typ.(type) {
@@ -277,45 +296,62 @@ func formatClient(ctx *Context, dst io.Writer, cl *compiler.ClientDefinition) er
 
 func formatService(ctx *Context, dst io.Writer, svc *compiler.Service) error {
 	log.Printf(" * Generating Service %s", svc.Name())
-	codegen.WritePreamble(dst, ctx.packageName)
 
-	fmt.Fprintf(dst, "\n\nimport RESTResponse from '../types/response';")
-	fmt.Fprintf(dst, "\n\nimport type { ClientOptions } from '../types/client_options';")
+	// imports need to be written later, because we need to pull types
+	// from types.js
+	var buf bytes.Buffer
+
+	codegen.WritePreamble(&buf, ctx.packageName)
+	fmt.Fprintf(&buf, "\n\nimport RESTResponse from '../types/response';")
+	fmt.Fprintf(&buf, "\n\nimport type { ClientOptions } from '../types/client_options';")
+
+	// import everything from types.js
+	fmt.Fprintf(&buf, "\n\nimport type { ")
+	typDefs := allTypes(ctx)
+	for i, typDef := range typDefs {
+		fmt.Fprintf(&buf, "%s", typDef.Type.Name())
+		if i < len(typDefs) - 1 {
+			fmt.Fprintf(&buf, ", ")
+		}
+	}
+	fmt.Fprintf(&buf, " } from '../types';")
 
 	for _, call := range svc.Calls() {
-		if err := formatCall(ctx, dst, call); err != nil {
+		if err := formatCall(ctx, &buf, call); err != nil {
 			return errors.Wrapf(err, `failed to format call %s`, call.Name())
 		}
 	}
 
-	fmt.Fprintf(dst, "\n\nexport default class %s {", svc.Name())
-	fmt.Fprintf(dst, "\nserver: string;")
-	fmt.Fprintf(dst, "\noptions: ?ClientOptions;")
-	fmt.Fprintf(dst, "\n\nconstructor(server: string, options: ?ClientOptions) {")
-	fmt.Fprintf(dst, "\nthis.server = server;")
-	fmt.Fprintf(dst, "\nthis.options = options;")
-	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(&buf, "\n\nexport default class %s {", svc.Name())
+	fmt.Fprintf(&buf, "\nserver: string;")
+	fmt.Fprintf(&buf, "\noptions: ?ClientOptions;")
+	fmt.Fprintf(&buf, "\n\nconstructor(server: string, options: ?ClientOptions) {")
+	fmt.Fprintf(&buf, "\nthis.server = server;")
+	fmt.Fprintf(&buf, "\nthis.options = options;")
+	fmt.Fprintf(&buf, "\n}")
 	for _, call := range svc.Calls() {
-		fmt.Fprintf(dst, "\n\n%s (", codegen.MethodName(call.Method()))
+		fmt.Fprintf(&buf, "\n\n%s (", codegen.MethodName(call.Method()))
 
 		requireds := call.Requireds()
 		for i, field := range requireds {
-			fmt.Fprintf(dst, "%s: %s", codegen.FieldName(field.Name()), esType(field.Type()))
+			fmt.Fprintf(&buf, "%s: %s", codegen.FieldName(field.Name()), esType(field.Type()))
 			if i < len(requireds)-1 {
-				fmt.Fprintf(dst, ", ")
+				fmt.Fprintf(&buf, ", ")
 			}
 		}
 
-		fmt.Fprintf(dst, ") :%s {", codegen.ClassName(call.Name()))
-		fmt.Fprintf(dst, "\nlet call = new %s(this.server, this.options", codegen.ClassName(call.Name()))
+		fmt.Fprintf(&buf, ") :%s {", codegen.ClassName(call.Name()))
+		fmt.Fprintf(&buf, "\nlet call = new %s(this.server, this.options", codegen.ClassName(call.Name()))
 		for _, field := range requireds {
-			fmt.Fprintf(dst, ", %s", codegen.FieldName(field.Name()))
+			fmt.Fprintf(&buf, ", %s", codegen.FieldName(field.Name()))
 		}
-		fmt.Fprintf(dst, ");")
-		fmt.Fprintf(dst, "\nreturn call;")
-		fmt.Fprintf(dst, "\n}")
+		fmt.Fprintf(&buf, ");")
+		fmt.Fprintf(&buf, "\nreturn call;")
+		fmt.Fprintf(&buf, "\n}")
 	}
-	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(&buf, "\n}")
+
+	buf.WriteTo(dst)
 	return nil
 }
 
@@ -327,7 +363,7 @@ func formatCall(ctx *Context, dst io.Writer, call *compiler.Call) error {
 			continue
 		}
 
-		if err := formatCallPayload(ctx, dst, call, typ); err != nil {
+		if err := formatCallPayload(ctx, dst, typ); err != nil {
 			return errors.Wrap(err, `failed to declare call body`)
 		}
 	}
@@ -467,7 +503,7 @@ func formatCall(ctx *Context, dst io.Writer, call *compiler.Call) error {
 	return nil
 }
 
-func formatCallPayload(ctx *Context, dst io.Writer, call *compiler.Call, typ compiler.Type) error {
+func formatCallPayload(ctx *Context, dst io.Writer, typ compiler.Type) error {
 	fmt.Fprintf(dst, "\n\nclass %s {", codegen.ClassName(typ.Name()))
 	switch typ := typ.(type) {
 	case *compiler.Array:
