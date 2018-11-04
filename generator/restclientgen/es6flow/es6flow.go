@@ -72,7 +72,7 @@ func Generate(spec openapi.Swagger, options ...Option) error {
 		resolver:           openapi.NewResolver(spec),
 		root:               spec,
 		client:             client,
-		types:              make(map[string]typeDefinition),
+		types:              make(map[string]compiler.TypeDefinition),
 	}
 
 	// declare types
@@ -167,13 +167,15 @@ func writeTypesFile(ctx *Context) error {
 	var dst io.Writer = &buf
 	codegen.WritePreamble(dst, ctx.packageName)
 
-	var typDefs []typeDefinition
-	for _, typ := range ctx.types {
+	var typDefs []compiler.TypeDefinition
+	for _, typ := range ctx.client.Definitions() {
 		typDefs = append(typDefs, typ)
 	}
 	sort.Slice(typDefs, func(i, j int) bool {
 		return typDefs[i].Type.Name() < typDefs[j].Type.Name()
 	})
+
+	log.Printf("  * %d types to define", len(typDefs))
 
 	for _, typDef := range typDefs {
 		typ := typDef.Type
@@ -181,9 +183,23 @@ func writeTypesFile(ctx *Context) error {
 		switch t := typ.(type) {
 		//		case *Array:
 		//			fmt.Fprintf(dst, "\n\ntype %s []%s", t.name, t.elem)
-		case *Struct:
+		case *compiler.Struct:
 			fmt.Fprintf(dst, "\n\n// %s represents the data structure defined in %s", typ.Name(), typDef.Context)
-			t.WriteCode(dst)
+			fmt.Fprintf(dst, "\nexport type %s = {", t.Name())
+			fields := t.Fields()
+			for i, field := range fields {
+				optional := ""
+				if field.Required() {
+					optional = "?"
+				}
+				fmt.Fprintf(dst, "\n%s: %s%s", field.Hints().JsName, optional, field.Type().Name())
+				if i != len(fields) {
+					fmt.Fprintf(dst, ",")
+				}
+			}
+
+			fmt.Fprintf(dst, "\npayload(): string")
+			fmt.Fprintf(dst, "\n}")
 		}
 	}
 
@@ -545,27 +561,6 @@ func formatCallPayload(ctx *Context, dst io.Writer, call *compiler.Call, typ com
 	return nil
 }
 
-*/
-
-func (v *Struct) WriteCode(dst io.Writer) error {
-	fmt.Fprintf(dst, "\nexport type %s = {", v.name)
-	for i, field := range v.fields {
-		optional := ""
-		if field.required {
-			optional = "?"
-		}
-		fmt.Fprintf(dst, "\n%s: %s%s", field.jsName, optional, field.typ)
-		if i != len(v.fields) {
-			fmt.Fprintf(dst, ",")
-		}
-	}
-
-	fmt.Fprintf(dst, "\npayload(): string")
-	fmt.Fprintf(dst, "\n}")
-	return nil
-}
-
-/*
 func compileClient(ctx *Context) error {
 	for piter := ctx.root.Paths().Paths(); piter.Next(); {
 		_, pi := piter.Item()

@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/iancoleman/strcase"
+	"github.com/lestrrat-go/openapi/internal/codegen/es6"
 	"github.com/lestrrat-go/openapi/internal/codegen/golang"
 	restclient "github.com/lestrrat-go/openapi/internal/codegen/restclient/golang"
 	openapi "github.com/lestrrat-go/openapi/v2"
@@ -339,6 +340,7 @@ func compileStruct(ctx *compileCtx, schema openapi.Schema) (Type, error) {
 			hints: Hints{
 				GoName: golang.ExportedName(name),
 				GoTag:  fmt.Sprintf(`json:"%s"`, name),
+				JsName: es6.FieldName(name),
 			},
 			typ:      fieldMsg,
 			required: schema.IsRequiredProperty(name),

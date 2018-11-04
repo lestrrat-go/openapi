@@ -129,6 +129,7 @@ func (r *Response) Type() string {
 type Hints struct {
 	GoName string // camelCase name
 	GoTag  string
+	JsName string
 }
 
 type Field struct {
@@ -137,6 +138,10 @@ type Field struct {
 	typ      Type
 	required bool
 	in       openapi.Location
+}
+
+func (f *Field) Required() bool {
+	return f.required
 }
 
 func (f *Field) Hints() Hints {

@@ -17,7 +17,7 @@ type Context struct {
 	defaultServiceName string
 	resolver           openapi.Resolver
 	root               openapi.Swagger
-	types              map[string]typeDefinition
+	types              map[string]compiler.TypeDefinition
 	consumes           []string
 	produces           []string
 }
