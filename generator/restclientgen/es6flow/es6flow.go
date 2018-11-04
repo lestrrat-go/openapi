@@ -19,16 +19,21 @@ import (
 )
 
 func esType(typ compiler.Type) string {
-	if name := typ.Name(); name != "" {
-		return name
+	name := typ.Name()
+
+	switch name {
+	case "int", "int32", "int64", "float", "float32", "float64", "double":
+		return "number"
 	}
 
-	switch typ := typ.(type) {
-	case *compiler.Array:
-		return "Array<" + typ.Elem() + ">"
-	default:
-		return "couldNotDeduce"
+	if strings.HasPrefix(name, "[]") {
+		if strings.HasPrefix(name[2:], "*") {
+			return "Array<" + name[3:] + ">"
+		} else {
+			return "Array<" + name[2:] + ">"
+		}
 	}
+	return name
 }
 
 func Generate(spec openapi.Swagger, options ...Option) error {
@@ -193,7 +198,7 @@ func writeTypesFile(ctx *Context) error {
 					optional = "?"
 				}
 
-				fmt.Fprintf(dst, "\n%s: %s%s", field.Hints().JsName, optional, jsType(field.Type().Name()))
+				fmt.Fprintf(dst, "\n%s: %s%s", field.Hints().JsName, optional, esType(field.Type()))
 				if i != len(fields) {
 					fmt.Fprintf(dst, ",")
 				}
@@ -314,17 +319,6 @@ func formatService(ctx *Context, dst io.Writer, svc *compiler.Service) error {
 	return nil
 }
 
-func jsType(s string) string {
-	if strings.HasPrefix(s, "[]") {
-		if strings.HasPrefix(s[2:], "*") {
-			return "Array<" + s[3:] + ">"
-		} else {
-			return "Array<" + s[2:] + ">"
-		}
-	}
-	return s
-}
-
 func formatCall(ctx *Context, dst io.Writer, call *compiler.Call) error {
 	log.Printf("formatCall for %s", call.Name())
 
@@ -343,7 +337,7 @@ func formatCall(ctx *Context, dst io.Writer, call *compiler.Call) error {
 	fmt.Fprintf(dst, "\n_options :?ClientOptions;")
 	fmt.Fprintf(dst, "\n_server :string;")
 	if bodyType := call.Body(); bodyType != nil {
-		fmt.Fprintf(dst, "\n_body :%s;", jsType(bodyType.Name()))
+		fmt.Fprintf(dst, "\n_body :%s;", esType(bodyType))
 	}
 	if queryType := call.Query(); queryType != nil {
 		fmt.Fprintf(dst, "\n_query :%s", queryType.Name())
