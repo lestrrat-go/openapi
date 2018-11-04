@@ -193,7 +193,7 @@ func writeTypesFile(ctx *Context) error {
 					optional = "?"
 				}
 
-				fmt.Fprintf(dst, "\n%s: %s%s", field.Hints().JsName, optional, field.Type().Name())
+				fmt.Fprintf(dst, "\n%s: %s%s", field.Hints().JsName, optional, jsType(field.Type().Name()))
 				if i != len(fields) {
 					fmt.Fprintf(dst, ",")
 				}
@@ -316,7 +316,11 @@ func formatService(ctx *Context, dst io.Writer, svc *compiler.Service) error {
 
 func jsType(s string) string {
 	if strings.HasPrefix(s, "[]") {
-		return "Array<" + s[2:] + ">"
+		if strings.HasPrefix(s[2:], "*") {
+			return "Array<" + s[3:] + ">"
+		} else {
+			return "Array<" + s[2:] + ">"
+		}
 	}
 	return s
 }

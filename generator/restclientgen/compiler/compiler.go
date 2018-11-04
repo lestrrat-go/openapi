@@ -15,6 +15,7 @@ import (
 	"github.com/lestrrat-go/openapi/internal/codegen/golang"
 	restclient "github.com/lestrrat-go/openapi/internal/codegen/restclient/golang"
 	openapi "github.com/lestrrat-go/openapi/v2"
+	"github.com/lestrrat-go/pdebug"
 	"github.com/pkg/errors"
 )
 
@@ -293,9 +294,13 @@ func compileItems(ctx *compileCtx, items openapi.Items) (t Type, err error) {
 	return compileSchemaLike(ctx, items)
 }
 
-func compileArray(ctx *compileCtx, schema interface{}) (Type, error) {
+func compileArray(ctx *compileCtx, schema interface{}) (typ Type, err error) {
+	if pdebug.Enabled {
+		g := pdebug.Marker("compileArray").BindError(&err)
+		defer g.End()
+	}
+
 	var subtyp Type
-	var err error
 	if s, ok := schema.(openapi.Schema); ok {
 		subtyp, err = compileSchema(ctx, s.Items())
 	} else if i, ok := schema.(openapi.Parameter); ok {
@@ -307,7 +312,17 @@ func compileArray(ctx *compileCtx, schema interface{}) (Type, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to compile array schema`)
 	}
-	return &Array{elem: subtyp}, nil
+
+	var name string
+	if isBuiltinType(subtyp.Name()) {
+		name = "[]" + subtyp.Name()
+	} else {
+		name = "[]*" + subtyp.Name()
+	}
+	return &Array{
+		elem: subtyp,
+		name: name,
+	}, nil
 }
 
 func compileParameterToProperty(parentBuilder *openapi.SchemaBuilder, param openapi.Parameter) error {
@@ -319,29 +334,46 @@ func compileParameterToProperty(parentBuilder *openapi.SchemaBuilder, param open
 	return nil
 }
 
-func compileStruct(ctx *compileCtx, schema openapi.Schema) (Type, error) {
+func compileStructField(ctx *compileCtx, parent openapi.Schema, name string, prop openapi.Schema) (field *Field, err error) {
+	if pdebug.Enabled {
+		g := pdebug.Marker("compileStructField %s", name).BindError(&err)
+		defer g.End()
+	}
+
+	fieldMsg, err := compileSchema(ctx, prop)
+	if err != nil {
+		return nil, errors.Wrap(err, `failed to compile schema for object property`)
+	}
+	if pdebug.Enabled {
+		pdebug.Printf(`field %s is of type %s`, name, fieldMsg.Name())
+	}
+
+	return &Field{
+		name: name,
+		hints: Hints{
+			GoName: golang.ExportedName(name),
+			GoTag:  fmt.Sprintf(`json:"%s"`, name),
+			JsName: es6.FieldName(name),
+		},
+		typ:      fieldMsg,
+		required: parent.IsRequiredProperty(name),
+	}, nil
+}
+
+func compileStruct(ctx *compileCtx, schema openapi.Schema) (typ Type, err error) {
+	if pdebug.Enabled {
+		g := pdebug.Marker("compileStruct").BindError(&err)
+		defer g.End()
+	}
 	var obj Struct
 
 	for piter := schema.Properties(); piter.Next(); {
 		name, prop := piter.Item()
-		log.Printf("   * Compiling property %s", name)
-
-		fieldMsg, err := compileSchema(ctx, prop)
+		field, err := compileStructField(ctx, schema, name, prop)
 		if err != nil {
-			return nil, errors.Wrap(err, `failed to compile schema for object property`)
+			return nil, errors.Wrapf(err, `failed to compile field %s`, name)
 		}
-		log.Printf("     * Type is %#v", fieldMsg)
-
-		obj.fields = append(obj.fields, &Field{
-			name: name,
-			hints: Hints{
-				GoName: golang.ExportedName(name),
-				GoTag:  fmt.Sprintf(`json:"%s"`, name),
-				JsName: es6.FieldName(name),
-			},
-			typ:      fieldMsg,
-			required: schema.IsRequiredProperty(name),
-		})
+		obj.fields = append(obj.fields, field)
 	}
 	return &obj, nil
 }
@@ -418,7 +450,6 @@ func compileSchema(ctx *compileCtx, schema openapi.Schema) (t Type, err error) {
 				// we shall only name things if it's possible to do so
 				// TODO: make a separate type that allows us to distinquish
 				// Builtin
-				log.Printf("%T", t)
 				if _, ok := t.(Builtin); !ok {
 					t.SetName(n)
 				}
