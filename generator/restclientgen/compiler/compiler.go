@@ -282,13 +282,8 @@ func compileBuiltin(ctx *compileCtx, schema openapiTypeFormater) (Type, error) {
 		return Builtin("bool"), nil
 	case openapi.String:
 		return Builtin(schema.Type()), nil
-	case openapi.Integer:
-		switch schema.Format() {
-		case "int64":
-			return Builtin("int64"), nil
-		default:
-			return Builtin("int"), nil
-		}
+	case openapi.Number, openapi.Integer:
+		return compileNumeric(schema.Type(), schema.Format())
 	default:
 		return nil, errors.Errorf(`unknown builtin %s`, schema.Type())
 	}
@@ -329,11 +324,13 @@ func compileStruct(ctx *compileCtx, schema openapi.Schema) (Type, error) {
 
 	for piter := schema.Properties(); piter.Next(); {
 		name, prop := piter.Item()
+		log.Printf("   * Compiling property %s", name)
 
 		fieldMsg, err := compileSchema(ctx, prop)
 		if err != nil {
 			return nil, errors.Wrap(err, `failed to compile schema for object property`)
 		}
+		log.Printf("     * Type is %#v", fieldMsg)
 
 		obj.fields = append(obj.fields, &Field{
 			name: name,
@@ -364,7 +361,7 @@ type openapiTypeFormater interface {
 
 func compileSchemaLike(ctx *compileCtx, schema openapiTypeFormater) (Type, error) {
 	switch schema.Type() {
-	case openapi.String, openapi.Integer, openapi.Boolean:
+	case openapi.String, openapi.Integer, openapi.Boolean, openapi.Number:
 		return compileBuiltin(ctx, schema)
 	case openapi.Array:
 		return compileArray(ctx, schema)
@@ -412,11 +409,16 @@ func compileSchema(ctx *compileCtx, schema openapi.Schema) (t Type, err error) {
 		}
 		schema = news
 		defer func() {
+			if err != nil {
+				return
+			}
+
 			if strings.HasPrefix(ref, "#/definitions/") {
 				n := golang.ExportedName(strings.TrimPrefix(ref, "#/definitions/"))
 				// we shall only name things if it's possible to do so
 				// TODO: make a separate type that allows us to distinquish
 				// Builtin
+				log.Printf("%T", t)
 				if _, ok := t.(Builtin); !ok {
 					t.SetName(n)
 				}
@@ -494,14 +496,28 @@ func compileResponse(ctx *compileCtx, res openapi.Response) (*Response, error) {
 	}, nil
 }
 
-func compileNumeric(s string) Type {
-	switch s {
-	case "double":
-		return Builtin("double")
-	case "int64":
-		return Builtin("int64")
+func compileNumeric(typ openapi.PrimitiveType, format string) (Type, error) {
+	switch typ {
+	case openapi.Integer:
+		switch format {
+		case "int", "int32", "int64":
+			return Builtin(format), nil
+		case "":
+			return Builtin("int"), nil
+		default:
+			return nil, errors.Errorf(`invalid format for integer: %s`, format)
+		}
+	case "number":
+		switch format {
+		case "", "float":
+			return Builtin("float32"), nil
+		case "double":
+			return Builtin("double"), nil
+		default:
+			return nil, errors.Errorf(`invalid format for number: %s`, format)
+		}
 	default:
-		return Builtin("float32")
+		return nil, errors.Errorf(`invalid numeric type %s`, typ)
 	}
 }
 
@@ -561,7 +577,7 @@ func compileParameterType(ctx *compileCtx, param openapi.Parameter) (Type, error
 
 	switch param.Type() {
 	case openapi.Number:
-		return compileNumeric(param.Format()), nil
+		return compileNumeric(param.Type(), param.Format())
 	case openapi.Array:
 		return compileArray(ctx, param)
 	}

@@ -1,6 +1,9 @@
 package compiler
 
 import (
+	"sort"
+
+	openapi "github.com/lestrrat-go/openapi/v2"
 	"github.com/pkg/errors"
 )
 
@@ -107,4 +110,95 @@ func (v Incomplete) ResolveIncomplete(ctx *compileCtx) (Type, error) {
 		return nil, errors.Errorf(`invalid reference %s`, string(v))
 	}
 	return typ, nil
+}
+
+func (c *ClientDefinition) Definitions() map[string]TypeDefinition {
+	return c.definitions
+}
+
+func (c *ClientDefinition) ServiceNames() []string {
+	var serviceNames []string
+	for name := range c.services {
+		serviceNames = append(serviceNames, name)
+	}
+	sort.Strings(serviceNames)
+	return serviceNames
+}
+
+func (c *ClientDefinition) Services() map[string]*Service {
+	return c.services
+}
+
+func (c *ClientDefinition) getServiceFor(name string) *Service {
+	name = name + "Service"
+	svc, ok := c.services[name]
+	if !ok {
+		svc = &Service{name: name}
+		c.services[name] = svc
+	}
+	return svc
+}
+
+func (s *Service) Name() string {
+	return s.name
+}
+
+func (s *Service) Calls() []*Call {
+	return s.calls
+}
+
+func (s *Service) addCall(call *Call) {
+	s.calls = append(s.calls, call)
+}
+
+func (r *Response) Code() string {
+	return r.code
+}
+
+func (r *Response) Type() string {
+	return r.typ
+}
+
+func (f *Field) Required() bool {
+	return f.required
+}
+
+func (f *Field) Hints() Hints {
+	return f.hints
+}
+
+func (f *Field) Name() string {
+	return f.name
+}
+
+func (f *Field) Type() Type {
+	return f.typ
+}
+
+func (f *Field) In() openapi.Location {
+	return f.in
+}
+
+func (f *Field) ContainerName() string {
+	switch f.in {
+	case openapi.InBody, openapi.InForm:
+		return "body"
+	case openapi.InQuery:
+		return "query"
+	case openapi.InHeader:
+		return "header"
+	case openapi.InPath:
+		return "path"
+	default:
+		// No error case, as it should've been handled in Validate()
+		return "(no container)"
+	}
+}
+
+func (ss *SecuritySettings) Definition() openapi.SecurityScheme {
+	return ss.definition
+}
+
+func (ss *SecuritySettings) Scopes() []string {
+	return ss.scopes
 }

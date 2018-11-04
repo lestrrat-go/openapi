@@ -192,6 +192,7 @@ func writeTypesFile(ctx *Context) error {
 				if field.Required() {
 					optional = "?"
 				}
+
 				fmt.Fprintf(dst, "\n%s: %s%s", field.Hints().JsName, optional, field.Type().Name())
 				if i != len(fields) {
 					fmt.Fprintf(dst, ",")
