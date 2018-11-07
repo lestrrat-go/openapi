@@ -187,7 +187,6 @@ func writeOptionsFile(ctx *Context) error {
 	fmt.Fprintf(dst, "\n\ntype CallOption = Option")
 
 	fmt.Fprintf(dst, "\n\nconst (")
-	fmt.Fprintf(dst, "\noptkeyJWT = `jwt`")
 	fmt.Fprintf(dst, "\noptkeyDebugDump = `debugDump`")
 	fmt.Fprintf(dst, "\noptkeyRequestContentType = `requestContentType`")
 	fmt.Fprintf(dst, "\n)")
@@ -357,7 +356,7 @@ func formatService(ctx *Context, dst io.Writer, svc *compiler.Service) error {
 
 	// TODO: be smarter as to which libraries to include
 	// for exmaple, oauth stuff
-	codegen.WriteImports(dst, "context", "encoding/json", "fmt", "io", "mime", "net/http", "net/http/httputil", "net/url", "strings", "strconv", "github.com/pkg/errors", "github.com/lestrrat-go/urlenc", "github.com/lestrrat-go/jwx/jwt", "golang.org/x/oauth2")
+	codegen.WriteImports(dst, "context", "encoding/json", "fmt", "io", "mime", "net/http", "net/http/httputil", "net/url", "strings", "strconv", "github.com/pkg/errors", "github.com/lestrrat-go/urlenc", "golang.org/x/oauth2")
 
 	fmt.Fprintf(dst, "\n\ntype %s struct {", svc.Name())
 	fmt.Fprintf(dst, "\nhttpCl *http.Client")
@@ -555,25 +554,6 @@ func formatCall(dst io.Writer, svcName string, call *compiler.Call) error {
 	if call.Body() != nil {
 		fmt.Fprintf(dst, "\nreq.Header.Set(`Content-Type`, contentType)")
 		fmt.Fprintf(dst, "\nreq.Header.Set(`Content-Length`, strconv.Itoa(body.Len()))")
-	}
-
-	if hasJWT {
-		fmt.Fprintf(dst, "\nif len(signedJWT) > 0 {")
-		fmt.Fprintf(dst, "\nreq.Header.Set(`Authorization`, `Bearer ` + signedJWT)")
-		fmt.Fprintf(dst, "\nif debugOut != nil {")
-		fmt.Fprintf(dst, "\ntoken, err := jwt.Parse(strings.NewReader(signedJWT))")
-		fmt.Fprintf(dst, "\nif err != nil {")
-		fmt.Fprintf(dst, "\nfmt.Fprintf(debugOut, `failed to decode JWT token: %%s`, err)")
-		fmt.Fprintf(dst, "\n} else {")
-		fmt.Fprintf(dst, "\nencoded, err := json.MarshalIndent(token, ``, `  `)")
-		fmt.Fprintf(dst, "\nif err != nil {")
-		fmt.Fprintf(dst, "\nfmt.Fprintf(debugOut, `failed to marshal token back into JSON: %%s`, err)")
-		fmt.Fprintf(dst, "\n} else {")
-		fmt.Fprintf(dst, "\nfmt.Fprintf(debugOut, \"=== ID Token ===\\n%%s\\n===============\", encoded)")
-		fmt.Fprintf(dst, "\n}") // end if err != nil
-		fmt.Fprintf(dst, "\n}") // end if err != nil
-		fmt.Fprintf(dst, "\n}") // end if debugOut != nil
-		fmt.Fprintf(dst, "\n}") // end if len(signedJWT) > 0
 	}
 
 	fmt.Fprintf(dst, "\n\nif debugOut != nil {")
