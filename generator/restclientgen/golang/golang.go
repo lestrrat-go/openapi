@@ -202,12 +202,6 @@ func writeOptionsFile(ctx *Context) error {
 	fmt.Fprintf(dst, "\nreturn newOption(optkeyRequestContentType, s)")
 	fmt.Fprintf(dst, "\n}")
 
-	fmt.Fprintf(dst, "\n\n// WithJWT is used to specify a signed token to be")
-	fmt.Fprintf(dst, "\n// included in the Authorization header.")
-	fmt.Fprintf(dst, "\nfunc WithJWT(s string) CallOption {")
-	fmt.Fprintf(dst, "\nreturn newOption(optkeyJWT, s)")
-	fmt.Fprintf(dst, "\n}")
-
 	fmt.Fprintf(dst, "\n\n// WithDebugDump is used to dump request and response to")
 	fmt.Fprintf(dst, "\n// the sepcified io.Writer")
 	fmt.Fprintf(dst, "\nfunc WithDebugDump(dst io.Writer) CallOption {")
@@ -321,7 +315,7 @@ func formatClient(ctx *Context, dst io.Writer, cl *compiler.ClientDefinition) er
 	}
 
 	fmt.Fprintf(dst, "\n\n// %s creates a new client. For example, if your API require additional", newFuncName)
-	fmt.Fprintf(dst, "\n// OAuth authentication, JWT authorization, etc, pass an http.Client with")
+	fmt.Fprintf(dst, "\n// OAuth authentication or other, pass an http.Client with")
 	fmt.Fprintf(dst, "\n// a custom Transport to handle it")
 	fmt.Fprintf(dst, "\nfunc %s(cl *http.Client, options ...ClientOption) *Client {", newFuncName)
 	fmt.Fprintf(dst, "\nvar server string")
@@ -452,21 +446,7 @@ func formatCall(dst io.Writer, svcName string, call *compiler.Call) error {
 
 	fmt.Fprintf(dst, "\n\nfunc (call *%s) Do(ctx context.Context, options ...CallOption) (Response, error) {", call.Name())
 
-	var hasJWT bool
-	if sslist := call.SecuritySettings(); len(sslist) > 0 {
-		for _, settings := range sslist {
-			switch settings.Definition().Type() {
-			case "oauth2":
-				// Require Authorization header
-				hasJWT = true
-			}
-		}
-	}
-
 	fmt.Fprintf(dst, "\n\nvar debugOut io.Writer")
-	if hasJWT {
-		fmt.Fprintf(dst, "\nvar signedJWT string")
-	}
 
 	if call.Body() != nil {
 		fmt.Fprintf(dst, "\ncontentType := %#v", call.DefaultConsumes())
@@ -479,10 +459,6 @@ func formatCall(dst io.Writer, svcName string, call *compiler.Call) error {
 	if call.Body() != nil {
 		fmt.Fprintf(dst, "\ncase optkeyRequestContentType:")
 		fmt.Fprintf(dst, "\ncontentType = option.Value().(string)")
-	}
-	if hasJWT {
-		fmt.Fprintf(dst, "\ncase optkeyJWT:")
-		fmt.Fprintf(dst, "\nsignedJWT = option.Value().(string)")
 	}
 	fmt.Fprintf(dst, "\n}")
 	fmt.Fprintf(dst, "\n}")
