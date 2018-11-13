@@ -4,26 +4,30 @@ package openapi
 // DO NOT EDIT MANUALLY. All changes will be lost
 
 import (
-	"log"
+	"sync"
 )
-
-var _ = log.Printf
 
 // ResponseMutator is used to build an instance of Response. The user must
 // call `Do()` after providing all the necessary information to
 // the new instance of Response with new values
 type ResponseMutator struct {
+	mu     sync.Mutex
 	proxy  *response
 	target *response
 }
 
 // Do finalizes the matuation process for Response and returns the result
 func (m *ResponseMutator) Do() error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	*m.target = *m.proxy
 	return nil
 }
 
 // MutateResponse creates a new mutator object for Response
+// Operations on the mutator are safe to be used concurrently, except for
+// when calling `Do()`, where the user is responsible for restricting access
+// to the target object to be mutated
 func MutateResponse(v Response) *ResponseMutator {
 	return &ResponseMutator{
 		target: v.(*response),
@@ -33,36 +37,48 @@ func MutateResponse(v Response) *ResponseMutator {
 
 // Name sets the Name field for object Response.
 func (m *ResponseMutator) Name(v string) *ResponseMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.name = v
 	return m
 }
 
 // StatusCode sets the StatusCode field for object Response.
 func (m *ResponseMutator) StatusCode(v string) *ResponseMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.statusCode = v
 	return m
 }
 
 // Description sets the Description field for object Response.
 func (m *ResponseMutator) Description(v string) *ResponseMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.description = v
 	return m
 }
 
 // Schema sets the Schema field for object Response.
 func (m *ResponseMutator) Schema(v Schema) *ResponseMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.schema = v
 	return m
 }
 
 // ClearHeaders removes all values in headers field
 func (m *ResponseMutator) ClearHeaders() *ResponseMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	_ = m.proxy.headers.Clear()
 	return m
 }
 
 // Header sets the value of headers
 func (m *ResponseMutator) Header(key HeaderMapKey, value Header) *ResponseMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if m.proxy.headers == nil {
 		m.proxy.headers = HeaderMap{}
 	}
@@ -73,12 +89,16 @@ func (m *ResponseMutator) Header(key HeaderMapKey, value Header) *ResponseMutato
 
 // ClearExamples removes all values in examples field
 func (m *ResponseMutator) ClearExamples() *ResponseMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	_ = m.proxy.examples.Clear()
 	return m
 }
 
 // Example sets the value of examples
 func (m *ResponseMutator) Example(key ExampleMapKey, value interface{}) *ResponseMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if m.proxy.examples == nil {
 		m.proxy.examples = ExampleMap{}
 	}

@@ -4,26 +4,30 @@ package openapi
 // DO NOT EDIT MANUALLY. All changes will be lost
 
 import (
-	"log"
+	"sync"
 )
-
-var _ = log.Printf
 
 // ExternalDocumentationMutator is used to build an instance of ExternalDocumentation. The user must
 // call `Do()` after providing all the necessary information to
 // the new instance of ExternalDocumentation with new values
 type ExternalDocumentationMutator struct {
+	mu     sync.Mutex
 	proxy  *externalDocumentation
 	target *externalDocumentation
 }
 
 // Do finalizes the matuation process for ExternalDocumentation and returns the result
 func (m *ExternalDocumentationMutator) Do() error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	*m.target = *m.proxy
 	return nil
 }
 
 // MutateExternalDocumentation creates a new mutator object for ExternalDocumentation
+// Operations on the mutator are safe to be used concurrently, except for
+// when calling `Do()`, where the user is responsible for restricting access
+// to the target object to be mutated
 func MutateExternalDocumentation(v ExternalDocumentation) *ExternalDocumentationMutator {
 	return &ExternalDocumentationMutator{
 		target: v.(*externalDocumentation),
@@ -33,12 +37,16 @@ func MutateExternalDocumentation(v ExternalDocumentation) *ExternalDocumentation
 
 // URL sets the URL field for object ExternalDocumentation.
 func (m *ExternalDocumentationMutator) URL(v string) *ExternalDocumentationMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.url = v
 	return m
 }
 
 // Description sets the Description field for object ExternalDocumentation.
 func (m *ExternalDocumentationMutator) Description(v string) *ExternalDocumentationMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.description = v
 	return m
 }

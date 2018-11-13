@@ -4,26 +4,30 @@ package openapi
 // DO NOT EDIT MANUALLY. All changes will be lost
 
 import (
-	"log"
+	"sync"
 )
-
-var _ = log.Printf
 
 // HeaderMutator is used to build an instance of Header. The user must
 // call `Do()` after providing all the necessary information to
 // the new instance of Header with new values
 type HeaderMutator struct {
+	mu     sync.Mutex
 	proxy  *header
 	target *header
 }
 
 // Do finalizes the matuation process for Header and returns the result
 func (m *HeaderMutator) Do() error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	*m.target = *m.proxy
 	return nil
 }
 
 // MutateHeader creates a new mutator object for Header
+// Operations on the mutator are safe to be used concurrently, except for
+// when calling `Do()`, where the user is responsible for restricting access
+// to the target object to be mutated
 func MutateHeader(v Header) *HeaderMutator {
 	return &HeaderMutator{
 		target: v.(*header),
@@ -33,120 +37,160 @@ func MutateHeader(v Header) *HeaderMutator {
 
 // Name sets the Name field for object Header.
 func (m *HeaderMutator) Name(v string) *HeaderMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.name = v
 	return m
 }
 
 // Description sets the Description field for object Header.
 func (m *HeaderMutator) Description(v string) *HeaderMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.description = v
 	return m
 }
 
 // Type sets the Type field for object Header.
 func (m *HeaderMutator) Type(v string) *HeaderMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.typ = v
 	return m
 }
 
 // Format sets the Format field for object Header.
 func (m *HeaderMutator) Format(v string) *HeaderMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.format = v
 	return m
 }
 
 // Items sets the Items field for object Header.
 func (m *HeaderMutator) Items(v Items) *HeaderMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.items = v
 	return m
 }
 
 // CollectionFormat sets the CollectionFormat field for object Header.
 func (m *HeaderMutator) CollectionFormat(v CollectionFormat) *HeaderMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.collectionFormat = v
 	return m
 }
 
 // Default sets the Default field for object Header.
 func (m *HeaderMutator) Default(v interface{}) *HeaderMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.defaultValue = v
 	return m
 }
 
 // Maximum sets the Maximum field for object Header.
 func (m *HeaderMutator) Maximum(v float64) *HeaderMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.maximum = v
 	return m
 }
 
 // ExclusiveMaximum sets the ExclusiveMaximum field for object Header.
 func (m *HeaderMutator) ExclusiveMaximum(v float64) *HeaderMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.exclusiveMaximum = v
 	return m
 }
 
 // Minimum sets the Minimum field for object Header.
 func (m *HeaderMutator) Minimum(v float64) *HeaderMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.minimum = v
 	return m
 }
 
 // ExclusiveMinimum sets the ExclusiveMinimum field for object Header.
 func (m *HeaderMutator) ExclusiveMinimum(v float64) *HeaderMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.exclusiveMinimum = v
 	return m
 }
 
 // MaxLength sets the MaxLength field for object Header.
 func (m *HeaderMutator) MaxLength(v int) *HeaderMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.maxLength = v
 	return m
 }
 
 // MinLength sets the MinLength field for object Header.
 func (m *HeaderMutator) MinLength(v int) *HeaderMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.minLength = v
 	return m
 }
 
 // Pattern sets the Pattern field for object Header.
 func (m *HeaderMutator) Pattern(v string) *HeaderMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.pattern = v
 	return m
 }
 
 // MaxItems sets the MaxItems field for object Header.
 func (m *HeaderMutator) MaxItems(v int) *HeaderMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.maxItems = v
 	return m
 }
 
 // MinItems sets the MinItems field for object Header.
 func (m *HeaderMutator) MinItems(v int) *HeaderMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.minItems = v
 	return m
 }
 
 // UniqueItems sets the UniqueItems field for object Header.
 func (m *HeaderMutator) UniqueItems(v bool) *HeaderMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.uniqueItems = v
 	return m
 }
 
 // ClearEnum clears all elements in enum
 func (m *HeaderMutator) ClearEnum() *HeaderMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	_ = m.proxy.enum.Clear()
 	return m
 }
 
 // Enum appends a value to enum
 func (m *HeaderMutator) Enum(value interface{}) *HeaderMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.enum = append(m.proxy.enum, value)
 	return m
 }
 
 // MultipleOf sets the MultipleOf field for object Header.
 func (m *HeaderMutator) MultipleOf(v float64) *HeaderMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.multipleOf = v
 	return m
 }

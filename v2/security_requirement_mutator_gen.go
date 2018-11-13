@@ -4,26 +4,30 @@ package openapi
 // DO NOT EDIT MANUALLY. All changes will be lost
 
 import (
-	"log"
+	"sync"
 )
-
-var _ = log.Printf
 
 // SecurityRequirementMutator is used to build an instance of SecurityRequirement. The user must
 // call `Do()` after providing all the necessary information to
 // the new instance of SecurityRequirement with new values
 type SecurityRequirementMutator struct {
+	mu     sync.Mutex
 	proxy  *securityRequirement
 	target *securityRequirement
 }
 
 // Do finalizes the matuation process for SecurityRequirement and returns the result
 func (m *SecurityRequirementMutator) Do() error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	*m.target = *m.proxy
 	return nil
 }
 
 // MutateSecurityRequirement creates a new mutator object for SecurityRequirement
+// Operations on the mutator are safe to be used concurrently, except for
+// when calling `Do()`, where the user is responsible for restricting access
+// to the target object to be mutated
 func MutateSecurityRequirement(v SecurityRequirement) *SecurityRequirementMutator {
 	return &SecurityRequirementMutator{
 		target: v.(*securityRequirement),
@@ -33,6 +37,8 @@ func MutateSecurityRequirement(v SecurityRequirement) *SecurityRequirementMutato
 
 // Name sets the Name field for object SecurityRequirement.
 func (m *SecurityRequirementMutator) Name(v string) *SecurityRequirementMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.name = v
 	return m
 }

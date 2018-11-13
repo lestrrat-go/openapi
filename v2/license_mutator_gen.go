@@ -4,26 +4,30 @@ package openapi
 // DO NOT EDIT MANUALLY. All changes will be lost
 
 import (
-	"log"
+	"sync"
 )
-
-var _ = log.Printf
 
 // LicenseMutator is used to build an instance of License. The user must
 // call `Do()` after providing all the necessary information to
 // the new instance of License with new values
 type LicenseMutator struct {
+	mu     sync.Mutex
 	proxy  *license
 	target *license
 }
 
 // Do finalizes the matuation process for License and returns the result
 func (m *LicenseMutator) Do() error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	*m.target = *m.proxy
 	return nil
 }
 
 // MutateLicense creates a new mutator object for License
+// Operations on the mutator are safe to be used concurrently, except for
+// when calling `Do()`, where the user is responsible for restricting access
+// to the target object to be mutated
 func MutateLicense(v License) *LicenseMutator {
 	return &LicenseMutator{
 		target: v.(*license),
@@ -33,12 +37,16 @@ func MutateLicense(v License) *LicenseMutator {
 
 // Name sets the Name field for object License.
 func (m *LicenseMutator) Name(v string) *LicenseMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.name = v
 	return m
 }
 
 // URL sets the URL field for object License.
 func (m *LicenseMutator) URL(v string) *LicenseMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.url = v
 	return m
 }

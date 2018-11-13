@@ -4,26 +4,30 @@ package openapi
 // DO NOT EDIT MANUALLY. All changes will be lost
 
 import (
-	"log"
+	"sync"
 )
-
-var _ = log.Printf
 
 // ResponsesMutator is used to build an instance of Responses. The user must
 // call `Do()` after providing all the necessary information to
 // the new instance of Responses with new values
 type ResponsesMutator struct {
+	mu     sync.Mutex
 	proxy  *responses
 	target *responses
 }
 
 // Do finalizes the matuation process for Responses and returns the result
 func (m *ResponsesMutator) Do() error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	*m.target = *m.proxy
 	return nil
 }
 
 // MutateResponses creates a new mutator object for Responses
+// Operations on the mutator are safe to be used concurrently, except for
+// when calling `Do()`, where the user is responsible for restricting access
+// to the target object to be mutated
 func MutateResponses(v Responses) *ResponsesMutator {
 	return &ResponsesMutator{
 		target: v.(*responses),
@@ -33,6 +37,8 @@ func MutateResponses(v Responses) *ResponsesMutator {
 
 // Default sets the Default field for object Responses.
 func (m *ResponsesMutator) Default(v Response) *ResponsesMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.defaultValue = v
 	return m
 }

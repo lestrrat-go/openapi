@@ -4,26 +4,30 @@ package openapi
 // DO NOT EDIT MANUALLY. All changes will be lost
 
 import (
-	"log"
+	"sync"
 )
-
-var _ = log.Printf
 
 // InfoMutator is used to build an instance of Info. The user must
 // call `Do()` after providing all the necessary information to
 // the new instance of Info with new values
 type InfoMutator struct {
+	mu     sync.Mutex
 	proxy  *info
 	target *info
 }
 
 // Do finalizes the matuation process for Info and returns the result
 func (m *InfoMutator) Do() error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	*m.target = *m.proxy
 	return nil
 }
 
 // MutateInfo creates a new mutator object for Info
+// Operations on the mutator are safe to be used concurrently, except for
+// when calling `Do()`, where the user is responsible for restricting access
+// to the target object to be mutated
 func MutateInfo(v Info) *InfoMutator {
 	return &InfoMutator{
 		target: v.(*info),
@@ -33,36 +37,48 @@ func MutateInfo(v Info) *InfoMutator {
 
 // Title sets the Title field for object Info.
 func (m *InfoMutator) Title(v string) *InfoMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.title = v
 	return m
 }
 
 // Version sets the Version field for object Info.
 func (m *InfoMutator) Version(v string) *InfoMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.version = v
 	return m
 }
 
 // Description sets the Description field for object Info.
 func (m *InfoMutator) Description(v string) *InfoMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.description = v
 	return m
 }
 
 // TermsOfService sets the TermsOfService field for object Info.
 func (m *InfoMutator) TermsOfService(v string) *InfoMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.termsOfService = v
 	return m
 }
 
 // Contact sets the Contact field for object Info.
 func (m *InfoMutator) Contact(v Contact) *InfoMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.contact = v
 	return m
 }
 
 // License sets the License field for object Info.
 func (m *InfoMutator) License(v License) *InfoMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.license = v
 	return m
 }

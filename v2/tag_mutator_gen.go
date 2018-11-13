@@ -4,26 +4,30 @@ package openapi
 // DO NOT EDIT MANUALLY. All changes will be lost
 
 import (
-	"log"
+	"sync"
 )
-
-var _ = log.Printf
 
 // TagMutator is used to build an instance of Tag. The user must
 // call `Do()` after providing all the necessary information to
 // the new instance of Tag with new values
 type TagMutator struct {
+	mu     sync.Mutex
 	proxy  *tag
 	target *tag
 }
 
 // Do finalizes the matuation process for Tag and returns the result
 func (m *TagMutator) Do() error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	*m.target = *m.proxy
 	return nil
 }
 
 // MutateTag creates a new mutator object for Tag
+// Operations on the mutator are safe to be used concurrently, except for
+// when calling `Do()`, where the user is responsible for restricting access
+// to the target object to be mutated
 func MutateTag(v Tag) *TagMutator {
 	return &TagMutator{
 		target: v.(*tag),
@@ -33,18 +37,24 @@ func MutateTag(v Tag) *TagMutator {
 
 // Name sets the Name field for object Tag.
 func (m *TagMutator) Name(v string) *TagMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.name = v
 	return m
 }
 
 // Description sets the Description field for object Tag.
 func (m *TagMutator) Description(v string) *TagMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.description = v
 	return m
 }
 
 // ExternalDocs sets the ExternalDocs field for object Tag.
 func (m *TagMutator) ExternalDocs(v ExternalDocumentation) *TagMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.externalDocs = v
 	return m
 }

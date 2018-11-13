@@ -4,26 +4,30 @@ package openapi
 // DO NOT EDIT MANUALLY. All changes will be lost
 
 import (
-	"log"
+	"sync"
 )
-
-var _ = log.Printf
 
 // SecuritySchemeMutator is used to build an instance of SecurityScheme. The user must
 // call `Do()` after providing all the necessary information to
 // the new instance of SecurityScheme with new values
 type SecuritySchemeMutator struct {
+	mu     sync.Mutex
 	proxy  *securityScheme
 	target *securityScheme
 }
 
 // Do finalizes the matuation process for SecurityScheme and returns the result
 func (m *SecuritySchemeMutator) Do() error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	*m.target = *m.proxy
 	return nil
 }
 
 // MutateSecurityScheme creates a new mutator object for SecurityScheme
+// Operations on the mutator are safe to be used concurrently, except for
+// when calling `Do()`, where the user is responsible for restricting access
+// to the target object to be mutated
 func MutateSecurityScheme(v SecurityScheme) *SecuritySchemeMutator {
 	return &SecuritySchemeMutator{
 		target: v.(*securityScheme),
@@ -33,54 +37,72 @@ func MutateSecurityScheme(v SecurityScheme) *SecuritySchemeMutator {
 
 // Type sets the Type field for object SecurityScheme.
 func (m *SecuritySchemeMutator) Type(v string) *SecuritySchemeMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.typ = v
 	return m
 }
 
 // Description sets the Description field for object SecurityScheme.
 func (m *SecuritySchemeMutator) Description(v string) *SecuritySchemeMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.description = v
 	return m
 }
 
 // Name sets the Name field for object SecurityScheme.
 func (m *SecuritySchemeMutator) Name(v string) *SecuritySchemeMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.name = v
 	return m
 }
 
 // In sets the In field for object SecurityScheme.
 func (m *SecuritySchemeMutator) In(v string) *SecuritySchemeMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.in = v
 	return m
 }
 
 // Flow sets the Flow field for object SecurityScheme.
 func (m *SecuritySchemeMutator) Flow(v string) *SecuritySchemeMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.flow = v
 	return m
 }
 
 // AuthorizationURL sets the AuthorizationURL field for object SecurityScheme.
 func (m *SecuritySchemeMutator) AuthorizationURL(v string) *SecuritySchemeMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.authorizationURL = v
 	return m
 }
 
 // TokenURL sets the TokenURL field for object SecurityScheme.
 func (m *SecuritySchemeMutator) TokenURL(v string) *SecuritySchemeMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.proxy.tokenURL = v
 	return m
 }
 
 // ClearScopes removes all values in scopes field
 func (m *SecuritySchemeMutator) ClearScopes() *SecuritySchemeMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	_ = m.proxy.scopes.Clear()
 	return m
 }
 
 // Scope sets the value of scopes
 func (m *SecuritySchemeMutator) Scope(key StringMapKey, value string) *SecuritySchemeMutator {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if m.proxy.scopes == nil {
 		m.proxy.scopes = StringMap{}
 	}
