@@ -150,10 +150,10 @@ type info struct {
 	extensions     Extensions `json:"-"`
 	title          string     `json:"title" builder:"required"`
 	version        string     `json:"version" builder:"required"`
-	description    string     `json:"description"`
-	termsOfService string     `json:"termsOfService"`
-	contact        Contact    `json:"contact"`
-	license        License    `json:"license"`
+	description    string     `json:"description,omitempty"`
+	termsOfService string     `json:"termsOfService,omitempty"`
+	contact        Contact    `json:"contact,omitempty"`
+	license        License    `json:"license,omitempty"`
 }
 
 type Contact interface {

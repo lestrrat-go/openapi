@@ -22,10 +22,10 @@ type infoMarshalProxy struct {
 	Reference      string  `json:"$ref,omitempty"`
 	Title          string  `json:"title"`
 	Version        string  `json:"version"`
-	Description    string  `json:"description"`
-	TermsOfService string  `json:"termsOfService"`
-	Contact        Contact `json:"contact"`
-	License        License `json:"license"`
+	Description    string  `json:"description,omitempty"`
+	TermsOfService string  `json:"termsOfService,omitempty"`
+	Contact        Contact `json:"contact,omitempty"`
+	License        License `json:"license,omitempty"`
 }
 
 func (v *info) MarshalJSON() ([]byte, error) {
