@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/ghodss/yaml"
@@ -151,9 +152,71 @@ func TestParseExtensions(t *testing.T) {
 }
 
 func TestValidate(t *testing.T) {
-	_, err := openapi.NewSwagger(nil,nil).Build()
+	_, err := openapi.NewSwagger(nil, nil).Build()
 	if !assert.Error(t, err, "expected to see an error") {
 		return
 	}
 	t.Logf("%s", err)
+}
+
+func TestAllOf(t *testing.T) {
+	const src = `
+swagger: "2.0"
+info:
+  version: 1.0.0
+  title: Swagger Petstore
+definitions:
+  Pet:
+    type: object
+    discriminator: petType
+    properties:
+      name:
+        type: string
+      petType:
+        type: string
+    required:
+    - name
+    - petType
+  Cat:
+    description: A representation of a cat
+    allOf:
+    - $ref: '#/definitions/Pet'
+    - type: object
+      properties:
+        huntingSkill:
+          type: string
+          description: The measured skill for hunting
+          default: lazy
+          enum:
+          - clueless
+          - lazy
+          - adventurous
+          - aggressive
+      required:
+      - huntingSkill
+  Dog:
+    description: A representation of a dog
+    allOf:
+    - $ref: '#/definitions/Pet'
+    - type: object
+      properties:
+        packSize:
+          type: integer
+          format: int32
+          description: the size of the pack the dog is from
+          default: 0
+          minimum: 0
+      required:
+      - packSize
+paths: {}
+`
+	rdr := strings.NewReader(src)
+	spec, err := openapi.ParseYAML(rdr)
+
+	if !assert.NoError(t, err, `failed to parse source`) {
+		return
+	}
+
+	// XXX for now, just test that we can parse it
+	_ = spec
 }
