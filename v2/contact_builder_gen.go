@@ -62,7 +62,6 @@ func NewContact() *ContactBuilder {
 }
 
 // Name sets the name field for object Contact.
-
 func (b *ContactBuilder) Name(v string) *ContactBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -74,7 +73,6 @@ func (b *ContactBuilder) Name(v string) *ContactBuilder {
 }
 
 // URL sets the url field for object Contact.
-
 func (b *ContactBuilder) URL(v string) *ContactBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -86,7 +84,6 @@ func (b *ContactBuilder) URL(v string) *ContactBuilder {
 }
 
 // Email sets the email field for object Contact.
-
 func (b *ContactBuilder) Email(v string) *ContactBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()

@@ -64,7 +64,6 @@ func NewResponse(description string) *ResponseBuilder {
 }
 
 // Name sets the name field for object Response.
-
 func (b *ResponseBuilder) Name(v string) *ResponseBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -76,7 +75,6 @@ func (b *ResponseBuilder) Name(v string) *ResponseBuilder {
 }
 
 // StatusCode sets the statusCode field for object Response.
-
 func (b *ResponseBuilder) StatusCode(v string) *ResponseBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -88,7 +86,6 @@ func (b *ResponseBuilder) StatusCode(v string) *ResponseBuilder {
 }
 
 // Schema sets the schema field for object Response.
-
 func (b *ResponseBuilder) Schema(v Schema) *ResponseBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -100,7 +97,6 @@ func (b *ResponseBuilder) Schema(v Schema) *ResponseBuilder {
 }
 
 // Headers sets the headers field for object Response.
-
 func (b *ResponseBuilder) Headers(v HeaderMap) *ResponseBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -112,7 +108,6 @@ func (b *ResponseBuilder) Headers(v HeaderMap) *ResponseBuilder {
 }
 
 // Examples sets the examples field for object Response.
-
 func (b *ResponseBuilder) Examples(v ExampleMap) *ResponseBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()

@@ -62,7 +62,6 @@ func NewSecurityRequirement() *SecurityRequirementBuilder {
 }
 
 // Name sets the name field for object SecurityRequirement.
-
 func (b *SecurityRequirementBuilder) Name(v string) *SecurityRequirementBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()

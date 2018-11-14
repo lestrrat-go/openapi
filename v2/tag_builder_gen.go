@@ -64,7 +64,6 @@ func NewTag(name string) *TagBuilder {
 }
 
 // Description sets the description field for object Tag.
-
 func (b *TagBuilder) Description(v string) *TagBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -76,7 +75,6 @@ func (b *TagBuilder) Description(v string) *TagBuilder {
 }
 
 // ExternalDocs sets the externalDocs field for object Tag.
-
 func (b *TagBuilder) ExternalDocs(v ExternalDocumentation) *TagBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()

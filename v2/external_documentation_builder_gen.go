@@ -64,7 +64,6 @@ func NewExternalDocumentation(url string) *ExternalDocumentationBuilder {
 }
 
 // Description sets the description field for object ExternalDocumentation.
-
 func (b *ExternalDocumentationBuilder) Description(v string) *ExternalDocumentationBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()

@@ -62,7 +62,6 @@ func NewResponses() *ResponsesBuilder {
 }
 
 // Default sets the defaultValue field for object Responses.
-
 func (b *ResponsesBuilder) Default(v Response) *ResponsesBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -74,7 +73,6 @@ func (b *ResponsesBuilder) Default(v Response) *ResponsesBuilder {
 }
 
 // Responses sets the responses field for object Responses.
-
 func (b *ResponsesBuilder) Responses(v ResponseMap) *ResponsesBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()

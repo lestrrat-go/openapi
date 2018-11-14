@@ -66,7 +66,6 @@ func NewSwagger(info Info, paths Paths) *SwaggerBuilder {
 }
 
 // Host sets the host field for object Swagger.
-
 func (b *SwaggerBuilder) Host(v string) *SwaggerBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -78,7 +77,6 @@ func (b *SwaggerBuilder) Host(v string) *SwaggerBuilder {
 }
 
 // BasePath sets the basePath field for object Swagger.
-
 func (b *SwaggerBuilder) BasePath(v string) *SwaggerBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -90,7 +88,6 @@ func (b *SwaggerBuilder) BasePath(v string) *SwaggerBuilder {
 }
 
 // Schemes sets the schemes field for object Swagger.
-
 func (b *SwaggerBuilder) Schemes(v ...Scheme) *SwaggerBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -102,7 +99,6 @@ func (b *SwaggerBuilder) Schemes(v ...Scheme) *SwaggerBuilder {
 }
 
 // Consumes sets the consumes field for object Swagger.
-
 func (b *SwaggerBuilder) Consumes(v ...MIMEType) *SwaggerBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -114,7 +110,6 @@ func (b *SwaggerBuilder) Consumes(v ...MIMEType) *SwaggerBuilder {
 }
 
 // Produces sets the produces field for object Swagger.
-
 func (b *SwaggerBuilder) Produces(v ...MIMEType) *SwaggerBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -126,7 +121,6 @@ func (b *SwaggerBuilder) Produces(v ...MIMEType) *SwaggerBuilder {
 }
 
 // Definitions sets the definitions field for object Swagger.
-
 func (b *SwaggerBuilder) Definitions(v InterfaceMap) *SwaggerBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -138,7 +132,6 @@ func (b *SwaggerBuilder) Definitions(v InterfaceMap) *SwaggerBuilder {
 }
 
 // Parameters sets the parameters field for object Swagger.
-
 func (b *SwaggerBuilder) Parameters(v ParameterMap) *SwaggerBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -150,7 +143,6 @@ func (b *SwaggerBuilder) Parameters(v ParameterMap) *SwaggerBuilder {
 }
 
 // Responses sets the responses field for object Swagger.
-
 func (b *SwaggerBuilder) Responses(v ResponseMap) *SwaggerBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -162,7 +154,6 @@ func (b *SwaggerBuilder) Responses(v ResponseMap) *SwaggerBuilder {
 }
 
 // SecurityDefinitions sets the securityDefinitions field for object Swagger.
-
 func (b *SwaggerBuilder) SecurityDefinitions(v SecuritySchemeMap) *SwaggerBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -174,7 +165,6 @@ func (b *SwaggerBuilder) SecurityDefinitions(v SecuritySchemeMap) *SwaggerBuilde
 }
 
 // Security sets the security field for object Swagger.
-
 func (b *SwaggerBuilder) Security(v ...SecurityRequirement) *SwaggerBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -186,7 +176,6 @@ func (b *SwaggerBuilder) Security(v ...SecurityRequirement) *SwaggerBuilder {
 }
 
 // Tags sets the tags field for object Swagger.
-
 func (b *SwaggerBuilder) Tags(v ...Tag) *SwaggerBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -198,7 +187,6 @@ func (b *SwaggerBuilder) Tags(v ...Tag) *SwaggerBuilder {
 }
 
 // ExternalDocs sets the externalDocs field for object Swagger.
-
 func (b *SwaggerBuilder) ExternalDocs(v ExternalDocumentation) *SwaggerBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()

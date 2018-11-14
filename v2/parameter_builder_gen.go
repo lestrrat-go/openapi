@@ -65,7 +65,6 @@ func NewParameter(name string, in Location) *ParameterBuilder {
 }
 
 // Description sets the description field for object Parameter.
-
 func (b *ParameterBuilder) Description(v string) *ParameterBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -77,7 +76,6 @@ func (b *ParameterBuilder) Description(v string) *ParameterBuilder {
 }
 
 // Required sets the required field for object Parameter.
-
 func (b *ParameterBuilder) Required(v bool) *ParameterBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -89,7 +87,6 @@ func (b *ParameterBuilder) Required(v bool) *ParameterBuilder {
 }
 
 // Schema sets the schema field for object Parameter.
-
 func (b *ParameterBuilder) Schema(v Schema) *ParameterBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -101,7 +98,6 @@ func (b *ParameterBuilder) Schema(v Schema) *ParameterBuilder {
 }
 
 // Type sets the typ field for object Parameter.
-
 func (b *ParameterBuilder) Type(v PrimitiveType) *ParameterBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -113,7 +109,6 @@ func (b *ParameterBuilder) Type(v PrimitiveType) *ParameterBuilder {
 }
 
 // Format sets the format field for object Parameter.
-
 func (b *ParameterBuilder) Format(v string) *ParameterBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -125,7 +120,6 @@ func (b *ParameterBuilder) Format(v string) *ParameterBuilder {
 }
 
 // Title sets the title field for object Parameter.
-
 func (b *ParameterBuilder) Title(v string) *ParameterBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -137,7 +131,6 @@ func (b *ParameterBuilder) Title(v string) *ParameterBuilder {
 }
 
 // AllowEmptyValue sets the allowEmptyValue field for object Parameter.
-
 func (b *ParameterBuilder) AllowEmptyValue(v bool) *ParameterBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -149,7 +142,6 @@ func (b *ParameterBuilder) AllowEmptyValue(v bool) *ParameterBuilder {
 }
 
 // Items sets the items field for object Parameter.
-
 func (b *ParameterBuilder) Items(v Items) *ParameterBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -161,7 +153,6 @@ func (b *ParameterBuilder) Items(v Items) *ParameterBuilder {
 }
 
 // CollectionFormat sets the collectionFormat field for object Parameter.
-
 func (b *ParameterBuilder) CollectionFormat(v CollectionFormat) *ParameterBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -173,7 +164,6 @@ func (b *ParameterBuilder) CollectionFormat(v CollectionFormat) *ParameterBuilde
 }
 
 // Default sets the defaultValue field for object Parameter.
-
 func (b *ParameterBuilder) Default(v interface{}) *ParameterBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -185,7 +175,6 @@ func (b *ParameterBuilder) Default(v interface{}) *ParameterBuilder {
 }
 
 // Maximum sets the maximum field for object Parameter.
-
 func (b *ParameterBuilder) Maximum(v float64) *ParameterBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -197,7 +186,6 @@ func (b *ParameterBuilder) Maximum(v float64) *ParameterBuilder {
 }
 
 // ExclusiveMaximum sets the exclusiveMaximum field for object Parameter.
-
 func (b *ParameterBuilder) ExclusiveMaximum(v float64) *ParameterBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -209,7 +197,6 @@ func (b *ParameterBuilder) ExclusiveMaximum(v float64) *ParameterBuilder {
 }
 
 // Minimum sets the minimum field for object Parameter.
-
 func (b *ParameterBuilder) Minimum(v float64) *ParameterBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -221,7 +208,6 @@ func (b *ParameterBuilder) Minimum(v float64) *ParameterBuilder {
 }
 
 // ExclusiveMinimum sets the exclusiveMinimum field for object Parameter.
-
 func (b *ParameterBuilder) ExclusiveMinimum(v float64) *ParameterBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -233,7 +219,6 @@ func (b *ParameterBuilder) ExclusiveMinimum(v float64) *ParameterBuilder {
 }
 
 // MaxLength sets the maxLength field for object Parameter.
-
 func (b *ParameterBuilder) MaxLength(v int) *ParameterBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -245,7 +230,6 @@ func (b *ParameterBuilder) MaxLength(v int) *ParameterBuilder {
 }
 
 // MinLength sets the minLength field for object Parameter.
-
 func (b *ParameterBuilder) MinLength(v int) *ParameterBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -257,7 +241,6 @@ func (b *ParameterBuilder) MinLength(v int) *ParameterBuilder {
 }
 
 // Pattern sets the pattern field for object Parameter.
-
 func (b *ParameterBuilder) Pattern(v string) *ParameterBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -269,7 +252,6 @@ func (b *ParameterBuilder) Pattern(v string) *ParameterBuilder {
 }
 
 // MaxItems sets the maxItems field for object Parameter.
-
 func (b *ParameterBuilder) MaxItems(v int) *ParameterBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -281,7 +263,6 @@ func (b *ParameterBuilder) MaxItems(v int) *ParameterBuilder {
 }
 
 // MinItems sets the minItems field for object Parameter.
-
 func (b *ParameterBuilder) MinItems(v int) *ParameterBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -293,7 +274,6 @@ func (b *ParameterBuilder) MinItems(v int) *ParameterBuilder {
 }
 
 // UniqueItems sets the uniqueItems field for object Parameter.
-
 func (b *ParameterBuilder) UniqueItems(v bool) *ParameterBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -305,7 +285,6 @@ func (b *ParameterBuilder) UniqueItems(v bool) *ParameterBuilder {
 }
 
 // Enum sets the enum field for object Parameter.
-
 func (b *ParameterBuilder) Enum(v ...interface{}) *ParameterBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -317,7 +296,6 @@ func (b *ParameterBuilder) Enum(v ...interface{}) *ParameterBuilder {
 }
 
 // MultipleOf sets the multipleOf field for object Parameter.
-
 func (b *ParameterBuilder) MultipleOf(v float64) *ParameterBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()

@@ -62,7 +62,6 @@ func NewXML() *XMLBuilder {
 }
 
 // Name sets the name field for object XML.
-
 func (b *XMLBuilder) Name(v string) *XMLBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -74,7 +73,6 @@ func (b *XMLBuilder) Name(v string) *XMLBuilder {
 }
 
 // Namespace sets the namespace field for object XML.
-
 func (b *XMLBuilder) Namespace(v string) *XMLBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -86,7 +84,6 @@ func (b *XMLBuilder) Namespace(v string) *XMLBuilder {
 }
 
 // Prefix sets the prefix field for object XML.
-
 func (b *XMLBuilder) Prefix(v string) *XMLBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -98,7 +95,6 @@ func (b *XMLBuilder) Prefix(v string) *XMLBuilder {
 }
 
 // Attribute sets the attribute field for object XML.
-
 func (b *XMLBuilder) Attribute(v bool) *XMLBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -110,7 +106,6 @@ func (b *XMLBuilder) Attribute(v bool) *XMLBuilder {
 }
 
 // Wrapped sets the wrapped field for object XML.
-
 func (b *XMLBuilder) Wrapped(v bool) *XMLBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()

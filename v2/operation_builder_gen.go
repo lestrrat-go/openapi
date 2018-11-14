@@ -64,7 +64,6 @@ func NewOperation(responses Responses) *OperationBuilder {
 }
 
 // Tags sets the tags field for object Operation.
-
 func (b *OperationBuilder) Tags(v ...string) *OperationBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -76,7 +75,6 @@ func (b *OperationBuilder) Tags(v ...string) *OperationBuilder {
 }
 
 // Summary sets the summary field for object Operation.
-
 func (b *OperationBuilder) Summary(v string) *OperationBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -88,7 +86,6 @@ func (b *OperationBuilder) Summary(v string) *OperationBuilder {
 }
 
 // Description sets the description field for object Operation.
-
 func (b *OperationBuilder) Description(v string) *OperationBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -100,7 +97,6 @@ func (b *OperationBuilder) Description(v string) *OperationBuilder {
 }
 
 // ExternalDocs sets the externalDocs field for object Operation.
-
 func (b *OperationBuilder) ExternalDocs(v ExternalDocumentation) *OperationBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -112,7 +108,6 @@ func (b *OperationBuilder) ExternalDocs(v ExternalDocumentation) *OperationBuild
 }
 
 // OperationID sets the operationID field for object Operation.
-
 func (b *OperationBuilder) OperationID(v string) *OperationBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -124,7 +119,6 @@ func (b *OperationBuilder) OperationID(v string) *OperationBuilder {
 }
 
 // Consumes sets the consumes field for object Operation.
-
 func (b *OperationBuilder) Consumes(v ...MIMEType) *OperationBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -136,7 +130,6 @@ func (b *OperationBuilder) Consumes(v ...MIMEType) *OperationBuilder {
 }
 
 // Produces sets the produces field for object Operation.
-
 func (b *OperationBuilder) Produces(v ...MIMEType) *OperationBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -148,7 +141,6 @@ func (b *OperationBuilder) Produces(v ...MIMEType) *OperationBuilder {
 }
 
 // Parameters sets the parameters field for object Operation.
-
 func (b *OperationBuilder) Parameters(v ...Parameter) *OperationBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -160,7 +152,6 @@ func (b *OperationBuilder) Parameters(v ...Parameter) *OperationBuilder {
 }
 
 // Schemes sets the schemes field for object Operation.
-
 func (b *OperationBuilder) Schemes(v ...Scheme) *OperationBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -172,7 +163,6 @@ func (b *OperationBuilder) Schemes(v ...Scheme) *OperationBuilder {
 }
 
 // Deprecated sets the deprecated field for object Operation.
-
 func (b *OperationBuilder) Deprecated(v bool) *OperationBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -184,7 +174,6 @@ func (b *OperationBuilder) Deprecated(v bool) *OperationBuilder {
 }
 
 // Security sets the security field for object Operation.
-
 func (b *OperationBuilder) Security(v ...SecurityRequirement) *OperationBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()

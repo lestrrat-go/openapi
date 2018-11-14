@@ -64,7 +64,6 @@ func NewSecurityScheme(typ string) *SecuritySchemeBuilder {
 }
 
 // Description sets the description field for object SecurityScheme.
-
 func (b *SecuritySchemeBuilder) Description(v string) *SecuritySchemeBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -76,7 +75,6 @@ func (b *SecuritySchemeBuilder) Description(v string) *SecuritySchemeBuilder {
 }
 
 // Name sets the name field for object SecurityScheme.
-
 func (b *SecuritySchemeBuilder) Name(v string) *SecuritySchemeBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -88,7 +86,6 @@ func (b *SecuritySchemeBuilder) Name(v string) *SecuritySchemeBuilder {
 }
 
 // In sets the in field for object SecurityScheme.
-
 func (b *SecuritySchemeBuilder) In(v string) *SecuritySchemeBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -100,7 +97,6 @@ func (b *SecuritySchemeBuilder) In(v string) *SecuritySchemeBuilder {
 }
 
 // Flow sets the flow field for object SecurityScheme.
-
 func (b *SecuritySchemeBuilder) Flow(v string) *SecuritySchemeBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -112,7 +108,6 @@ func (b *SecuritySchemeBuilder) Flow(v string) *SecuritySchemeBuilder {
 }
 
 // AuthorizationURL sets the authorizationURL field for object SecurityScheme.
-
 func (b *SecuritySchemeBuilder) AuthorizationURL(v string) *SecuritySchemeBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -124,7 +119,6 @@ func (b *SecuritySchemeBuilder) AuthorizationURL(v string) *SecuritySchemeBuilde
 }
 
 // TokenURL sets the tokenURL field for object SecurityScheme.
-
 func (b *SecuritySchemeBuilder) TokenURL(v string) *SecuritySchemeBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -136,7 +130,6 @@ func (b *SecuritySchemeBuilder) TokenURL(v string) *SecuritySchemeBuilder {
 }
 
 // Scopes sets the scopes field for object SecurityScheme.
-
 func (b *SecuritySchemeBuilder) Scopes(v StringMap) *SecuritySchemeBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()

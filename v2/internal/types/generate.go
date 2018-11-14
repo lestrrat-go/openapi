@@ -607,7 +607,7 @@ func generateBuilderFromEntity(e interface{}) error {
 			}
 			argType = "..." + argType
 		}
-		fmt.Fprintf(dst, "\n\nfunc (b *%sBuilder) %s(v %s) *%sBuilder {", ifacename, exportedFieldName, argType, ifacename)
+		fmt.Fprintf(dst, "\nfunc (b *%sBuilder) %s(v %s) *%sBuilder {", ifacename, exportedFieldName, argType, ifacename)
 		fmt.Fprintf(dst, "\nb.mu.Lock()")
 		fmt.Fprintf(dst, "\ndefer b.mu.Unlock()")
 		fmt.Fprintf(dst, "\nif b.target == nil {")

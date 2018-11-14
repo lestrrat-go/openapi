@@ -65,7 +65,6 @@ func NewInfo(title string, version string) *InfoBuilder {
 }
 
 // Description sets the description field for object Info.
-
 func (b *InfoBuilder) Description(v string) *InfoBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -77,7 +76,6 @@ func (b *InfoBuilder) Description(v string) *InfoBuilder {
 }
 
 // TermsOfService sets the termsOfService field for object Info.
-
 func (b *InfoBuilder) TermsOfService(v string) *InfoBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -89,7 +87,6 @@ func (b *InfoBuilder) TermsOfService(v string) *InfoBuilder {
 }
 
 // Contact sets the contact field for object Info.
-
 func (b *InfoBuilder) Contact(v Contact) *InfoBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -101,7 +98,6 @@ func (b *InfoBuilder) Contact(v Contact) *InfoBuilder {
 }
 
 // License sets the license field for object Info.
-
 func (b *InfoBuilder) License(v License) *InfoBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()

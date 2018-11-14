@@ -62,7 +62,6 @@ func NewPaths() *PathsBuilder {
 }
 
 // Paths sets the paths field for object Paths.
-
 func (b *PathsBuilder) Paths(v PathItemMap) *PathsBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()

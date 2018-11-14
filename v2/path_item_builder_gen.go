@@ -62,7 +62,6 @@ func NewPathItem() *PathItemBuilder {
 }
 
 // Parameters sets the parameters field for object PathItem.
-
 func (b *PathItemBuilder) Parameters(v ...Parameter) *PathItemBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()

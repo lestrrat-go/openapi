@@ -64,7 +64,6 @@ func NewLicense(name string) *LicenseBuilder {
 }
 
 // URL sets the url field for object License.
-
 func (b *LicenseBuilder) URL(v string) *LicenseBuilder {
 	b.mu.Lock()
 	defer b.mu.Unlock()
