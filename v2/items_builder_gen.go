@@ -16,7 +16,7 @@ var _ = errors.Cause
 // Builders may NOT be reused. It must be created for every instance
 // of Items that you want to create
 type ItemsBuilder struct {
-	mu     sync.Mutex
+	lock   sync.Locker
 	target *items
 }
 
@@ -33,8 +33,8 @@ func (b *ItemsBuilder) MustBuild(options ...Option) Items {
 // Build finalizes the building process for Items and returns the result
 // By default, Build() will validate if the given structure is valid
 func (b *ItemsBuilder) Build(options ...Option) (Items, error) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return nil, errors.New(`builder has already been used`)
 	}
@@ -55,16 +55,27 @@ func (b *ItemsBuilder) Build(options ...Option) (Items, error) {
 }
 
 // NewItems creates a new builder object for Items
-func NewItems() *ItemsBuilder {
+func NewItems(options ...Option) *ItemsBuilder {
+	var lock sync.Locker = &sync.Mutex{}
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyLocker:
+			lock = option.Value().(sync.Locker)
+		}
+	}
 	var b ItemsBuilder
+	if lock == nil {
+		lock = nilLock{}
+	}
+	b.lock = lock
 	b.target = &items{}
 	return &b
 }
 
 // Type sets the typ field for object Items.
 func (b *ItemsBuilder) Type(v PrimitiveType) *ItemsBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -74,8 +85,8 @@ func (b *ItemsBuilder) Type(v PrimitiveType) *ItemsBuilder {
 
 // Format sets the format field for object Items.
 func (b *ItemsBuilder) Format(v string) *ItemsBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -85,8 +96,8 @@ func (b *ItemsBuilder) Format(v string) *ItemsBuilder {
 
 // Items sets the items field for object Items.
 func (b *ItemsBuilder) Items(v Items) *ItemsBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -96,8 +107,8 @@ func (b *ItemsBuilder) Items(v Items) *ItemsBuilder {
 
 // CollectionFormat sets the collectionFormat field for object Items.
 func (b *ItemsBuilder) CollectionFormat(v CollectionFormat) *ItemsBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -107,8 +118,8 @@ func (b *ItemsBuilder) CollectionFormat(v CollectionFormat) *ItemsBuilder {
 
 // Default sets the defaultValue field for object Items.
 func (b *ItemsBuilder) Default(v interface{}) *ItemsBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -118,8 +129,8 @@ func (b *ItemsBuilder) Default(v interface{}) *ItemsBuilder {
 
 // Maximum sets the maximum field for object Items.
 func (b *ItemsBuilder) Maximum(v float64) *ItemsBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -129,8 +140,8 @@ func (b *ItemsBuilder) Maximum(v float64) *ItemsBuilder {
 
 // ExclusiveMaximum sets the exclusiveMaximum field for object Items.
 func (b *ItemsBuilder) ExclusiveMaximum(v float64) *ItemsBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -140,8 +151,8 @@ func (b *ItemsBuilder) ExclusiveMaximum(v float64) *ItemsBuilder {
 
 // Minimum sets the minimum field for object Items.
 func (b *ItemsBuilder) Minimum(v float64) *ItemsBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -151,8 +162,8 @@ func (b *ItemsBuilder) Minimum(v float64) *ItemsBuilder {
 
 // ExclusiveMinimum sets the exclusiveMinimum field for object Items.
 func (b *ItemsBuilder) ExclusiveMinimum(v float64) *ItemsBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -162,8 +173,8 @@ func (b *ItemsBuilder) ExclusiveMinimum(v float64) *ItemsBuilder {
 
 // MaxLength sets the maxLength field for object Items.
 func (b *ItemsBuilder) MaxLength(v int) *ItemsBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -173,8 +184,8 @@ func (b *ItemsBuilder) MaxLength(v int) *ItemsBuilder {
 
 // MinLength sets the minLength field for object Items.
 func (b *ItemsBuilder) MinLength(v int) *ItemsBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -184,8 +195,8 @@ func (b *ItemsBuilder) MinLength(v int) *ItemsBuilder {
 
 // Pattern sets the pattern field for object Items.
 func (b *ItemsBuilder) Pattern(v string) *ItemsBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -195,8 +206,8 @@ func (b *ItemsBuilder) Pattern(v string) *ItemsBuilder {
 
 // MaxItems sets the maxItems field for object Items.
 func (b *ItemsBuilder) MaxItems(v int) *ItemsBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -206,8 +217,8 @@ func (b *ItemsBuilder) MaxItems(v int) *ItemsBuilder {
 
 // MinItems sets the minItems field for object Items.
 func (b *ItemsBuilder) MinItems(v int) *ItemsBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -217,8 +228,8 @@ func (b *ItemsBuilder) MinItems(v int) *ItemsBuilder {
 
 // UniqueItems sets the uniqueItems field for object Items.
 func (b *ItemsBuilder) UniqueItems(v bool) *ItemsBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -228,8 +239,8 @@ func (b *ItemsBuilder) UniqueItems(v bool) *ItemsBuilder {
 
 // Enum sets the enum field for object Items.
 func (b *ItemsBuilder) Enum(v ...interface{}) *ItemsBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -239,8 +250,8 @@ func (b *ItemsBuilder) Enum(v ...interface{}) *ItemsBuilder {
 
 // MultipleOf sets the multipleOf field for object Items.
 func (b *ItemsBuilder) MultipleOf(v float64) *ItemsBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -250,8 +261,8 @@ func (b *ItemsBuilder) MultipleOf(v float64) *ItemsBuilder {
 
 // Reference sets the $ref (reference) field for object Items.
 func (b *ItemsBuilder) Reference(v string) *ItemsBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -262,8 +273,8 @@ func (b *ItemsBuilder) Reference(v string) *ItemsBuilder {
 // Extension sets an arbitrary element (an extension) to the
 // object Items. The extension name should start with a "x-"
 func (b *ItemsBuilder) Extension(name string, value interface{}) *ItemsBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}

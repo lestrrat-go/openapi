@@ -16,7 +16,7 @@ var _ = errors.Cause
 // Builders may NOT be reused. It must be created for every instance
 // of XML that you want to create
 type XMLBuilder struct {
-	mu     sync.Mutex
+	lock   sync.Locker
 	target *xml
 }
 
@@ -33,8 +33,8 @@ func (b *XMLBuilder) MustBuild(options ...Option) XML {
 // Build finalizes the building process for XML and returns the result
 // By default, Build() will validate if the given structure is valid
 func (b *XMLBuilder) Build(options ...Option) (XML, error) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return nil, errors.New(`builder has already been used`)
 	}
@@ -55,16 +55,27 @@ func (b *XMLBuilder) Build(options ...Option) (XML, error) {
 }
 
 // NewXML creates a new builder object for XML
-func NewXML() *XMLBuilder {
+func NewXML(options ...Option) *XMLBuilder {
+	var lock sync.Locker = &sync.Mutex{}
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyLocker:
+			lock = option.Value().(sync.Locker)
+		}
+	}
 	var b XMLBuilder
+	if lock == nil {
+		lock = nilLock{}
+	}
+	b.lock = lock
 	b.target = &xml{}
 	return &b
 }
 
 // Name sets the name field for object XML.
 func (b *XMLBuilder) Name(v string) *XMLBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -74,8 +85,8 @@ func (b *XMLBuilder) Name(v string) *XMLBuilder {
 
 // Namespace sets the namespace field for object XML.
 func (b *XMLBuilder) Namespace(v string) *XMLBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -85,8 +96,8 @@ func (b *XMLBuilder) Namespace(v string) *XMLBuilder {
 
 // Prefix sets the prefix field for object XML.
 func (b *XMLBuilder) Prefix(v string) *XMLBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -96,8 +107,8 @@ func (b *XMLBuilder) Prefix(v string) *XMLBuilder {
 
 // Attribute sets the attribute field for object XML.
 func (b *XMLBuilder) Attribute(v bool) *XMLBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -107,8 +118,8 @@ func (b *XMLBuilder) Attribute(v bool) *XMLBuilder {
 
 // Wrapped sets the wrapped field for object XML.
 func (b *XMLBuilder) Wrapped(v bool) *XMLBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -118,8 +129,8 @@ func (b *XMLBuilder) Wrapped(v bool) *XMLBuilder {
 
 // Reference sets the $ref (reference) field for object XML.
 func (b *XMLBuilder) Reference(v string) *XMLBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -130,8 +141,8 @@ func (b *XMLBuilder) Reference(v string) *XMLBuilder {
 // Extension sets an arbitrary element (an extension) to the
 // object XML. The extension name should start with a "x-"
 func (b *XMLBuilder) Extension(name string, value interface{}) *XMLBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}

@@ -16,7 +16,7 @@ var _ = errors.Cause
 // Builders may NOT be reused. It must be created for every instance
 // of SecurityScheme that you want to create
 type SecuritySchemeBuilder struct {
-	mu     sync.Mutex
+	lock   sync.Locker
 	target *securityScheme
 }
 
@@ -33,8 +33,8 @@ func (b *SecuritySchemeBuilder) MustBuild(options ...Option) SecurityScheme {
 // Build finalizes the building process for SecurityScheme and returns the result
 // By default, Build() will validate if the given structure is valid
 func (b *SecuritySchemeBuilder) Build(options ...Option) (SecurityScheme, error) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return nil, errors.New(`builder has already been used`)
 	}
@@ -55,8 +55,19 @@ func (b *SecuritySchemeBuilder) Build(options ...Option) (SecurityScheme, error)
 }
 
 // NewSecurityScheme creates a new builder object for SecurityScheme
-func NewSecurityScheme(typ string) *SecuritySchemeBuilder {
+func NewSecurityScheme(typ string, options ...Option) *SecuritySchemeBuilder {
+	var lock sync.Locker = &sync.Mutex{}
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyLocker:
+			lock = option.Value().(sync.Locker)
+		}
+	}
 	var b SecuritySchemeBuilder
+	if lock == nil {
+		lock = nilLock{}
+	}
+	b.lock = lock
 	b.target = &securityScheme{
 		typ: typ,
 	}
@@ -65,8 +76,8 @@ func NewSecurityScheme(typ string) *SecuritySchemeBuilder {
 
 // Description sets the description field for object SecurityScheme.
 func (b *SecuritySchemeBuilder) Description(v string) *SecuritySchemeBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -76,8 +87,8 @@ func (b *SecuritySchemeBuilder) Description(v string) *SecuritySchemeBuilder {
 
 // Name sets the name field for object SecurityScheme.
 func (b *SecuritySchemeBuilder) Name(v string) *SecuritySchemeBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -87,8 +98,8 @@ func (b *SecuritySchemeBuilder) Name(v string) *SecuritySchemeBuilder {
 
 // In sets the in field for object SecurityScheme.
 func (b *SecuritySchemeBuilder) In(v string) *SecuritySchemeBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -98,8 +109,8 @@ func (b *SecuritySchemeBuilder) In(v string) *SecuritySchemeBuilder {
 
 // Flow sets the flow field for object SecurityScheme.
 func (b *SecuritySchemeBuilder) Flow(v string) *SecuritySchemeBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -109,8 +120,8 @@ func (b *SecuritySchemeBuilder) Flow(v string) *SecuritySchemeBuilder {
 
 // AuthorizationURL sets the authorizationURL field for object SecurityScheme.
 func (b *SecuritySchemeBuilder) AuthorizationURL(v string) *SecuritySchemeBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -120,8 +131,8 @@ func (b *SecuritySchemeBuilder) AuthorizationURL(v string) *SecuritySchemeBuilde
 
 // TokenURL sets the tokenURL field for object SecurityScheme.
 func (b *SecuritySchemeBuilder) TokenURL(v string) *SecuritySchemeBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -131,8 +142,8 @@ func (b *SecuritySchemeBuilder) TokenURL(v string) *SecuritySchemeBuilder {
 
 // Scopes sets the scopes field for object SecurityScheme.
 func (b *SecuritySchemeBuilder) Scopes(v StringMap) *SecuritySchemeBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -142,8 +153,8 @@ func (b *SecuritySchemeBuilder) Scopes(v StringMap) *SecuritySchemeBuilder {
 
 // Reference sets the $ref (reference) field for object SecurityScheme.
 func (b *SecuritySchemeBuilder) Reference(v string) *SecuritySchemeBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -154,8 +165,8 @@ func (b *SecuritySchemeBuilder) Reference(v string) *SecuritySchemeBuilder {
 // Extension sets an arbitrary element (an extension) to the
 // object SecurityScheme. The extension name should start with a "x-"
 func (b *SecuritySchemeBuilder) Extension(name string, value interface{}) *SecuritySchemeBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}

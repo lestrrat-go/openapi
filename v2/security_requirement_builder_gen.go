@@ -16,7 +16,7 @@ var _ = errors.Cause
 // Builders may NOT be reused. It must be created for every instance
 // of SecurityRequirement that you want to create
 type SecurityRequirementBuilder struct {
-	mu     sync.Mutex
+	lock   sync.Locker
 	target *securityRequirement
 }
 
@@ -33,8 +33,8 @@ func (b *SecurityRequirementBuilder) MustBuild(options ...Option) SecurityRequir
 // Build finalizes the building process for SecurityRequirement and returns the result
 // By default, Build() will validate if the given structure is valid
 func (b *SecurityRequirementBuilder) Build(options ...Option) (SecurityRequirement, error) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return nil, errors.New(`builder has already been used`)
 	}
@@ -55,16 +55,27 @@ func (b *SecurityRequirementBuilder) Build(options ...Option) (SecurityRequireme
 }
 
 // NewSecurityRequirement creates a new builder object for SecurityRequirement
-func NewSecurityRequirement() *SecurityRequirementBuilder {
+func NewSecurityRequirement(options ...Option) *SecurityRequirementBuilder {
+	var lock sync.Locker = &sync.Mutex{}
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyLocker:
+			lock = option.Value().(sync.Locker)
+		}
+	}
 	var b SecurityRequirementBuilder
+	if lock == nil {
+		lock = nilLock{}
+	}
+	b.lock = lock
 	b.target = &securityRequirement{}
 	return &b
 }
 
 // Name sets the name field for object SecurityRequirement.
 func (b *SecurityRequirementBuilder) Name(v string) *SecurityRequirementBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -74,8 +85,8 @@ func (b *SecurityRequirementBuilder) Name(v string) *SecurityRequirementBuilder 
 
 // Reference sets the $ref (reference) field for object SecurityRequirement.
 func (b *SecurityRequirementBuilder) Reference(v string) *SecurityRequirementBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -86,8 +97,8 @@ func (b *SecurityRequirementBuilder) Reference(v string) *SecurityRequirementBui
 // Extension sets an arbitrary element (an extension) to the
 // object SecurityRequirement. The extension name should start with a "x-"
 func (b *SecurityRequirementBuilder) Extension(name string, value interface{}) *SecurityRequirementBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}

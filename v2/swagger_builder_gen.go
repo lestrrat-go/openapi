@@ -16,7 +16,7 @@ var _ = errors.Cause
 // Builders may NOT be reused. It must be created for every instance
 // of Swagger that you want to create
 type SwaggerBuilder struct {
-	mu     sync.Mutex
+	lock   sync.Locker
 	target *swagger
 }
 
@@ -33,8 +33,8 @@ func (b *SwaggerBuilder) MustBuild(options ...Option) Swagger {
 // Build finalizes the building process for Swagger and returns the result
 // By default, Build() will validate if the given structure is valid
 func (b *SwaggerBuilder) Build(options ...Option) (Swagger, error) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return nil, errors.New(`builder has already been used`)
 	}
@@ -55,8 +55,19 @@ func (b *SwaggerBuilder) Build(options ...Option) (Swagger, error) {
 }
 
 // NewSwagger creates a new builder object for Swagger
-func NewSwagger(info Info, paths Paths) *SwaggerBuilder {
+func NewSwagger(info Info, paths Paths, options ...Option) *SwaggerBuilder {
+	var lock sync.Locker = &sync.Mutex{}
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyLocker:
+			lock = option.Value().(sync.Locker)
+		}
+	}
 	var b SwaggerBuilder
+	if lock == nil {
+		lock = nilLock{}
+	}
+	b.lock = lock
 	b.target = &swagger{
 		version: defaultSwaggerVersion,
 		info:    info,
@@ -67,8 +78,8 @@ func NewSwagger(info Info, paths Paths) *SwaggerBuilder {
 
 // Host sets the host field for object Swagger.
 func (b *SwaggerBuilder) Host(v string) *SwaggerBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -78,8 +89,8 @@ func (b *SwaggerBuilder) Host(v string) *SwaggerBuilder {
 
 // BasePath sets the basePath field for object Swagger.
 func (b *SwaggerBuilder) BasePath(v string) *SwaggerBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -89,8 +100,8 @@ func (b *SwaggerBuilder) BasePath(v string) *SwaggerBuilder {
 
 // Schemes sets the schemes field for object Swagger.
 func (b *SwaggerBuilder) Schemes(v ...Scheme) *SwaggerBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -100,8 +111,8 @@ func (b *SwaggerBuilder) Schemes(v ...Scheme) *SwaggerBuilder {
 
 // Consumes sets the consumes field for object Swagger.
 func (b *SwaggerBuilder) Consumes(v ...MIMEType) *SwaggerBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -111,8 +122,8 @@ func (b *SwaggerBuilder) Consumes(v ...MIMEType) *SwaggerBuilder {
 
 // Produces sets the produces field for object Swagger.
 func (b *SwaggerBuilder) Produces(v ...MIMEType) *SwaggerBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -122,8 +133,8 @@ func (b *SwaggerBuilder) Produces(v ...MIMEType) *SwaggerBuilder {
 
 // Definitions sets the definitions field for object Swagger.
 func (b *SwaggerBuilder) Definitions(v InterfaceMap) *SwaggerBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -133,8 +144,8 @@ func (b *SwaggerBuilder) Definitions(v InterfaceMap) *SwaggerBuilder {
 
 // Parameters sets the parameters field for object Swagger.
 func (b *SwaggerBuilder) Parameters(v ParameterMap) *SwaggerBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -144,8 +155,8 @@ func (b *SwaggerBuilder) Parameters(v ParameterMap) *SwaggerBuilder {
 
 // Responses sets the responses field for object Swagger.
 func (b *SwaggerBuilder) Responses(v ResponseMap) *SwaggerBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -155,8 +166,8 @@ func (b *SwaggerBuilder) Responses(v ResponseMap) *SwaggerBuilder {
 
 // SecurityDefinitions sets the securityDefinitions field for object Swagger.
 func (b *SwaggerBuilder) SecurityDefinitions(v SecuritySchemeMap) *SwaggerBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -166,8 +177,8 @@ func (b *SwaggerBuilder) SecurityDefinitions(v SecuritySchemeMap) *SwaggerBuilde
 
 // Security sets the security field for object Swagger.
 func (b *SwaggerBuilder) Security(v ...SecurityRequirement) *SwaggerBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -177,8 +188,8 @@ func (b *SwaggerBuilder) Security(v ...SecurityRequirement) *SwaggerBuilder {
 
 // Tags sets the tags field for object Swagger.
 func (b *SwaggerBuilder) Tags(v ...Tag) *SwaggerBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -188,8 +199,8 @@ func (b *SwaggerBuilder) Tags(v ...Tag) *SwaggerBuilder {
 
 // ExternalDocs sets the externalDocs field for object Swagger.
 func (b *SwaggerBuilder) ExternalDocs(v ExternalDocumentation) *SwaggerBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -199,8 +210,8 @@ func (b *SwaggerBuilder) ExternalDocs(v ExternalDocumentation) *SwaggerBuilder {
 
 // Reference sets the $ref (reference) field for object Swagger.
 func (b *SwaggerBuilder) Reference(v string) *SwaggerBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -211,8 +222,8 @@ func (b *SwaggerBuilder) Reference(v string) *SwaggerBuilder {
 // Extension sets an arbitrary element (an extension) to the
 // object Swagger. The extension name should start with a "x-"
 func (b *SwaggerBuilder) Extension(name string, value interface{}) *SwaggerBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}

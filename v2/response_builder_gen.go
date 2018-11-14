@@ -16,7 +16,7 @@ var _ = errors.Cause
 // Builders may NOT be reused. It must be created for every instance
 // of Response that you want to create
 type ResponseBuilder struct {
-	mu     sync.Mutex
+	lock   sync.Locker
 	target *response
 }
 
@@ -33,8 +33,8 @@ func (b *ResponseBuilder) MustBuild(options ...Option) Response {
 // Build finalizes the building process for Response and returns the result
 // By default, Build() will validate if the given structure is valid
 func (b *ResponseBuilder) Build(options ...Option) (Response, error) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return nil, errors.New(`builder has already been used`)
 	}
@@ -55,8 +55,19 @@ func (b *ResponseBuilder) Build(options ...Option) (Response, error) {
 }
 
 // NewResponse creates a new builder object for Response
-func NewResponse(description string) *ResponseBuilder {
+func NewResponse(description string, options ...Option) *ResponseBuilder {
+	var lock sync.Locker = &sync.Mutex{}
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyLocker:
+			lock = option.Value().(sync.Locker)
+		}
+	}
 	var b ResponseBuilder
+	if lock == nil {
+		lock = nilLock{}
+	}
+	b.lock = lock
 	b.target = &response{
 		description: description,
 	}
@@ -65,8 +76,8 @@ func NewResponse(description string) *ResponseBuilder {
 
 // Name sets the name field for object Response.
 func (b *ResponseBuilder) Name(v string) *ResponseBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -76,8 +87,8 @@ func (b *ResponseBuilder) Name(v string) *ResponseBuilder {
 
 // StatusCode sets the statusCode field for object Response.
 func (b *ResponseBuilder) StatusCode(v string) *ResponseBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -87,8 +98,8 @@ func (b *ResponseBuilder) StatusCode(v string) *ResponseBuilder {
 
 // Schema sets the schema field for object Response.
 func (b *ResponseBuilder) Schema(v Schema) *ResponseBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -98,8 +109,8 @@ func (b *ResponseBuilder) Schema(v Schema) *ResponseBuilder {
 
 // Headers sets the headers field for object Response.
 func (b *ResponseBuilder) Headers(v HeaderMap) *ResponseBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -109,8 +120,8 @@ func (b *ResponseBuilder) Headers(v HeaderMap) *ResponseBuilder {
 
 // Examples sets the examples field for object Response.
 func (b *ResponseBuilder) Examples(v ExampleMap) *ResponseBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -120,8 +131,8 @@ func (b *ResponseBuilder) Examples(v ExampleMap) *ResponseBuilder {
 
 // Reference sets the $ref (reference) field for object Response.
 func (b *ResponseBuilder) Reference(v string) *ResponseBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -132,8 +143,8 @@ func (b *ResponseBuilder) Reference(v string) *ResponseBuilder {
 // Extension sets an arbitrary element (an extension) to the
 // object Response. The extension name should start with a "x-"
 func (b *ResponseBuilder) Extension(name string, value interface{}) *ResponseBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}

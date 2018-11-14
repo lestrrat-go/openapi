@@ -492,7 +492,7 @@ func generateBuilderFromEntity(e interface{}) error {
 	fmt.Fprintf(dst, "\n// Builders may NOT be reused. It must be created for every instance")
 	fmt.Fprintf(dst, "\n// of %s that you want to create", ifacename)
 	fmt.Fprintf(dst, "\ntype %sBuilder struct {", ifacename)
-	fmt.Fprintf(dst, "\nmu sync.Mutex")
+	fmt.Fprintf(dst, "\nlock sync.Locker")
 	fmt.Fprintf(dst, "\ntarget *%s", structname)
 	fmt.Fprintf(dst, "\n}")
 
@@ -509,8 +509,8 @@ func generateBuilderFromEntity(e interface{}) error {
 	fmt.Fprintf(dst, "\n\n// Build finalizes the building process for %s and returns the result", ifacename)
 	fmt.Fprintf(dst, "\n// By default, Build() will validate if the given structure is valid")
 	fmt.Fprintf(dst, "\nfunc (b *%[1]sBuilder) Build(options ...Option) (%[1]s, error) {", ifacename)
-	fmt.Fprintf(dst, "\nb.mu.Lock()")
-	fmt.Fprintf(dst, "\ndefer b.mu.Unlock()")
+	fmt.Fprintf(dst, "\nb.lock.Lock()")
+	fmt.Fprintf(dst, "\ndefer b.lock.Unlock()")
 	fmt.Fprintf(dst, "\nif b.target == nil {")
 	fmt.Fprintf(dst, "\nreturn nil, errors.New(`builder has already been used`)")
 	fmt.Fprintf(dst, "\n}")
@@ -555,16 +555,25 @@ func generateBuilderFromEntity(e interface{}) error {
 		}
 	}
 
-	fmt.Fprintf(dst, "\n\n// New%s creates a new builder object for %s", ifacename, ifacename)
+	fmt.Fprintf(dst, "\n\n// New%[1]s creates a new builder object for %[1]s", ifacename)
 	fmt.Fprintf(dst, "\nfunc New%s(", ifacename)
-	for i, fv := range requireds {
+	for _, fv := range requireds {
 		fmt.Fprintf(dst, "%s %s", codegen.UnexportedName(fv.Name), typname(fv.Type))
-		if i < len(requireds)-1 {
-			fmt.Fprintf(dst, ", ")
-		}
+		fmt.Fprintf(dst, ", ")
 	}
-	fmt.Fprintf(dst, ") *%sBuilder {", ifacename)
+	fmt.Fprintf(dst, "options ...Option) *%sBuilder {", ifacename)
+	fmt.Fprintf(dst, "\nvar lock sync.Locker = &sync.Mutex{}")
+	fmt.Fprintf(dst, "\nfor _, option := range options {")
+	fmt.Fprintf(dst, "\nswitch option.Name() {")
+	fmt.Fprintf(dst, "\ncase optkeyLocker:")
+	fmt.Fprintf(dst, "\nlock = option.Value().(sync.Locker)")
+	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\n}")
 	fmt.Fprintf(dst, "\nvar b %sBuilder", ifacename)
+	fmt.Fprintf(dst, "\nif lock == nil {")
+	fmt.Fprintf(dst, "\nlock = nilLock{}")
+	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\nb.lock = lock")
 	fmt.Fprintf(dst, "\nb.target = &%s{", structname)
 	hasDefault := make(map[string]struct{})
 	for _, fv := range defaults {
@@ -608,8 +617,8 @@ func generateBuilderFromEntity(e interface{}) error {
 			argType = "..." + argType
 		}
 		fmt.Fprintf(dst, "\nfunc (b *%sBuilder) %s(v %s) *%sBuilder {", ifacename, exportedFieldName, argType, ifacename)
-		fmt.Fprintf(dst, "\nb.mu.Lock()")
-		fmt.Fprintf(dst, "\ndefer b.mu.Unlock()")
+		fmt.Fprintf(dst, "\nb.lock.Lock()")
+		fmt.Fprintf(dst, "\ndefer b.lock.Unlock()")
 		fmt.Fprintf(dst, "\nif b.target == nil {")
 		fmt.Fprintf(dst, "\nreturn b")
 		fmt.Fprintf(dst, "\n}")
@@ -624,8 +633,8 @@ func generateBuilderFromEntity(e interface{}) error {
 
 	fmt.Fprintf(dst, "\n\n// Reference sets the $ref (reference) field for object %s.", ifacename)
 	fmt.Fprintf(dst, "\nfunc (b *%sBuilder) Reference(v string) *%sBuilder {", ifacename, ifacename)
-	fmt.Fprintf(dst, "\nb.mu.Lock()")
-	fmt.Fprintf(dst, "\ndefer b.mu.Unlock()")
+	fmt.Fprintf(dst, "\nb.lock.Lock()")
+	fmt.Fprintf(dst, "\ndefer b.lock.Unlock()")
 	fmt.Fprintf(dst, "\nif b.target == nil {")
 	fmt.Fprintf(dst, "\nreturn b")
 	fmt.Fprintf(dst, "\n}")
@@ -636,8 +645,8 @@ func generateBuilderFromEntity(e interface{}) error {
 	fmt.Fprintf(dst, "\n\n// Extension sets an arbitrary element (an extension) to the")
 	fmt.Fprintf(dst, "\n// object %s. The extension name should start with a \"x-\"", ifacename)
 	fmt.Fprintf(dst, "\nfunc (b *%[1]sBuilder) Extension(name string, value interface{}) *%[1]sBuilder {", ifacename)
-	fmt.Fprintf(dst, "\nb.mu.Lock()")
-	fmt.Fprintf(dst, "\ndefer b.mu.Unlock()")
+	fmt.Fprintf(dst, "\nb.lock.Lock()")
+	fmt.Fprintf(dst, "\ndefer b.lock.Unlock()")
 	fmt.Fprintf(dst, "\nif b.target == nil {")
 	fmt.Fprintf(dst, "\nreturn b")
 	fmt.Fprintf(dst, "\n}")

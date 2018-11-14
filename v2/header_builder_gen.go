@@ -16,7 +16,7 @@ var _ = errors.Cause
 // Builders may NOT be reused. It must be created for every instance
 // of Header that you want to create
 type HeaderBuilder struct {
-	mu     sync.Mutex
+	lock   sync.Locker
 	target *header
 }
 
@@ -33,8 +33,8 @@ func (b *HeaderBuilder) MustBuild(options ...Option) Header {
 // Build finalizes the building process for Header and returns the result
 // By default, Build() will validate if the given structure is valid
 func (b *HeaderBuilder) Build(options ...Option) (Header, error) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return nil, errors.New(`builder has already been used`)
 	}
@@ -55,8 +55,19 @@ func (b *HeaderBuilder) Build(options ...Option) (Header, error) {
 }
 
 // NewHeader creates a new builder object for Header
-func NewHeader(typ string) *HeaderBuilder {
+func NewHeader(typ string, options ...Option) *HeaderBuilder {
+	var lock sync.Locker = &sync.Mutex{}
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyLocker:
+			lock = option.Value().(sync.Locker)
+		}
+	}
 	var b HeaderBuilder
+	if lock == nil {
+		lock = nilLock{}
+	}
+	b.lock = lock
 	b.target = &header{
 		typ: typ,
 	}
@@ -65,8 +76,8 @@ func NewHeader(typ string) *HeaderBuilder {
 
 // Name sets the name field for object Header.
 func (b *HeaderBuilder) Name(v string) *HeaderBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -76,8 +87,8 @@ func (b *HeaderBuilder) Name(v string) *HeaderBuilder {
 
 // Description sets the description field for object Header.
 func (b *HeaderBuilder) Description(v string) *HeaderBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -87,8 +98,8 @@ func (b *HeaderBuilder) Description(v string) *HeaderBuilder {
 
 // Format sets the format field for object Header.
 func (b *HeaderBuilder) Format(v string) *HeaderBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -98,8 +109,8 @@ func (b *HeaderBuilder) Format(v string) *HeaderBuilder {
 
 // Items sets the items field for object Header.
 func (b *HeaderBuilder) Items(v Items) *HeaderBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -109,8 +120,8 @@ func (b *HeaderBuilder) Items(v Items) *HeaderBuilder {
 
 // CollectionFormat sets the collectionFormat field for object Header.
 func (b *HeaderBuilder) CollectionFormat(v CollectionFormat) *HeaderBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -120,8 +131,8 @@ func (b *HeaderBuilder) CollectionFormat(v CollectionFormat) *HeaderBuilder {
 
 // Default sets the defaultValue field for object Header.
 func (b *HeaderBuilder) Default(v interface{}) *HeaderBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -131,8 +142,8 @@ func (b *HeaderBuilder) Default(v interface{}) *HeaderBuilder {
 
 // Maximum sets the maximum field for object Header.
 func (b *HeaderBuilder) Maximum(v float64) *HeaderBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -142,8 +153,8 @@ func (b *HeaderBuilder) Maximum(v float64) *HeaderBuilder {
 
 // ExclusiveMaximum sets the exclusiveMaximum field for object Header.
 func (b *HeaderBuilder) ExclusiveMaximum(v float64) *HeaderBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -153,8 +164,8 @@ func (b *HeaderBuilder) ExclusiveMaximum(v float64) *HeaderBuilder {
 
 // Minimum sets the minimum field for object Header.
 func (b *HeaderBuilder) Minimum(v float64) *HeaderBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -164,8 +175,8 @@ func (b *HeaderBuilder) Minimum(v float64) *HeaderBuilder {
 
 // ExclusiveMinimum sets the exclusiveMinimum field for object Header.
 func (b *HeaderBuilder) ExclusiveMinimum(v float64) *HeaderBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -175,8 +186,8 @@ func (b *HeaderBuilder) ExclusiveMinimum(v float64) *HeaderBuilder {
 
 // MaxLength sets the maxLength field for object Header.
 func (b *HeaderBuilder) MaxLength(v int) *HeaderBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -186,8 +197,8 @@ func (b *HeaderBuilder) MaxLength(v int) *HeaderBuilder {
 
 // MinLength sets the minLength field for object Header.
 func (b *HeaderBuilder) MinLength(v int) *HeaderBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -197,8 +208,8 @@ func (b *HeaderBuilder) MinLength(v int) *HeaderBuilder {
 
 // Pattern sets the pattern field for object Header.
 func (b *HeaderBuilder) Pattern(v string) *HeaderBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -208,8 +219,8 @@ func (b *HeaderBuilder) Pattern(v string) *HeaderBuilder {
 
 // MaxItems sets the maxItems field for object Header.
 func (b *HeaderBuilder) MaxItems(v int) *HeaderBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -219,8 +230,8 @@ func (b *HeaderBuilder) MaxItems(v int) *HeaderBuilder {
 
 // MinItems sets the minItems field for object Header.
 func (b *HeaderBuilder) MinItems(v int) *HeaderBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -230,8 +241,8 @@ func (b *HeaderBuilder) MinItems(v int) *HeaderBuilder {
 
 // UniqueItems sets the uniqueItems field for object Header.
 func (b *HeaderBuilder) UniqueItems(v bool) *HeaderBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -241,8 +252,8 @@ func (b *HeaderBuilder) UniqueItems(v bool) *HeaderBuilder {
 
 // Enum sets the enum field for object Header.
 func (b *HeaderBuilder) Enum(v ...interface{}) *HeaderBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -252,8 +263,8 @@ func (b *HeaderBuilder) Enum(v ...interface{}) *HeaderBuilder {
 
 // MultipleOf sets the multipleOf field for object Header.
 func (b *HeaderBuilder) MultipleOf(v float64) *HeaderBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -263,8 +274,8 @@ func (b *HeaderBuilder) MultipleOf(v float64) *HeaderBuilder {
 
 // Reference sets the $ref (reference) field for object Header.
 func (b *HeaderBuilder) Reference(v string) *HeaderBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -275,8 +286,8 @@ func (b *HeaderBuilder) Reference(v string) *HeaderBuilder {
 // Extension sets an arbitrary element (an extension) to the
 // object Header. The extension name should start with a "x-"
 func (b *HeaderBuilder) Extension(name string, value interface{}) *HeaderBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}

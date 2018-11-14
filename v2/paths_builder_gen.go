@@ -16,7 +16,7 @@ var _ = errors.Cause
 // Builders may NOT be reused. It must be created for every instance
 // of Paths that you want to create
 type PathsBuilder struct {
-	mu     sync.Mutex
+	lock   sync.Locker
 	target *paths
 }
 
@@ -33,8 +33,8 @@ func (b *PathsBuilder) MustBuild(options ...Option) Paths {
 // Build finalizes the building process for Paths and returns the result
 // By default, Build() will validate if the given structure is valid
 func (b *PathsBuilder) Build(options ...Option) (Paths, error) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return nil, errors.New(`builder has already been used`)
 	}
@@ -55,16 +55,27 @@ func (b *PathsBuilder) Build(options ...Option) (Paths, error) {
 }
 
 // NewPaths creates a new builder object for Paths
-func NewPaths() *PathsBuilder {
+func NewPaths(options ...Option) *PathsBuilder {
+	var lock sync.Locker = &sync.Mutex{}
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyLocker:
+			lock = option.Value().(sync.Locker)
+		}
+	}
 	var b PathsBuilder
+	if lock == nil {
+		lock = nilLock{}
+	}
+	b.lock = lock
 	b.target = &paths{}
 	return &b
 }
 
 // Paths sets the paths field for object Paths.
 func (b *PathsBuilder) Paths(v PathItemMap) *PathsBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -74,8 +85,8 @@ func (b *PathsBuilder) Paths(v PathItemMap) *PathsBuilder {
 
 // Reference sets the $ref (reference) field for object Paths.
 func (b *PathsBuilder) Reference(v string) *PathsBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -86,8 +97,8 @@ func (b *PathsBuilder) Reference(v string) *PathsBuilder {
 // Extension sets an arbitrary element (an extension) to the
 // object Paths. The extension name should start with a "x-"
 func (b *PathsBuilder) Extension(name string, value interface{}) *PathsBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}

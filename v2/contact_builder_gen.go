@@ -16,7 +16,7 @@ var _ = errors.Cause
 // Builders may NOT be reused. It must be created for every instance
 // of Contact that you want to create
 type ContactBuilder struct {
-	mu     sync.Mutex
+	lock   sync.Locker
 	target *contact
 }
 
@@ -33,8 +33,8 @@ func (b *ContactBuilder) MustBuild(options ...Option) Contact {
 // Build finalizes the building process for Contact and returns the result
 // By default, Build() will validate if the given structure is valid
 func (b *ContactBuilder) Build(options ...Option) (Contact, error) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return nil, errors.New(`builder has already been used`)
 	}
@@ -55,16 +55,27 @@ func (b *ContactBuilder) Build(options ...Option) (Contact, error) {
 }
 
 // NewContact creates a new builder object for Contact
-func NewContact() *ContactBuilder {
+func NewContact(options ...Option) *ContactBuilder {
+	var lock sync.Locker = &sync.Mutex{}
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyLocker:
+			lock = option.Value().(sync.Locker)
+		}
+	}
 	var b ContactBuilder
+	if lock == nil {
+		lock = nilLock{}
+	}
+	b.lock = lock
 	b.target = &contact{}
 	return &b
 }
 
 // Name sets the name field for object Contact.
 func (b *ContactBuilder) Name(v string) *ContactBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -74,8 +85,8 @@ func (b *ContactBuilder) Name(v string) *ContactBuilder {
 
 // URL sets the url field for object Contact.
 func (b *ContactBuilder) URL(v string) *ContactBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -85,8 +96,8 @@ func (b *ContactBuilder) URL(v string) *ContactBuilder {
 
 // Email sets the email field for object Contact.
 func (b *ContactBuilder) Email(v string) *ContactBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -96,8 +107,8 @@ func (b *ContactBuilder) Email(v string) *ContactBuilder {
 
 // Reference sets the $ref (reference) field for object Contact.
 func (b *ContactBuilder) Reference(v string) *ContactBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -108,8 +119,8 @@ func (b *ContactBuilder) Reference(v string) *ContactBuilder {
 // Extension sets an arbitrary element (an extension) to the
 // object Contact. The extension name should start with a "x-"
 func (b *ContactBuilder) Extension(name string, value interface{}) *ContactBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}

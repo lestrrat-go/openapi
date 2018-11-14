@@ -16,7 +16,7 @@ var _ = errors.Cause
 // Builders may NOT be reused. It must be created for every instance
 // of Operation that you want to create
 type OperationBuilder struct {
-	mu     sync.Mutex
+	lock   sync.Locker
 	target *operation
 }
 
@@ -33,8 +33,8 @@ func (b *OperationBuilder) MustBuild(options ...Option) Operation {
 // Build finalizes the building process for Operation and returns the result
 // By default, Build() will validate if the given structure is valid
 func (b *OperationBuilder) Build(options ...Option) (Operation, error) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return nil, errors.New(`builder has already been used`)
 	}
@@ -55,8 +55,19 @@ func (b *OperationBuilder) Build(options ...Option) (Operation, error) {
 }
 
 // NewOperation creates a new builder object for Operation
-func NewOperation(responses Responses) *OperationBuilder {
+func NewOperation(responses Responses, options ...Option) *OperationBuilder {
+	var lock sync.Locker = &sync.Mutex{}
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyLocker:
+			lock = option.Value().(sync.Locker)
+		}
+	}
 	var b OperationBuilder
+	if lock == nil {
+		lock = nilLock{}
+	}
+	b.lock = lock
 	b.target = &operation{
 		responses: responses,
 	}
@@ -65,8 +76,8 @@ func NewOperation(responses Responses) *OperationBuilder {
 
 // Tags sets the tags field for object Operation.
 func (b *OperationBuilder) Tags(v ...string) *OperationBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -76,8 +87,8 @@ func (b *OperationBuilder) Tags(v ...string) *OperationBuilder {
 
 // Summary sets the summary field for object Operation.
 func (b *OperationBuilder) Summary(v string) *OperationBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -87,8 +98,8 @@ func (b *OperationBuilder) Summary(v string) *OperationBuilder {
 
 // Description sets the description field for object Operation.
 func (b *OperationBuilder) Description(v string) *OperationBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -98,8 +109,8 @@ func (b *OperationBuilder) Description(v string) *OperationBuilder {
 
 // ExternalDocs sets the externalDocs field for object Operation.
 func (b *OperationBuilder) ExternalDocs(v ExternalDocumentation) *OperationBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -109,8 +120,8 @@ func (b *OperationBuilder) ExternalDocs(v ExternalDocumentation) *OperationBuild
 
 // OperationID sets the operationID field for object Operation.
 func (b *OperationBuilder) OperationID(v string) *OperationBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -120,8 +131,8 @@ func (b *OperationBuilder) OperationID(v string) *OperationBuilder {
 
 // Consumes sets the consumes field for object Operation.
 func (b *OperationBuilder) Consumes(v ...MIMEType) *OperationBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -131,8 +142,8 @@ func (b *OperationBuilder) Consumes(v ...MIMEType) *OperationBuilder {
 
 // Produces sets the produces field for object Operation.
 func (b *OperationBuilder) Produces(v ...MIMEType) *OperationBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -142,8 +153,8 @@ func (b *OperationBuilder) Produces(v ...MIMEType) *OperationBuilder {
 
 // Parameters sets the parameters field for object Operation.
 func (b *OperationBuilder) Parameters(v ...Parameter) *OperationBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -153,8 +164,8 @@ func (b *OperationBuilder) Parameters(v ...Parameter) *OperationBuilder {
 
 // Schemes sets the schemes field for object Operation.
 func (b *OperationBuilder) Schemes(v ...Scheme) *OperationBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -164,8 +175,8 @@ func (b *OperationBuilder) Schemes(v ...Scheme) *OperationBuilder {
 
 // Deprecated sets the deprecated field for object Operation.
 func (b *OperationBuilder) Deprecated(v bool) *OperationBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -175,8 +186,8 @@ func (b *OperationBuilder) Deprecated(v bool) *OperationBuilder {
 
 // Security sets the security field for object Operation.
 func (b *OperationBuilder) Security(v ...SecurityRequirement) *OperationBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -186,8 +197,8 @@ func (b *OperationBuilder) Security(v ...SecurityRequirement) *OperationBuilder 
 
 // Reference sets the $ref (reference) field for object Operation.
 func (b *OperationBuilder) Reference(v string) *OperationBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -198,8 +209,8 @@ func (b *OperationBuilder) Reference(v string) *OperationBuilder {
 // Extension sets an arbitrary element (an extension) to the
 // object Operation. The extension name should start with a "x-"
 func (b *OperationBuilder) Extension(name string, value interface{}) *OperationBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}

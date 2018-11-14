@@ -16,7 +16,7 @@ var _ = errors.Cause
 // Builders may NOT be reused. It must be created for every instance
 // of Info that you want to create
 type InfoBuilder struct {
-	mu     sync.Mutex
+	lock   sync.Locker
 	target *info
 }
 
@@ -33,8 +33,8 @@ func (b *InfoBuilder) MustBuild(options ...Option) Info {
 // Build finalizes the building process for Info and returns the result
 // By default, Build() will validate if the given structure is valid
 func (b *InfoBuilder) Build(options ...Option) (Info, error) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return nil, errors.New(`builder has already been used`)
 	}
@@ -55,8 +55,19 @@ func (b *InfoBuilder) Build(options ...Option) (Info, error) {
 }
 
 // NewInfo creates a new builder object for Info
-func NewInfo(title string, version string) *InfoBuilder {
+func NewInfo(title string, version string, options ...Option) *InfoBuilder {
+	var lock sync.Locker = &sync.Mutex{}
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyLocker:
+			lock = option.Value().(sync.Locker)
+		}
+	}
 	var b InfoBuilder
+	if lock == nil {
+		lock = nilLock{}
+	}
+	b.lock = lock
 	b.target = &info{
 		title:   title,
 		version: version,
@@ -66,8 +77,8 @@ func NewInfo(title string, version string) *InfoBuilder {
 
 // Description sets the description field for object Info.
 func (b *InfoBuilder) Description(v string) *InfoBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -77,8 +88,8 @@ func (b *InfoBuilder) Description(v string) *InfoBuilder {
 
 // TermsOfService sets the termsOfService field for object Info.
 func (b *InfoBuilder) TermsOfService(v string) *InfoBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -88,8 +99,8 @@ func (b *InfoBuilder) TermsOfService(v string) *InfoBuilder {
 
 // Contact sets the contact field for object Info.
 func (b *InfoBuilder) Contact(v Contact) *InfoBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -99,8 +110,8 @@ func (b *InfoBuilder) Contact(v Contact) *InfoBuilder {
 
 // License sets the license field for object Info.
 func (b *InfoBuilder) License(v License) *InfoBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -110,8 +121,8 @@ func (b *InfoBuilder) License(v License) *InfoBuilder {
 
 // Reference sets the $ref (reference) field for object Info.
 func (b *InfoBuilder) Reference(v string) *InfoBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -122,8 +133,8 @@ func (b *InfoBuilder) Reference(v string) *InfoBuilder {
 // Extension sets an arbitrary element (an extension) to the
 // object Info. The extension name should start with a "x-"
 func (b *InfoBuilder) Extension(name string, value interface{}) *InfoBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}

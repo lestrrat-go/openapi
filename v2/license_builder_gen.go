@@ -16,7 +16,7 @@ var _ = errors.Cause
 // Builders may NOT be reused. It must be created for every instance
 // of License that you want to create
 type LicenseBuilder struct {
-	mu     sync.Mutex
+	lock   sync.Locker
 	target *license
 }
 
@@ -33,8 +33,8 @@ func (b *LicenseBuilder) MustBuild(options ...Option) License {
 // Build finalizes the building process for License and returns the result
 // By default, Build() will validate if the given structure is valid
 func (b *LicenseBuilder) Build(options ...Option) (License, error) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return nil, errors.New(`builder has already been used`)
 	}
@@ -55,8 +55,19 @@ func (b *LicenseBuilder) Build(options ...Option) (License, error) {
 }
 
 // NewLicense creates a new builder object for License
-func NewLicense(name string) *LicenseBuilder {
+func NewLicense(name string, options ...Option) *LicenseBuilder {
+	var lock sync.Locker = &sync.Mutex{}
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyLocker:
+			lock = option.Value().(sync.Locker)
+		}
+	}
 	var b LicenseBuilder
+	if lock == nil {
+		lock = nilLock{}
+	}
+	b.lock = lock
 	b.target = &license{
 		name: name,
 	}
@@ -65,8 +76,8 @@ func NewLicense(name string) *LicenseBuilder {
 
 // URL sets the url field for object License.
 func (b *LicenseBuilder) URL(v string) *LicenseBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -76,8 +87,8 @@ func (b *LicenseBuilder) URL(v string) *LicenseBuilder {
 
 // Reference sets the $ref (reference) field for object License.
 func (b *LicenseBuilder) Reference(v string) *LicenseBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
@@ -88,8 +99,8 @@ func (b *LicenseBuilder) Reference(v string) *LicenseBuilder {
 // Extension sets an arbitrary element (an extension) to the
 // object License. The extension name should start with a "x-"
 func (b *LicenseBuilder) Extension(name string, value interface{}) *LicenseBuilder {
-	b.mu.Lock()
-	defer b.mu.Unlock()
+	b.lock.Lock()
+	defer b.lock.Unlock()
 	if b.target == nil {
 		return b
 	}
