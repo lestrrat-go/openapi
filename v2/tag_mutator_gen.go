@@ -11,15 +11,15 @@ import (
 // call `Apply()` after providing all the necessary information to
 // the new instance of Tag with new values
 type TagMutator struct {
-	mu     sync.Mutex
+	lock   sync.Locker
 	proxy  *tag
 	target *tag
 }
 
 // Apply finalizes the matuation process for Tag and returns the result
 func (m *TagMutator) Apply() error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	*m.target = *m.proxy
 	return nil
 }
@@ -28,8 +28,19 @@ func (m *TagMutator) Apply() error {
 // Operations on the mutator are safe to be used concurrently, except for
 // when calling `Apply()`, where the user is responsible for restricting access
 // to the target object to be mutated
-func MutateTag(v Tag) *TagMutator {
+func MutateTag(v Tag, options ...Option) *TagMutator {
+	var lock sync.Locker = &sync.Mutex{}
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyLocker:
+			lock = option.Value().(sync.Locker)
+		}
+	}
+	if lock == nil {
+		lock = nilLock{}
+	}
 	return &TagMutator{
+		lock:   lock,
 		target: v.(*tag),
 		proxy:  v.Clone().(*tag),
 	}
@@ -37,24 +48,24 @@ func MutateTag(v Tag) *TagMutator {
 
 // Name sets the Name field for object Tag.
 func (m *TagMutator) Name(v string) *TagMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.name = v
 	return m
 }
 
 // Description sets the Description field for object Tag.
 func (m *TagMutator) Description(v string) *TagMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.description = v
 	return m
 }
 
 // ExternalDocs sets the ExternalDocs field for object Tag.
 func (m *TagMutator) ExternalDocs(v ExternalDocumentation) *TagMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.externalDocs = v
 	return m
 }

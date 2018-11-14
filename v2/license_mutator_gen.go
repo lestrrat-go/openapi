@@ -11,15 +11,15 @@ import (
 // call `Apply()` after providing all the necessary information to
 // the new instance of License with new values
 type LicenseMutator struct {
-	mu     sync.Mutex
+	lock   sync.Locker
 	proxy  *license
 	target *license
 }
 
 // Apply finalizes the matuation process for License and returns the result
 func (m *LicenseMutator) Apply() error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	*m.target = *m.proxy
 	return nil
 }
@@ -28,8 +28,19 @@ func (m *LicenseMutator) Apply() error {
 // Operations on the mutator are safe to be used concurrently, except for
 // when calling `Apply()`, where the user is responsible for restricting access
 // to the target object to be mutated
-func MutateLicense(v License) *LicenseMutator {
+func MutateLicense(v License, options ...Option) *LicenseMutator {
+	var lock sync.Locker = &sync.Mutex{}
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyLocker:
+			lock = option.Value().(sync.Locker)
+		}
+	}
+	if lock == nil {
+		lock = nilLock{}
+	}
 	return &LicenseMutator{
+		lock:   lock,
 		target: v.(*license),
 		proxy:  v.Clone().(*license),
 	}
@@ -37,16 +48,16 @@ func MutateLicense(v License) *LicenseMutator {
 
 // Name sets the Name field for object License.
 func (m *LicenseMutator) Name(v string) *LicenseMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.name = v
 	return m
 }
 
 // URL sets the URL field for object License.
 func (m *LicenseMutator) URL(v string) *LicenseMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.url = v
 	return m
 }

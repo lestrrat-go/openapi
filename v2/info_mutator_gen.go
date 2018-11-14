@@ -11,15 +11,15 @@ import (
 // call `Apply()` after providing all the necessary information to
 // the new instance of Info with new values
 type InfoMutator struct {
-	mu     sync.Mutex
+	lock   sync.Locker
 	proxy  *info
 	target *info
 }
 
 // Apply finalizes the matuation process for Info and returns the result
 func (m *InfoMutator) Apply() error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	*m.target = *m.proxy
 	return nil
 }
@@ -28,8 +28,19 @@ func (m *InfoMutator) Apply() error {
 // Operations on the mutator are safe to be used concurrently, except for
 // when calling `Apply()`, where the user is responsible for restricting access
 // to the target object to be mutated
-func MutateInfo(v Info) *InfoMutator {
+func MutateInfo(v Info, options ...Option) *InfoMutator {
+	var lock sync.Locker = &sync.Mutex{}
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyLocker:
+			lock = option.Value().(sync.Locker)
+		}
+	}
+	if lock == nil {
+		lock = nilLock{}
+	}
 	return &InfoMutator{
+		lock:   lock,
 		target: v.(*info),
 		proxy:  v.Clone().(*info),
 	}
@@ -37,48 +48,48 @@ func MutateInfo(v Info) *InfoMutator {
 
 // Title sets the Title field for object Info.
 func (m *InfoMutator) Title(v string) *InfoMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.title = v
 	return m
 }
 
 // Version sets the Version field for object Info.
 func (m *InfoMutator) Version(v string) *InfoMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.version = v
 	return m
 }
 
 // Description sets the Description field for object Info.
 func (m *InfoMutator) Description(v string) *InfoMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.description = v
 	return m
 }
 
 // TermsOfService sets the TermsOfService field for object Info.
 func (m *InfoMutator) TermsOfService(v string) *InfoMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.termsOfService = v
 	return m
 }
 
 // Contact sets the Contact field for object Info.
 func (m *InfoMutator) Contact(v Contact) *InfoMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.contact = v
 	return m
 }
 
 // License sets the License field for object Info.
 func (m *InfoMutator) License(v License) *InfoMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.license = v
 	return m
 }

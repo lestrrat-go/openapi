@@ -11,15 +11,15 @@ import (
 // call `Apply()` after providing all the necessary information to
 // the new instance of SecurityRequirement with new values
 type SecurityRequirementMutator struct {
-	mu     sync.Mutex
+	lock   sync.Locker
 	proxy  *securityRequirement
 	target *securityRequirement
 }
 
 // Apply finalizes the matuation process for SecurityRequirement and returns the result
 func (m *SecurityRequirementMutator) Apply() error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	*m.target = *m.proxy
 	return nil
 }
@@ -28,8 +28,19 @@ func (m *SecurityRequirementMutator) Apply() error {
 // Operations on the mutator are safe to be used concurrently, except for
 // when calling `Apply()`, where the user is responsible for restricting access
 // to the target object to be mutated
-func MutateSecurityRequirement(v SecurityRequirement) *SecurityRequirementMutator {
+func MutateSecurityRequirement(v SecurityRequirement, options ...Option) *SecurityRequirementMutator {
+	var lock sync.Locker = &sync.Mutex{}
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyLocker:
+			lock = option.Value().(sync.Locker)
+		}
+	}
+	if lock == nil {
+		lock = nilLock{}
+	}
 	return &SecurityRequirementMutator{
+		lock:   lock,
 		target: v.(*securityRequirement),
 		proxy:  v.Clone().(*securityRequirement),
 	}
@@ -37,8 +48,8 @@ func MutateSecurityRequirement(v SecurityRequirement) *SecurityRequirementMutato
 
 // Name sets the Name field for object SecurityRequirement.
 func (m *SecurityRequirementMutator) Name(v string) *SecurityRequirementMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.name = v
 	return m
 }

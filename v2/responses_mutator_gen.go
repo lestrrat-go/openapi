@@ -11,15 +11,15 @@ import (
 // call `Apply()` after providing all the necessary information to
 // the new instance of Responses with new values
 type ResponsesMutator struct {
-	mu     sync.Mutex
+	lock   sync.Locker
 	proxy  *responses
 	target *responses
 }
 
 // Apply finalizes the matuation process for Responses and returns the result
 func (m *ResponsesMutator) Apply() error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	*m.target = *m.proxy
 	return nil
 }
@@ -28,8 +28,19 @@ func (m *ResponsesMutator) Apply() error {
 // Operations on the mutator are safe to be used concurrently, except for
 // when calling `Apply()`, where the user is responsible for restricting access
 // to the target object to be mutated
-func MutateResponses(v Responses) *ResponsesMutator {
+func MutateResponses(v Responses, options ...Option) *ResponsesMutator {
+	var lock sync.Locker = &sync.Mutex{}
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyLocker:
+			lock = option.Value().(sync.Locker)
+		}
+	}
+	if lock == nil {
+		lock = nilLock{}
+	}
 	return &ResponsesMutator{
+		lock:   lock,
 		target: v.(*responses),
 		proxy:  v.Clone().(*responses),
 	}
@@ -37,8 +48,8 @@ func MutateResponses(v Responses) *ResponsesMutator {
 
 // Default sets the Default field for object Responses.
 func (m *ResponsesMutator) Default(v Response) *ResponsesMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.defaultValue = v
 	return m
 }

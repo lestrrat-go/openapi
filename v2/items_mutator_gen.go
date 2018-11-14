@@ -11,15 +11,15 @@ import (
 // call `Apply()` after providing all the necessary information to
 // the new instance of Items with new values
 type ItemsMutator struct {
-	mu     sync.Mutex
+	lock   sync.Locker
 	proxy  *items
 	target *items
 }
 
 // Apply finalizes the matuation process for Items and returns the result
 func (m *ItemsMutator) Apply() error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	*m.target = *m.proxy
 	return nil
 }
@@ -28,8 +28,19 @@ func (m *ItemsMutator) Apply() error {
 // Operations on the mutator are safe to be used concurrently, except for
 // when calling `Apply()`, where the user is responsible for restricting access
 // to the target object to be mutated
-func MutateItems(v Items) *ItemsMutator {
+func MutateItems(v Items, options ...Option) *ItemsMutator {
+	var lock sync.Locker = &sync.Mutex{}
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyLocker:
+			lock = option.Value().(sync.Locker)
+		}
+	}
+	if lock == nil {
+		lock = nilLock{}
+	}
 	return &ItemsMutator{
+		lock:   lock,
 		target: v.(*items),
 		proxy:  v.Clone().(*items),
 	}
@@ -37,48 +48,48 @@ func MutateItems(v Items) *ItemsMutator {
 
 // Type sets the Type field for object Items.
 func (m *ItemsMutator) Type(v PrimitiveType) *ItemsMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.typ = v
 	return m
 }
 
 // Format sets the Format field for object Items.
 func (m *ItemsMutator) Format(v string) *ItemsMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.format = v
 	return m
 }
 
 // Items sets the Items field for object Items.
 func (m *ItemsMutator) Items(v Items) *ItemsMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.items = v
 	return m
 }
 
 // CollectionFormat sets the CollectionFormat field for object Items.
 func (m *ItemsMutator) CollectionFormat(v CollectionFormat) *ItemsMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.collectionFormat = v
 	return m
 }
 
 // Default sets the Default field for object Items.
 func (m *ItemsMutator) Default(v interface{}) *ItemsMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.defaultValue = v
 	return m
 }
 
 // ClearMaximum clears the maximum field
 func (m *ItemsMutator) ClearMaximum() *ItemsMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.maximum = nil
 	return m
 }
@@ -91,8 +102,8 @@ func (m *ItemsMutator) Maximum(v float64) *ItemsMutator {
 
 // ClearExclusiveMaximum clears the exclusiveMaximum field
 func (m *ItemsMutator) ClearExclusiveMaximum() *ItemsMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.exclusiveMaximum = nil
 	return m
 }
@@ -105,8 +116,8 @@ func (m *ItemsMutator) ExclusiveMaximum(v float64) *ItemsMutator {
 
 // ClearMinimum clears the minimum field
 func (m *ItemsMutator) ClearMinimum() *ItemsMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.minimum = nil
 	return m
 }
@@ -119,8 +130,8 @@ func (m *ItemsMutator) Minimum(v float64) *ItemsMutator {
 
 // ClearExclusiveMinimum clears the exclusiveMinimum field
 func (m *ItemsMutator) ClearExclusiveMinimum() *ItemsMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.exclusiveMinimum = nil
 	return m
 }
@@ -133,8 +144,8 @@ func (m *ItemsMutator) ExclusiveMinimum(v float64) *ItemsMutator {
 
 // ClearMaxLength clears the maxLength field
 func (m *ItemsMutator) ClearMaxLength() *ItemsMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.maxLength = nil
 	return m
 }
@@ -147,8 +158,8 @@ func (m *ItemsMutator) MaxLength(v int) *ItemsMutator {
 
 // ClearMinLength clears the minLength field
 func (m *ItemsMutator) ClearMinLength() *ItemsMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.minLength = nil
 	return m
 }
@@ -161,16 +172,16 @@ func (m *ItemsMutator) MinLength(v int) *ItemsMutator {
 
 // Pattern sets the Pattern field for object Items.
 func (m *ItemsMutator) Pattern(v string) *ItemsMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.pattern = v
 	return m
 }
 
 // ClearMaxItems clears the maxItems field
 func (m *ItemsMutator) ClearMaxItems() *ItemsMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.maxItems = nil
 	return m
 }
@@ -183,8 +194,8 @@ func (m *ItemsMutator) MaxItems(v int) *ItemsMutator {
 
 // ClearMinItems clears the minItems field
 func (m *ItemsMutator) ClearMinItems() *ItemsMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.minItems = nil
 	return m
 }
@@ -197,32 +208,32 @@ func (m *ItemsMutator) MinItems(v int) *ItemsMutator {
 
 // UniqueItems sets the UniqueItems field for object Items.
 func (m *ItemsMutator) UniqueItems(v bool) *ItemsMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.uniqueItems = v
 	return m
 }
 
 // ClearEnum clears all elements in enum
 func (m *ItemsMutator) ClearEnum() *ItemsMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	_ = m.proxy.enum.Clear()
 	return m
 }
 
 // Enum appends a value to enum
 func (m *ItemsMutator) Enum(value interface{}) *ItemsMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.enum = append(m.proxy.enum, value)
 	return m
 }
 
 // ClearMultipleOf clears the multipleOf field
 func (m *ItemsMutator) ClearMultipleOf() *ItemsMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.multipleOf = nil
 	return m
 }

@@ -11,15 +11,15 @@ import (
 // call `Apply()` after providing all the necessary information to
 // the new instance of Schema with new values
 type SchemaMutator struct {
-	mu     sync.Mutex
+	lock   sync.Locker
 	proxy  *schema
 	target *schema
 }
 
 // Apply finalizes the matuation process for Schema and returns the result
 func (m *SchemaMutator) Apply() error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	*m.target = *m.proxy
 	return nil
 }
@@ -28,8 +28,19 @@ func (m *SchemaMutator) Apply() error {
 // Operations on the mutator are safe to be used concurrently, except for
 // when calling `Apply()`, where the user is responsible for restricting access
 // to the target object to be mutated
-func MutateSchema(v Schema) *SchemaMutator {
+func MutateSchema(v Schema, options ...Option) *SchemaMutator {
+	var lock sync.Locker = &sync.Mutex{}
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyLocker:
+			lock = option.Value().(sync.Locker)
+		}
+	}
+	if lock == nil {
+		lock = nilLock{}
+	}
 	return &SchemaMutator{
+		lock:   lock,
 		target: v.(*schema),
 		proxy:  v.Clone().(*schema),
 	}
@@ -37,40 +48,40 @@ func MutateSchema(v Schema) *SchemaMutator {
 
 // Name sets the Name field for object Schema.
 func (m *SchemaMutator) Name(v string) *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.name = v
 	return m
 }
 
 // Type sets the Type field for object Schema.
 func (m *SchemaMutator) Type(v PrimitiveType) *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.typ = v
 	return m
 }
 
 // Format sets the Format field for object Schema.
 func (m *SchemaMutator) Format(v string) *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.format = v
 	return m
 }
 
 // Title sets the Title field for object Schema.
 func (m *SchemaMutator) Title(v string) *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.title = v
 	return m
 }
 
 // ClearMultipleOf clears the multipleOf field
 func (m *SchemaMutator) ClearMultipleOf() *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.multipleOf = nil
 	return m
 }
@@ -83,8 +94,8 @@ func (m *SchemaMutator) MultipleOf(v float64) *SchemaMutator {
 
 // ClearMaximum clears the maximum field
 func (m *SchemaMutator) ClearMaximum() *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.maximum = nil
 	return m
 }
@@ -97,8 +108,8 @@ func (m *SchemaMutator) Maximum(v float64) *SchemaMutator {
 
 // ClearExclusiveMaximum clears the exclusiveMaximum field
 func (m *SchemaMutator) ClearExclusiveMaximum() *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.exclusiveMaximum = nil
 	return m
 }
@@ -111,8 +122,8 @@ func (m *SchemaMutator) ExclusiveMaximum(v float64) *SchemaMutator {
 
 // ClearMinimum clears the minimum field
 func (m *SchemaMutator) ClearMinimum() *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.minimum = nil
 	return m
 }
@@ -125,8 +136,8 @@ func (m *SchemaMutator) Minimum(v float64) *SchemaMutator {
 
 // ClearExclusiveMinimum clears the exclusiveMinimum field
 func (m *SchemaMutator) ClearExclusiveMinimum() *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.exclusiveMinimum = nil
 	return m
 }
@@ -139,8 +150,8 @@ func (m *SchemaMutator) ExclusiveMinimum(v float64) *SchemaMutator {
 
 // ClearMaxLength clears the maxLength field
 func (m *SchemaMutator) ClearMaxLength() *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.maxLength = nil
 	return m
 }
@@ -153,8 +164,8 @@ func (m *SchemaMutator) MaxLength(v int) *SchemaMutator {
 
 // ClearMinLength clears the minLength field
 func (m *SchemaMutator) ClearMinLength() *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.minLength = nil
 	return m
 }
@@ -167,16 +178,16 @@ func (m *SchemaMutator) MinLength(v int) *SchemaMutator {
 
 // Pattern sets the Pattern field for object Schema.
 func (m *SchemaMutator) Pattern(v string) *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.pattern = v
 	return m
 }
 
 // ClearMaxItems clears the maxItems field
 func (m *SchemaMutator) ClearMaxItems() *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.maxItems = nil
 	return m
 }
@@ -189,8 +200,8 @@ func (m *SchemaMutator) MaxItems(v int) *SchemaMutator {
 
 // ClearMinItems clears the minItems field
 func (m *SchemaMutator) ClearMinItems() *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.minItems = nil
 	return m
 }
@@ -203,16 +214,16 @@ func (m *SchemaMutator) MinItems(v int) *SchemaMutator {
 
 // UniqueItems sets the UniqueItems field for object Schema.
 func (m *SchemaMutator) UniqueItems(v bool) *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.uniqueItems = v
 	return m
 }
 
 // ClearMaxProperties clears the maxProperties field
 func (m *SchemaMutator) ClearMaxProperties() *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.maxProperties = nil
 	return m
 }
@@ -225,8 +236,8 @@ func (m *SchemaMutator) MaxProperties(v int) *SchemaMutator {
 
 // ClearMinProperties clears the minProperties field
 func (m *SchemaMutator) ClearMinProperties() *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.minProperties = nil
 	return m
 }
@@ -239,72 +250,72 @@ func (m *SchemaMutator) MinProperties(v int) *SchemaMutator {
 
 // ClearRequired clears all elements in required
 func (m *SchemaMutator) ClearRequired() *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	_ = m.proxy.required.Clear()
 	return m
 }
 
 // Required appends a value to required
 func (m *SchemaMutator) Required(value string) *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.required = append(m.proxy.required, value)
 	return m
 }
 
 // ClearEnum clears all elements in enum
 func (m *SchemaMutator) ClearEnum() *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	_ = m.proxy.enum.Clear()
 	return m
 }
 
 // Enum appends a value to enum
 func (m *SchemaMutator) Enum(value interface{}) *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.enum = append(m.proxy.enum, value)
 	return m
 }
 
 // ClearAllOf clears all elements in allOf
 func (m *SchemaMutator) ClearAllOf() *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	_ = m.proxy.allOf.Clear()
 	return m
 }
 
 // AllOf appends a value to allOf
 func (m *SchemaMutator) AllOf(value Schema) *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.allOf = append(m.proxy.allOf, value)
 	return m
 }
 
 // Items sets the Items field for object Schema.
 func (m *SchemaMutator) Items(v Schema) *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.items = v
 	return m
 }
 
 // ClearProperties removes all values in properties field
 func (m *SchemaMutator) ClearProperties() *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	_ = m.proxy.properties.Clear()
 	return m
 }
 
 // Property sets the value of properties
 func (m *SchemaMutator) Property(key SchemaMapKey, value Schema) *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	if m.proxy.properties == nil {
 		m.proxy.properties = SchemaMap{}
 	}
@@ -315,16 +326,16 @@ func (m *SchemaMutator) Property(key SchemaMapKey, value Schema) *SchemaMutator 
 
 // ClearAdditionaProperties removes all values in additionaProperties field
 func (m *SchemaMutator) ClearAdditionaProperties() *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	_ = m.proxy.additionaProperties.Clear()
 	return m
 }
 
 // AdditionaProperty sets the value of additionaProperties
 func (m *SchemaMutator) AdditionaProperty(key SchemaMapKey, value Schema) *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	if m.proxy.additionaProperties == nil {
 		m.proxy.additionaProperties = SchemaMap{}
 	}
@@ -335,56 +346,56 @@ func (m *SchemaMutator) AdditionaProperty(key SchemaMapKey, value Schema) *Schem
 
 // Default sets the Default field for object Schema.
 func (m *SchemaMutator) Default(v interface{}) *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.defaultValue = v
 	return m
 }
 
 // Discriminator sets the Discriminator field for object Schema.
 func (m *SchemaMutator) Discriminator(v string) *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.discriminator = v
 	return m
 }
 
 // ReadOnly sets the ReadOnly field for object Schema.
 func (m *SchemaMutator) ReadOnly(v bool) *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.readOnly = v
 	return m
 }
 
 // ExternalDocs sets the ExternalDocs field for object Schema.
 func (m *SchemaMutator) ExternalDocs(v ExternalDocumentation) *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.externalDocs = v
 	return m
 }
 
 // Example sets the Example field for object Schema.
 func (m *SchemaMutator) Example(v interface{}) *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.example = v
 	return m
 }
 
 // Deprecated sets the Deprecated field for object Schema.
 func (m *SchemaMutator) Deprecated(v bool) *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.deprecated = v
 	return m
 }
 
 // XML sets the XML field for object Schema.
 func (m *SchemaMutator) XML(v XML) *SchemaMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.xml = v
 	return m
 }

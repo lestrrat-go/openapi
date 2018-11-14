@@ -160,19 +160,23 @@ func WriteImports(dst io.Writer, libs ...string) error {
 }
 
 func WriteFormattedToFile(fn string, code []byte) error {
-	formatted, err := format.Source(code)
-	if err != nil {
-		return errors.Wrap(err, `failed to format source code`)
-	}
-
 	f, err := os.OpenFile(fn, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
 		return errors.Wrap(err, `failed to open file for writing`)
 	}
 	defer f.Close()
 
-	if _, err := f.Write(formatted); err != nil {
-		return errors.Wrap(err, `failed to write to file`)
+	return WriteFormattedSource(f, code)
+}
+
+func WriteFormattedSource(dst io.Writer, code []byte) error {
+	formatted, err := format.Source(code)
+	if err != nil {
+		return errors.Wrap(err, `failed to format source code`)
+	}
+
+	if _, err := dst.Write(formatted); err != nil {
+		return errors.Wrap(err, `failed to write to output`)
 	}
 	return nil
 }

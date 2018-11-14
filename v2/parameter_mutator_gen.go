@@ -11,15 +11,15 @@ import (
 // call `Apply()` after providing all the necessary information to
 // the new instance of Parameter with new values
 type ParameterMutator struct {
-	mu     sync.Mutex
+	lock   sync.Locker
 	proxy  *parameter
 	target *parameter
 }
 
 // Apply finalizes the matuation process for Parameter and returns the result
 func (m *ParameterMutator) Apply() error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	*m.target = *m.proxy
 	return nil
 }
@@ -28,8 +28,19 @@ func (m *ParameterMutator) Apply() error {
 // Operations on the mutator are safe to be used concurrently, except for
 // when calling `Apply()`, where the user is responsible for restricting access
 // to the target object to be mutated
-func MutateParameter(v Parameter) *ParameterMutator {
+func MutateParameter(v Parameter, options ...Option) *ParameterMutator {
+	var lock sync.Locker = &sync.Mutex{}
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyLocker:
+			lock = option.Value().(sync.Locker)
+		}
+	}
+	if lock == nil {
+		lock = nilLock{}
+	}
 	return &ParameterMutator{
+		lock:   lock,
 		target: v.(*parameter),
 		proxy:  v.Clone().(*parameter),
 	}
@@ -37,104 +48,104 @@ func MutateParameter(v Parameter) *ParameterMutator {
 
 // Name sets the Name field for object Parameter.
 func (m *ParameterMutator) Name(v string) *ParameterMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.name = v
 	return m
 }
 
 // Description sets the Description field for object Parameter.
 func (m *ParameterMutator) Description(v string) *ParameterMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.description = v
 	return m
 }
 
 // Required sets the Required field for object Parameter.
 func (m *ParameterMutator) Required(v bool) *ParameterMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.required = v
 	return m
 }
 
 // In sets the In field for object Parameter.
 func (m *ParameterMutator) In(v Location) *ParameterMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.in = v
 	return m
 }
 
 // Schema sets the Schema field for object Parameter.
 func (m *ParameterMutator) Schema(v Schema) *ParameterMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.schema = v
 	return m
 }
 
 // Type sets the Type field for object Parameter.
 func (m *ParameterMutator) Type(v PrimitiveType) *ParameterMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.typ = v
 	return m
 }
 
 // Format sets the Format field for object Parameter.
 func (m *ParameterMutator) Format(v string) *ParameterMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.format = v
 	return m
 }
 
 // Title sets the Title field for object Parameter.
 func (m *ParameterMutator) Title(v string) *ParameterMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.title = v
 	return m
 }
 
 // AllowEmptyValue sets the AllowEmptyValue field for object Parameter.
 func (m *ParameterMutator) AllowEmptyValue(v bool) *ParameterMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.allowEmptyValue = v
 	return m
 }
 
 // Items sets the Items field for object Parameter.
 func (m *ParameterMutator) Items(v Items) *ParameterMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.items = v
 	return m
 }
 
 // CollectionFormat sets the CollectionFormat field for object Parameter.
 func (m *ParameterMutator) CollectionFormat(v CollectionFormat) *ParameterMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.collectionFormat = v
 	return m
 }
 
 // Default sets the Default field for object Parameter.
 func (m *ParameterMutator) Default(v interface{}) *ParameterMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.defaultValue = v
 	return m
 }
 
 // ClearMaximum clears the maximum field
 func (m *ParameterMutator) ClearMaximum() *ParameterMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.maximum = nil
 	return m
 }
@@ -147,8 +158,8 @@ func (m *ParameterMutator) Maximum(v float64) *ParameterMutator {
 
 // ClearExclusiveMaximum clears the exclusiveMaximum field
 func (m *ParameterMutator) ClearExclusiveMaximum() *ParameterMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.exclusiveMaximum = nil
 	return m
 }
@@ -161,8 +172,8 @@ func (m *ParameterMutator) ExclusiveMaximum(v float64) *ParameterMutator {
 
 // ClearMinimum clears the minimum field
 func (m *ParameterMutator) ClearMinimum() *ParameterMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.minimum = nil
 	return m
 }
@@ -175,8 +186,8 @@ func (m *ParameterMutator) Minimum(v float64) *ParameterMutator {
 
 // ClearExclusiveMinimum clears the exclusiveMinimum field
 func (m *ParameterMutator) ClearExclusiveMinimum() *ParameterMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.exclusiveMinimum = nil
 	return m
 }
@@ -189,8 +200,8 @@ func (m *ParameterMutator) ExclusiveMinimum(v float64) *ParameterMutator {
 
 // ClearMaxLength clears the maxLength field
 func (m *ParameterMutator) ClearMaxLength() *ParameterMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.maxLength = nil
 	return m
 }
@@ -203,8 +214,8 @@ func (m *ParameterMutator) MaxLength(v int) *ParameterMutator {
 
 // ClearMinLength clears the minLength field
 func (m *ParameterMutator) ClearMinLength() *ParameterMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.minLength = nil
 	return m
 }
@@ -217,16 +228,16 @@ func (m *ParameterMutator) MinLength(v int) *ParameterMutator {
 
 // Pattern sets the Pattern field for object Parameter.
 func (m *ParameterMutator) Pattern(v string) *ParameterMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.pattern = v
 	return m
 }
 
 // ClearMaxItems clears the maxItems field
 func (m *ParameterMutator) ClearMaxItems() *ParameterMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.maxItems = nil
 	return m
 }
@@ -239,8 +250,8 @@ func (m *ParameterMutator) MaxItems(v int) *ParameterMutator {
 
 // ClearMinItems clears the minItems field
 func (m *ParameterMutator) ClearMinItems() *ParameterMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.minItems = nil
 	return m
 }
@@ -253,32 +264,32 @@ func (m *ParameterMutator) MinItems(v int) *ParameterMutator {
 
 // UniqueItems sets the UniqueItems field for object Parameter.
 func (m *ParameterMutator) UniqueItems(v bool) *ParameterMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.uniqueItems = v
 	return m
 }
 
 // ClearEnum clears all elements in enum
 func (m *ParameterMutator) ClearEnum() *ParameterMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	_ = m.proxy.enum.Clear()
 	return m
 }
 
 // Enum appends a value to enum
 func (m *ParameterMutator) Enum(value interface{}) *ParameterMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.enum = append(m.proxy.enum, value)
 	return m
 }
 
 // ClearMultipleOf clears the multipleOf field
 func (m *ParameterMutator) ClearMultipleOf() *ParameterMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.multipleOf = nil
 	return m
 }

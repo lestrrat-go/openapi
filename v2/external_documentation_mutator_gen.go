@@ -11,15 +11,15 @@ import (
 // call `Apply()` after providing all the necessary information to
 // the new instance of ExternalDocumentation with new values
 type ExternalDocumentationMutator struct {
-	mu     sync.Mutex
+	lock   sync.Locker
 	proxy  *externalDocumentation
 	target *externalDocumentation
 }
 
 // Apply finalizes the matuation process for ExternalDocumentation and returns the result
 func (m *ExternalDocumentationMutator) Apply() error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	*m.target = *m.proxy
 	return nil
 }
@@ -28,8 +28,19 @@ func (m *ExternalDocumentationMutator) Apply() error {
 // Operations on the mutator are safe to be used concurrently, except for
 // when calling `Apply()`, where the user is responsible for restricting access
 // to the target object to be mutated
-func MutateExternalDocumentation(v ExternalDocumentation) *ExternalDocumentationMutator {
+func MutateExternalDocumentation(v ExternalDocumentation, options ...Option) *ExternalDocumentationMutator {
+	var lock sync.Locker = &sync.Mutex{}
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyLocker:
+			lock = option.Value().(sync.Locker)
+		}
+	}
+	if lock == nil {
+		lock = nilLock{}
+	}
 	return &ExternalDocumentationMutator{
+		lock:   lock,
 		target: v.(*externalDocumentation),
 		proxy:  v.Clone().(*externalDocumentation),
 	}
@@ -37,16 +48,16 @@ func MutateExternalDocumentation(v ExternalDocumentation) *ExternalDocumentation
 
 // URL sets the URL field for object ExternalDocumentation.
 func (m *ExternalDocumentationMutator) URL(v string) *ExternalDocumentationMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.url = v
 	return m
 }
 
 // Description sets the Description field for object ExternalDocumentation.
 func (m *ExternalDocumentationMutator) Description(v string) *ExternalDocumentationMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.description = v
 	return m
 }

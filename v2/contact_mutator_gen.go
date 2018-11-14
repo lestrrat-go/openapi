@@ -11,15 +11,15 @@ import (
 // call `Apply()` after providing all the necessary information to
 // the new instance of Contact with new values
 type ContactMutator struct {
-	mu     sync.Mutex
+	lock   sync.Locker
 	proxy  *contact
 	target *contact
 }
 
 // Apply finalizes the matuation process for Contact and returns the result
 func (m *ContactMutator) Apply() error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	*m.target = *m.proxy
 	return nil
 }
@@ -28,8 +28,19 @@ func (m *ContactMutator) Apply() error {
 // Operations on the mutator are safe to be used concurrently, except for
 // when calling `Apply()`, where the user is responsible for restricting access
 // to the target object to be mutated
-func MutateContact(v Contact) *ContactMutator {
+func MutateContact(v Contact, options ...Option) *ContactMutator {
+	var lock sync.Locker = &sync.Mutex{}
+	for _, option := range options {
+		switch option.Name() {
+		case optkeyLocker:
+			lock = option.Value().(sync.Locker)
+		}
+	}
+	if lock == nil {
+		lock = nilLock{}
+	}
 	return &ContactMutator{
+		lock:   lock,
 		target: v.(*contact),
 		proxy:  v.Clone().(*contact),
 	}
@@ -37,24 +48,24 @@ func MutateContact(v Contact) *ContactMutator {
 
 // Name sets the Name field for object Contact.
 func (m *ContactMutator) Name(v string) *ContactMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.name = v
 	return m
 }
 
 // URL sets the URL field for object Contact.
 func (m *ContactMutator) URL(v string) *ContactMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.url = v
 	return m
 }
 
 // Email sets the Email field for object Contact.
 func (m *ContactMutator) Email(v string) *ContactMutator {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	m.proxy.email = v
 	return m
 }
