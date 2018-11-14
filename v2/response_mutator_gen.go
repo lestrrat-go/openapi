@@ -8,7 +8,7 @@ import (
 )
 
 // ResponseMutator is used to build an instance of Response. The user must
-// call `Do()` after providing all the necessary information to
+// call `Apply()` after providing all the necessary information to
 // the new instance of Response with new values
 type ResponseMutator struct {
 	mu     sync.Mutex
@@ -16,8 +16,8 @@ type ResponseMutator struct {
 	target *response
 }
 
-// Do finalizes the matuation process for Response and returns the result
-func (m *ResponseMutator) Do() error {
+// Apply finalizes the matuation process for Response and returns the result
+func (m *ResponseMutator) Apply() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	*m.target = *m.proxy
@@ -26,7 +26,7 @@ func (m *ResponseMutator) Do() error {
 
 // MutateResponse creates a new mutator object for Response
 // Operations on the mutator are safe to be used concurrently, except for
-// when calling `Do()`, where the user is responsible for restricting access
+// when calling `Apply()`, where the user is responsible for restricting access
 // to the target object to be mutated
 func MutateResponse(v Response) *ResponseMutator {
 	return &ResponseMutator{

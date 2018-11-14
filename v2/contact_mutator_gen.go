@@ -8,7 +8,7 @@ import (
 )
 
 // ContactMutator is used to build an instance of Contact. The user must
-// call `Do()` after providing all the necessary information to
+// call `Apply()` after providing all the necessary information to
 // the new instance of Contact with new values
 type ContactMutator struct {
 	mu     sync.Mutex
@@ -16,8 +16,8 @@ type ContactMutator struct {
 	target *contact
 }
 
-// Do finalizes the matuation process for Contact and returns the result
-func (m *ContactMutator) Do() error {
+// Apply finalizes the matuation process for Contact and returns the result
+func (m *ContactMutator) Apply() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	*m.target = *m.proxy
@@ -26,7 +26,7 @@ func (m *ContactMutator) Do() error {
 
 // MutateContact creates a new mutator object for Contact
 // Operations on the mutator are safe to be used concurrently, except for
-// when calling `Do()`, where the user is responsible for restricting access
+// when calling `Apply()`, where the user is responsible for restricting access
 // to the target object to be mutated
 func MutateContact(v Contact) *ContactMutator {
 	return &ContactMutator{

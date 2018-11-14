@@ -8,7 +8,7 @@ import (
 )
 
 // ParameterMutator is used to build an instance of Parameter. The user must
-// call `Do()` after providing all the necessary information to
+// call `Apply()` after providing all the necessary information to
 // the new instance of Parameter with new values
 type ParameterMutator struct {
 	mu     sync.Mutex
@@ -16,8 +16,8 @@ type ParameterMutator struct {
 	target *parameter
 }
 
-// Do finalizes the matuation process for Parameter and returns the result
-func (m *ParameterMutator) Do() error {
+// Apply finalizes the matuation process for Parameter and returns the result
+func (m *ParameterMutator) Apply() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	*m.target = *m.proxy
@@ -26,7 +26,7 @@ func (m *ParameterMutator) Do() error {
 
 // MutateParameter creates a new mutator object for Parameter
 // Operations on the mutator are safe to be used concurrently, except for
-// when calling `Do()`, where the user is responsible for restricting access
+// when calling `Apply()`, where the user is responsible for restricting access
 // to the target object to be mutated
 func MutateParameter(v Parameter) *ParameterMutator {
 	return &ParameterMutator{

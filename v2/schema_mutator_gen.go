@@ -8,7 +8,7 @@ import (
 )
 
 // SchemaMutator is used to build an instance of Schema. The user must
-// call `Do()` after providing all the necessary information to
+// call `Apply()` after providing all the necessary information to
 // the new instance of Schema with new values
 type SchemaMutator struct {
 	mu     sync.Mutex
@@ -16,8 +16,8 @@ type SchemaMutator struct {
 	target *schema
 }
 
-// Do finalizes the matuation process for Schema and returns the result
-func (m *SchemaMutator) Do() error {
+// Apply finalizes the matuation process for Schema and returns the result
+func (m *SchemaMutator) Apply() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	*m.target = *m.proxy
@@ -26,7 +26,7 @@ func (m *SchemaMutator) Do() error {
 
 // MutateSchema creates a new mutator object for Schema
 // Operations on the mutator are safe to be used concurrently, except for
-// when calling `Do()`, where the user is responsible for restricting access
+// when calling `Apply()`, where the user is responsible for restricting access
 // to the target object to be mutated
 func MutateSchema(v Schema) *SchemaMutator {
 	return &SchemaMutator{

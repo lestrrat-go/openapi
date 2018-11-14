@@ -8,7 +8,7 @@ import (
 )
 
 // OperationMutator is used to build an instance of Operation. The user must
-// call `Do()` after providing all the necessary information to
+// call `Apply()` after providing all the necessary information to
 // the new instance of Operation with new values
 type OperationMutator struct {
 	mu     sync.Mutex
@@ -16,8 +16,8 @@ type OperationMutator struct {
 	target *operation
 }
 
-// Do finalizes the matuation process for Operation and returns the result
-func (m *OperationMutator) Do() error {
+// Apply finalizes the matuation process for Operation and returns the result
+func (m *OperationMutator) Apply() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	*m.target = *m.proxy
@@ -26,7 +26,7 @@ func (m *OperationMutator) Do() error {
 
 // MutateOperation creates a new mutator object for Operation
 // Operations on the mutator are safe to be used concurrently, except for
-// when calling `Do()`, where the user is responsible for restricting access
+// when calling `Apply()`, where the user is responsible for restricting access
 // to the target object to be mutated
 func MutateOperation(v Operation) *OperationMutator {
 	return &OperationMutator{

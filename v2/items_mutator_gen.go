@@ -8,7 +8,7 @@ import (
 )
 
 // ItemsMutator is used to build an instance of Items. The user must
-// call `Do()` after providing all the necessary information to
+// call `Apply()` after providing all the necessary information to
 // the new instance of Items with new values
 type ItemsMutator struct {
 	mu     sync.Mutex
@@ -16,8 +16,8 @@ type ItemsMutator struct {
 	target *items
 }
 
-// Do finalizes the matuation process for Items and returns the result
-func (m *ItemsMutator) Do() error {
+// Apply finalizes the matuation process for Items and returns the result
+func (m *ItemsMutator) Apply() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	*m.target = *m.proxy
@@ -26,7 +26,7 @@ func (m *ItemsMutator) Do() error {
 
 // MutateItems creates a new mutator object for Items
 // Operations on the mutator are safe to be used concurrently, except for
-// when calling `Do()`, where the user is responsible for restricting access
+// when calling `Apply()`, where the user is responsible for restricting access
 // to the target object to be mutated
 func MutateItems(v Items) *ItemsMutator {
 	return &ItemsMutator{

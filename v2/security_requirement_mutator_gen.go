@@ -8,7 +8,7 @@ import (
 )
 
 // SecurityRequirementMutator is used to build an instance of SecurityRequirement. The user must
-// call `Do()` after providing all the necessary information to
+// call `Apply()` after providing all the necessary information to
 // the new instance of SecurityRequirement with new values
 type SecurityRequirementMutator struct {
 	mu     sync.Mutex
@@ -16,8 +16,8 @@ type SecurityRequirementMutator struct {
 	target *securityRequirement
 }
 
-// Do finalizes the matuation process for SecurityRequirement and returns the result
-func (m *SecurityRequirementMutator) Do() error {
+// Apply finalizes the matuation process for SecurityRequirement and returns the result
+func (m *SecurityRequirementMutator) Apply() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	*m.target = *m.proxy
@@ -26,7 +26,7 @@ func (m *SecurityRequirementMutator) Do() error {
 
 // MutateSecurityRequirement creates a new mutator object for SecurityRequirement
 // Operations on the mutator are safe to be used concurrently, except for
-// when calling `Do()`, where the user is responsible for restricting access
+// when calling `Apply()`, where the user is responsible for restricting access
 // to the target object to be mutated
 func MutateSecurityRequirement(v SecurityRequirement) *SecurityRequirementMutator {
 	return &SecurityRequirementMutator{

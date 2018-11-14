@@ -56,7 +56,7 @@ func (p *paths) UnmarshalJSON(data []byte) error {
 		}
 		mutator.Path(path, &pi)
 	}
-	if err := mutator.Do(); err != nil {
+	if err := mutator.Apply(); err != nil {
 		return errors.Wrap(err, `failed to mutate paths`)
 	}
 	*p = *tmp

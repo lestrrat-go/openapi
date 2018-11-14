@@ -954,7 +954,7 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 		fmt.Fprintf(dst, "\n}")
 		fmt.Fprintf(dst, "\n}")
 
-		fmt.Fprintf(dst, "\n\nif err := mutator.Do(); err != nil {")
+		fmt.Fprintf(dst, "\n\nif err := mutator.Apply(); err != nil {")
 		fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to  unmarshal JSON`)")
 		fmt.Fprintf(dst, "\n}")
 
@@ -1010,7 +1010,7 @@ func generateJSONHandlersFromEntity(e interface{}) error {
 				}
 			}
 		}
-		fmt.Fprintf(dst, "\nif err := mutator.Do(); err != nil {")
+		fmt.Fprintf(dst, "\nif err := mutator.Apply(); err != nil {")
 		fmt.Fprintf(dst, "\nreturn errors.Wrap(err, `failed to mutate`)")
 		fmt.Fprintf(dst, "\n}")
 		fmt.Fprintf(dst, "\nv.resolved = true")
@@ -1145,7 +1145,7 @@ func generateMutatorFromEntity(e interface{}) error {
 	structname := rv.Type().Name()
 
 	fmt.Fprintf(dst, "\n\n// %sMutator is used to build an instance of %s. The user must", ifacename, ifacename)
-	fmt.Fprintf(dst, "\n// call `Do()` after providing all the necessary information to")
+	fmt.Fprintf(dst, "\n// call `Apply()` after providing all the necessary information to")
 	fmt.Fprintf(dst, "\n// the new instance of %s with new values", ifacename)
 	fmt.Fprintf(dst, "\ntype %sMutator struct {", ifacename)
 	fmt.Fprintf(dst, "\nmu sync.Mutex")
@@ -1153,8 +1153,8 @@ func generateMutatorFromEntity(e interface{}) error {
 	fmt.Fprintf(dst, "\ntarget *%s", structname)
 	fmt.Fprintf(dst, "\n}")
 
-	fmt.Fprintf(dst, "\n\n// Do finalizes the matuation process for %s and returns the result", ifacename)
-	fmt.Fprintf(dst, "\nfunc (m *%sMutator) Do() error {", ifacename)
+	fmt.Fprintf(dst, "\n\n// Apply finalizes the matuation process for %s and returns the result", ifacename)
+	fmt.Fprintf(dst, "\nfunc (m *%sMutator) Apply() error {", ifacename)
 	// TODO: validation
 	fmt.Fprintf(dst, "\nm.mu.Lock()")
 	fmt.Fprintf(dst, "\ndefer m.mu.Unlock()")
@@ -1164,7 +1164,7 @@ func generateMutatorFromEntity(e interface{}) error {
 
 	fmt.Fprintf(dst, "\n\n// Mutate%s creates a new mutator object for %s", ifacename, ifacename)
 	fmt.Fprintf(dst, "\n// Operations on the mutator are safe to be used concurrently, except for")
-	fmt.Fprintf(dst, "\n// when calling `Do()`, where the user is responsible for restricting access")
+	fmt.Fprintf(dst, "\n// when calling `Apply()`, where the user is responsible for restricting access")
 	fmt.Fprintf(dst, "\n// to the target object to be mutated")
 	fmt.Fprintf(dst, "\nfunc Mutate%s(v %s) *%sMutator {", ifacename, ifacename, ifacename)
 	fmt.Fprintf(dst, "\nreturn &%sMutator{", ifacename)

@@ -8,7 +8,7 @@ import (
 )
 
 // PathItemMutator is used to build an instance of PathItem. The user must
-// call `Do()` after providing all the necessary information to
+// call `Apply()` after providing all the necessary information to
 // the new instance of PathItem with new values
 type PathItemMutator struct {
 	mu     sync.Mutex
@@ -16,8 +16,8 @@ type PathItemMutator struct {
 	target *pathItem
 }
 
-// Do finalizes the matuation process for PathItem and returns the result
-func (m *PathItemMutator) Do() error {
+// Apply finalizes the matuation process for PathItem and returns the result
+func (m *PathItemMutator) Apply() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	*m.target = *m.proxy
@@ -26,7 +26,7 @@ func (m *PathItemMutator) Do() error {
 
 // MutatePathItem creates a new mutator object for PathItem
 // Operations on the mutator are safe to be used concurrently, except for
-// when calling `Do()`, where the user is responsible for restricting access
+// when calling `Apply()`, where the user is responsible for restricting access
 // to the target object to be mutated
 func MutatePathItem(v PathItem) *PathItemMutator {
 	return &PathItemMutator{

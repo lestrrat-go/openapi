@@ -8,7 +8,7 @@ import (
 )
 
 // InfoMutator is used to build an instance of Info. The user must
-// call `Do()` after providing all the necessary information to
+// call `Apply()` after providing all the necessary information to
 // the new instance of Info with new values
 type InfoMutator struct {
 	mu     sync.Mutex
@@ -16,8 +16,8 @@ type InfoMutator struct {
 	target *info
 }
 
-// Do finalizes the matuation process for Info and returns the result
-func (m *InfoMutator) Do() error {
+// Apply finalizes the matuation process for Info and returns the result
+func (m *InfoMutator) Apply() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	*m.target = *m.proxy
@@ -26,7 +26,7 @@ func (m *InfoMutator) Do() error {
 
 // MutateInfo creates a new mutator object for Info
 // Operations on the mutator are safe to be used concurrently, except for
-// when calling `Do()`, where the user is responsible for restricting access
+// when calling `Apply()`, where the user is responsible for restricting access
 // to the target object to be mutated
 func MutateInfo(v Info) *InfoMutator {
 	return &InfoMutator{

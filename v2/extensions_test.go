@@ -12,7 +12,7 @@ func TestExtensions(t *testing.T) {
 	err := openapi.MutateContact(contact).
 		Extension(`x-foo`, `Foo`).
 		Extension(`x-bar`, `Bar`).
-		Do()
+		Apply()
 	if !assert.NoError(t, err, `mutating contact should succeed`) {
 		return
 	}

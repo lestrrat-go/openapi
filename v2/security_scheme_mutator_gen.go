@@ -8,7 +8,7 @@ import (
 )
 
 // SecuritySchemeMutator is used to build an instance of SecurityScheme. The user must
-// call `Do()` after providing all the necessary information to
+// call `Apply()` after providing all the necessary information to
 // the new instance of SecurityScheme with new values
 type SecuritySchemeMutator struct {
 	mu     sync.Mutex
@@ -16,8 +16,8 @@ type SecuritySchemeMutator struct {
 	target *securityScheme
 }
 
-// Do finalizes the matuation process for SecurityScheme and returns the result
-func (m *SecuritySchemeMutator) Do() error {
+// Apply finalizes the matuation process for SecurityScheme and returns the result
+func (m *SecuritySchemeMutator) Apply() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	*m.target = *m.proxy
@@ -26,7 +26,7 @@ func (m *SecuritySchemeMutator) Do() error {
 
 // MutateSecurityScheme creates a new mutator object for SecurityScheme
 // Operations on the mutator are safe to be used concurrently, except for
-// when calling `Do()`, where the user is responsible for restricting access
+// when calling `Apply()`, where the user is responsible for restricting access
 // to the target object to be mutated
 func MutateSecurityScheme(v SecurityScheme) *SecuritySchemeMutator {
 	return &SecuritySchemeMutator{

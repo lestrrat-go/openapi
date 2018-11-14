@@ -8,7 +8,7 @@ import (
 )
 
 // PathsMutator is used to build an instance of Paths. The user must
-// call `Do()` after providing all the necessary information to
+// call `Apply()` after providing all the necessary information to
 // the new instance of Paths with new values
 type PathsMutator struct {
 	mu     sync.Mutex
@@ -16,8 +16,8 @@ type PathsMutator struct {
 	target *paths
 }
 
-// Do finalizes the matuation process for Paths and returns the result
-func (m *PathsMutator) Do() error {
+// Apply finalizes the matuation process for Paths and returns the result
+func (m *PathsMutator) Apply() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	*m.target = *m.proxy
@@ -26,7 +26,7 @@ func (m *PathsMutator) Do() error {
 
 // MutatePaths creates a new mutator object for Paths
 // Operations on the mutator are safe to be used concurrently, except for
-// when calling `Do()`, where the user is responsible for restricting access
+// when calling `Apply()`, where the user is responsible for restricting access
 // to the target object to be mutated
 func MutatePaths(v Paths) *PathsMutator {
 	return &PathsMutator{

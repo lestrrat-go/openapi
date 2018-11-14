@@ -273,7 +273,7 @@ func (v *items) UnmarshalJSON(data []byte) error {
 		}
 	}
 
-	if err := mutator.Do(); err != nil {
+	if err := mutator.Apply(); err != nil {
 		return errors.Wrap(err, `failed to  unmarshal JSON`)
 	}
 	return nil

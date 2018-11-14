@@ -8,7 +8,7 @@ import (
 )
 
 // TagMutator is used to build an instance of Tag. The user must
-// call `Do()` after providing all the necessary information to
+// call `Apply()` after providing all the necessary information to
 // the new instance of Tag with new values
 type TagMutator struct {
 	mu     sync.Mutex
@@ -16,8 +16,8 @@ type TagMutator struct {
 	target *tag
 }
 
-// Do finalizes the matuation process for Tag and returns the result
-func (m *TagMutator) Do() error {
+// Apply finalizes the matuation process for Tag and returns the result
+func (m *TagMutator) Apply() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	*m.target = *m.proxy
@@ -26,7 +26,7 @@ func (m *TagMutator) Do() error {
 
 // MutateTag creates a new mutator object for Tag
 // Operations on the mutator are safe to be used concurrently, except for
-// when calling `Do()`, where the user is responsible for restricting access
+// when calling `Apply()`, where the user is responsible for restricting access
 // to the target object to be mutated
 func MutateTag(v Tag) *TagMutator {
 	return &TagMutator{

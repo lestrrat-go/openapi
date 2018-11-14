@@ -8,7 +8,7 @@ import (
 )
 
 // HeaderMutator is used to build an instance of Header. The user must
-// call `Do()` after providing all the necessary information to
+// call `Apply()` after providing all the necessary information to
 // the new instance of Header with new values
 type HeaderMutator struct {
 	mu     sync.Mutex
@@ -16,8 +16,8 @@ type HeaderMutator struct {
 	target *header
 }
 
-// Do finalizes the matuation process for Header and returns the result
-func (m *HeaderMutator) Do() error {
+// Apply finalizes the matuation process for Header and returns the result
+func (m *HeaderMutator) Apply() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	*m.target = *m.proxy
@@ -26,7 +26,7 @@ func (m *HeaderMutator) Do() error {
 
 // MutateHeader creates a new mutator object for Header
 // Operations on the mutator are safe to be used concurrently, except for
-// when calling `Do()`, where the user is responsible for restricting access
+// when calling `Apply()`, where the user is responsible for restricting access
 // to the target object to be mutated
 func MutateHeader(v Header) *HeaderMutator {
 	return &HeaderMutator{

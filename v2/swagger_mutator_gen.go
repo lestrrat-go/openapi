@@ -8,7 +8,7 @@ import (
 )
 
 // SwaggerMutator is used to build an instance of Swagger. The user must
-// call `Do()` after providing all the necessary information to
+// call `Apply()` after providing all the necessary information to
 // the new instance of Swagger with new values
 type SwaggerMutator struct {
 	mu     sync.Mutex
@@ -16,8 +16,8 @@ type SwaggerMutator struct {
 	target *swagger
 }
 
-// Do finalizes the matuation process for Swagger and returns the result
-func (m *SwaggerMutator) Do() error {
+// Apply finalizes the matuation process for Swagger and returns the result
+func (m *SwaggerMutator) Apply() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	*m.target = *m.proxy
@@ -26,7 +26,7 @@ func (m *SwaggerMutator) Do() error {
 
 // MutateSwagger creates a new mutator object for Swagger
 // Operations on the mutator are safe to be used concurrently, except for
-// when calling `Do()`, where the user is responsible for restricting access
+// when calling `Apply()`, where the user is responsible for restricting access
 // to the target object to be mutated
 func MutateSwagger(v Swagger) *SwaggerMutator {
 	return &SwaggerMutator{
