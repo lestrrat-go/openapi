@@ -5,21 +5,25 @@ package openapi
 
 import (
 	"github.com/pkg/errors"
+	"sync"
 )
 
 var _ = errors.Cause
 
 // XMLBuilder is used to build an instance of XML. The user must
 // call `Build()` after providing all the necessary information to
-// build an instance of XML
+// build an instance of XML.
+// Builders may NOT be reused. It must be created for every instance
+// of XML that you want to create
 type XMLBuilder struct {
+	mu     sync.Mutex
 	target *xml
 }
 
 // MustBuild is a convenience function for those time when you know that
 // the result of the builder must be successful
 func (b *XMLBuilder) MustBuild(options ...Option) XML {
-	v, err := b.Build()
+	v, err := b.Build(options...)
 	if err != nil {
 		panic(err)
 	}
@@ -27,7 +31,13 @@ func (b *XMLBuilder) MustBuild(options ...Option) XML {
 }
 
 // Build finalizes the building process for XML and returns the result
+// By default, Build() will validate if the given structure is valid
 func (b *XMLBuilder) Build(options ...Option) (XML, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return nil, errors.New(`builder has already been used`)
+	}
 	validate := true
 	for _, option := range options {
 		switch option.Name() {
@@ -40,48 +50,84 @@ func (b *XMLBuilder) Build(options ...Option) (XML, error) {
 			return nil, errors.Wrap(err, `validation failed`)
 		}
 	}
+	defer func() { b.target = nil }()
 	return b.target, nil
 }
 
 // NewXML creates a new builder object for XML
 func NewXML() *XMLBuilder {
-	return &XMLBuilder{
-		target: &xml{},
-	}
+	var b XMLBuilder
+	b.target = &xml{}
+	return &b
 }
 
 // Name sets the name field for object XML.
+
 func (b *XMLBuilder) Name(v string) *XMLBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.name = v
 	return b
 }
 
 // Namespace sets the namespace field for object XML.
+
 func (b *XMLBuilder) Namespace(v string) *XMLBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.namespace = v
 	return b
 }
 
 // Prefix sets the prefix field for object XML.
+
 func (b *XMLBuilder) Prefix(v string) *XMLBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.prefix = v
 	return b
 }
 
 // Attribute sets the attribute field for object XML.
+
 func (b *XMLBuilder) Attribute(v bool) *XMLBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.attribute = v
 	return b
 }
 
 // Wrapped sets the wrapped field for object XML.
+
 func (b *XMLBuilder) Wrapped(v bool) *XMLBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.wrapped = v
 	return b
 }
 
 // Reference sets the $ref (reference) field for object XML.
 func (b *XMLBuilder) Reference(v string) *XMLBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.reference = v
 	return b
 }
@@ -89,6 +135,11 @@ func (b *XMLBuilder) Reference(v string) *XMLBuilder {
 // Extension sets an arbitrary element (an extension) to the
 // object XML. The extension name should start with a "x-"
 func (b *XMLBuilder) Extension(name string, value interface{}) *XMLBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.extensions[name] = value
 	return b
 }

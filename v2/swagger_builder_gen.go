@@ -5,21 +5,25 @@ package openapi
 
 import (
 	"github.com/pkg/errors"
+	"sync"
 )
 
 var _ = errors.Cause
 
 // SwaggerBuilder is used to build an instance of Swagger. The user must
 // call `Build()` after providing all the necessary information to
-// build an instance of Swagger
+// build an instance of Swagger.
+// Builders may NOT be reused. It must be created for every instance
+// of Swagger that you want to create
 type SwaggerBuilder struct {
+	mu     sync.Mutex
 	target *swagger
 }
 
 // MustBuild is a convenience function for those time when you know that
 // the result of the builder must be successful
 func (b *SwaggerBuilder) MustBuild(options ...Option) Swagger {
-	v, err := b.Build()
+	v, err := b.Build(options...)
 	if err != nil {
 		panic(err)
 	}
@@ -27,7 +31,13 @@ func (b *SwaggerBuilder) MustBuild(options ...Option) Swagger {
 }
 
 // Build finalizes the building process for Swagger and returns the result
+// By default, Build() will validate if the given structure is valid
 func (b *SwaggerBuilder) Build(options ...Option) (Swagger, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return nil, errors.New(`builder has already been used`)
+	}
 	validate := true
 	for _, option := range options {
 		switch option.Name() {
@@ -40,94 +50,172 @@ func (b *SwaggerBuilder) Build(options ...Option) (Swagger, error) {
 			return nil, errors.Wrap(err, `validation failed`)
 		}
 	}
+	defer func() { b.target = nil }()
 	return b.target, nil
 }
 
 // NewSwagger creates a new builder object for Swagger
 func NewSwagger(info Info, paths Paths) *SwaggerBuilder {
-	return &SwaggerBuilder{
-		target: &swagger{
-			version: defaultSwaggerVersion,
-			info:    info,
-			paths:   paths,
-		},
+	var b SwaggerBuilder
+	b.target = &swagger{
+		version: defaultSwaggerVersion,
+		info:    info,
+		paths:   paths,
 	}
+	return &b
 }
 
 // Host sets the host field for object Swagger.
+
 func (b *SwaggerBuilder) Host(v string) *SwaggerBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.host = v
 	return b
 }
 
 // BasePath sets the basePath field for object Swagger.
+
 func (b *SwaggerBuilder) BasePath(v string) *SwaggerBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.basePath = v
 	return b
 }
 
 // Schemes sets the schemes field for object Swagger.
+
 func (b *SwaggerBuilder) Schemes(v ...Scheme) *SwaggerBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.schemes = v
 	return b
 }
 
 // Consumes sets the consumes field for object Swagger.
+
 func (b *SwaggerBuilder) Consumes(v ...MIMEType) *SwaggerBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.consumes = v
 	return b
 }
 
 // Produces sets the produces field for object Swagger.
+
 func (b *SwaggerBuilder) Produces(v ...MIMEType) *SwaggerBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.produces = v
 	return b
 }
 
 // Definitions sets the definitions field for object Swagger.
+
 func (b *SwaggerBuilder) Definitions(v InterfaceMap) *SwaggerBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.definitions = v
 	return b
 }
 
 // Parameters sets the parameters field for object Swagger.
+
 func (b *SwaggerBuilder) Parameters(v ParameterMap) *SwaggerBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.parameters = v
 	return b
 }
 
 // Responses sets the responses field for object Swagger.
+
 func (b *SwaggerBuilder) Responses(v ResponseMap) *SwaggerBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.responses = v
 	return b
 }
 
 // SecurityDefinitions sets the securityDefinitions field for object Swagger.
+
 func (b *SwaggerBuilder) SecurityDefinitions(v SecuritySchemeMap) *SwaggerBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.securityDefinitions = v
 	return b
 }
 
 // Security sets the security field for object Swagger.
+
 func (b *SwaggerBuilder) Security(v ...SecurityRequirement) *SwaggerBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.security = v
 	return b
 }
 
 // Tags sets the tags field for object Swagger.
+
 func (b *SwaggerBuilder) Tags(v ...Tag) *SwaggerBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.tags = v
 	return b
 }
 
 // ExternalDocs sets the externalDocs field for object Swagger.
+
 func (b *SwaggerBuilder) ExternalDocs(v ExternalDocumentation) *SwaggerBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.externalDocs = v
 	return b
 }
 
 // Reference sets the $ref (reference) field for object Swagger.
 func (b *SwaggerBuilder) Reference(v string) *SwaggerBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.reference = v
 	return b
 }
@@ -135,6 +223,11 @@ func (b *SwaggerBuilder) Reference(v string) *SwaggerBuilder {
 // Extension sets an arbitrary element (an extension) to the
 // object Swagger. The extension name should start with a "x-"
 func (b *SwaggerBuilder) Extension(name string, value interface{}) *SwaggerBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.extensions[name] = value
 	return b
 }

@@ -5,21 +5,25 @@ package openapi
 
 import (
 	"github.com/pkg/errors"
+	"sync"
 )
 
 var _ = errors.Cause
 
 // LicenseBuilder is used to build an instance of License. The user must
 // call `Build()` after providing all the necessary information to
-// build an instance of License
+// build an instance of License.
+// Builders may NOT be reused. It must be created for every instance
+// of License that you want to create
 type LicenseBuilder struct {
+	mu     sync.Mutex
 	target *license
 }
 
 // MustBuild is a convenience function for those time when you know that
 // the result of the builder must be successful
 func (b *LicenseBuilder) MustBuild(options ...Option) License {
-	v, err := b.Build()
+	v, err := b.Build(options...)
 	if err != nil {
 		panic(err)
 	}
@@ -27,7 +31,13 @@ func (b *LicenseBuilder) MustBuild(options ...Option) License {
 }
 
 // Build finalizes the building process for License and returns the result
+// By default, Build() will validate if the given structure is valid
 func (b *LicenseBuilder) Build(options ...Option) (License, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return nil, errors.New(`builder has already been used`)
+	}
 	validate := true
 	for _, option := range options {
 		switch option.Name() {
@@ -40,26 +50,38 @@ func (b *LicenseBuilder) Build(options ...Option) (License, error) {
 			return nil, errors.Wrap(err, `validation failed`)
 		}
 	}
+	defer func() { b.target = nil }()
 	return b.target, nil
 }
 
 // NewLicense creates a new builder object for License
 func NewLicense(name string) *LicenseBuilder {
-	return &LicenseBuilder{
-		target: &license{
-			name: name,
-		},
+	var b LicenseBuilder
+	b.target = &license{
+		name: name,
 	}
+	return &b
 }
 
 // URL sets the url field for object License.
+
 func (b *LicenseBuilder) URL(v string) *LicenseBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.url = v
 	return b
 }
 
 // Reference sets the $ref (reference) field for object License.
 func (b *LicenseBuilder) Reference(v string) *LicenseBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.reference = v
 	return b
 }
@@ -67,6 +89,11 @@ func (b *LicenseBuilder) Reference(v string) *LicenseBuilder {
 // Extension sets an arbitrary element (an extension) to the
 // object License. The extension name should start with a "x-"
 func (b *LicenseBuilder) Extension(name string, value interface{}) *LicenseBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.extensions[name] = value
 	return b
 }

@@ -5,21 +5,25 @@ package openapi
 
 import (
 	"github.com/pkg/errors"
+	"sync"
 )
 
 var _ = errors.Cause
 
 // OperationBuilder is used to build an instance of Operation. The user must
 // call `Build()` after providing all the necessary information to
-// build an instance of Operation
+// build an instance of Operation.
+// Builders may NOT be reused. It must be created for every instance
+// of Operation that you want to create
 type OperationBuilder struct {
+	mu     sync.Mutex
 	target *operation
 }
 
 // MustBuild is a convenience function for those time when you know that
 // the result of the builder must be successful
 func (b *OperationBuilder) MustBuild(options ...Option) Operation {
-	v, err := b.Build()
+	v, err := b.Build(options...)
 	if err != nil {
 		panic(err)
 	}
@@ -27,7 +31,13 @@ func (b *OperationBuilder) MustBuild(options ...Option) Operation {
 }
 
 // Build finalizes the building process for Operation and returns the result
+// By default, Build() will validate if the given structure is valid
 func (b *OperationBuilder) Build(options ...Option) (Operation, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return nil, errors.New(`builder has already been used`)
+	}
 	validate := true
 	for _, option := range options {
 		switch option.Name() {
@@ -40,86 +50,158 @@ func (b *OperationBuilder) Build(options ...Option) (Operation, error) {
 			return nil, errors.Wrap(err, `validation failed`)
 		}
 	}
+	defer func() { b.target = nil }()
 	return b.target, nil
 }
 
 // NewOperation creates a new builder object for Operation
 func NewOperation(responses Responses) *OperationBuilder {
-	return &OperationBuilder{
-		target: &operation{
-			responses: responses,
-		},
+	var b OperationBuilder
+	b.target = &operation{
+		responses: responses,
 	}
+	return &b
 }
 
 // Tags sets the tags field for object Operation.
+
 func (b *OperationBuilder) Tags(v ...string) *OperationBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.tags = v
 	return b
 }
 
 // Summary sets the summary field for object Operation.
+
 func (b *OperationBuilder) Summary(v string) *OperationBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.summary = v
 	return b
 }
 
 // Description sets the description field for object Operation.
+
 func (b *OperationBuilder) Description(v string) *OperationBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.description = v
 	return b
 }
 
 // ExternalDocs sets the externalDocs field for object Operation.
+
 func (b *OperationBuilder) ExternalDocs(v ExternalDocumentation) *OperationBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.externalDocs = v
 	return b
 }
 
 // OperationID sets the operationID field for object Operation.
+
 func (b *OperationBuilder) OperationID(v string) *OperationBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.operationID = v
 	return b
 }
 
 // Consumes sets the consumes field for object Operation.
+
 func (b *OperationBuilder) Consumes(v ...MIMEType) *OperationBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.consumes = v
 	return b
 }
 
 // Produces sets the produces field for object Operation.
+
 func (b *OperationBuilder) Produces(v ...MIMEType) *OperationBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.produces = v
 	return b
 }
 
 // Parameters sets the parameters field for object Operation.
+
 func (b *OperationBuilder) Parameters(v ...Parameter) *OperationBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.parameters = v
 	return b
 }
 
 // Schemes sets the schemes field for object Operation.
+
 func (b *OperationBuilder) Schemes(v ...Scheme) *OperationBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.schemes = v
 	return b
 }
 
 // Deprecated sets the deprecated field for object Operation.
+
 func (b *OperationBuilder) Deprecated(v bool) *OperationBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.deprecated = v
 	return b
 }
 
 // Security sets the security field for object Operation.
+
 func (b *OperationBuilder) Security(v ...SecurityRequirement) *OperationBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.security = v
 	return b
 }
 
 // Reference sets the $ref (reference) field for object Operation.
 func (b *OperationBuilder) Reference(v string) *OperationBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.reference = v
 	return b
 }
@@ -127,6 +209,11 @@ func (b *OperationBuilder) Reference(v string) *OperationBuilder {
 // Extension sets an arbitrary element (an extension) to the
 // object Operation. The extension name should start with a "x-"
 func (b *OperationBuilder) Extension(name string, value interface{}) *OperationBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.extensions[name] = value
 	return b
 }

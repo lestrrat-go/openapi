@@ -5,21 +5,25 @@ package openapi
 
 import (
 	"github.com/pkg/errors"
+	"sync"
 )
 
 var _ = errors.Cause
 
 // SchemaBuilder is used to build an instance of Schema. The user must
 // call `Build()` after providing all the necessary information to
-// build an instance of Schema
+// build an instance of Schema.
+// Builders may NOT be reused. It must be created for every instance
+// of Schema that you want to create
 type SchemaBuilder struct {
+	mu     sync.Mutex
 	target *schema
 }
 
 // MustBuild is a convenience function for those time when you know that
 // the result of the builder must be successful
 func (b *SchemaBuilder) MustBuild(options ...Option) Schema {
-	v, err := b.Build()
+	v, err := b.Build(options...)
 	if err != nil {
 		panic(err)
 	}
@@ -27,7 +31,13 @@ func (b *SchemaBuilder) MustBuild(options ...Option) Schema {
 }
 
 // Build finalizes the building process for Schema and returns the result
+// By default, Build() will validate if the given structure is valid
 func (b *SchemaBuilder) Build(options ...Option) (Schema, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return nil, errors.New(`builder has already been used`)
+	}
 	validate := true
 	for _, option := range options {
 		switch option.Name() {
@@ -40,186 +50,360 @@ func (b *SchemaBuilder) Build(options ...Option) (Schema, error) {
 			return nil, errors.Wrap(err, `validation failed`)
 		}
 	}
+	defer func() { b.target = nil }()
 	return b.target, nil
 }
 
 // NewSchema creates a new builder object for Schema
 func NewSchema() *SchemaBuilder {
-	return &SchemaBuilder{
-		target: &schema{},
-	}
+	var b SchemaBuilder
+	b.target = &schema{}
+	return &b
 }
 
 // Type sets the typ field for object Schema.
+
 func (b *SchemaBuilder) Type(v PrimitiveType) *SchemaBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.typ = v
 	return b
 }
 
 // Format sets the format field for object Schema.
+
 func (b *SchemaBuilder) Format(v string) *SchemaBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.format = v
 	return b
 }
 
 // Title sets the title field for object Schema.
+
 func (b *SchemaBuilder) Title(v string) *SchemaBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.title = v
 	return b
 }
 
 // MultipleOf sets the multipleOf field for object Schema.
+
 func (b *SchemaBuilder) MultipleOf(v float64) *SchemaBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.multipleOf = &v
 	return b
 }
 
 // Maximum sets the maximum field for object Schema.
+
 func (b *SchemaBuilder) Maximum(v float64) *SchemaBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.maximum = &v
 	return b
 }
 
 // ExclusiveMaximum sets the exclusiveMaximum field for object Schema.
+
 func (b *SchemaBuilder) ExclusiveMaximum(v float64) *SchemaBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.exclusiveMaximum = &v
 	return b
 }
 
 // Minimum sets the minimum field for object Schema.
+
 func (b *SchemaBuilder) Minimum(v float64) *SchemaBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.minimum = &v
 	return b
 }
 
 // ExclusiveMinimum sets the exclusiveMinimum field for object Schema.
+
 func (b *SchemaBuilder) ExclusiveMinimum(v float64) *SchemaBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.exclusiveMinimum = &v
 	return b
 }
 
 // MaxLength sets the maxLength field for object Schema.
+
 func (b *SchemaBuilder) MaxLength(v int) *SchemaBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.maxLength = &v
 	return b
 }
 
 // MinLength sets the minLength field for object Schema.
+
 func (b *SchemaBuilder) MinLength(v int) *SchemaBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.minLength = &v
 	return b
 }
 
 // Pattern sets the pattern field for object Schema.
+
 func (b *SchemaBuilder) Pattern(v string) *SchemaBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.pattern = v
 	return b
 }
 
 // MaxItems sets the maxItems field for object Schema.
+
 func (b *SchemaBuilder) MaxItems(v int) *SchemaBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.maxItems = &v
 	return b
 }
 
 // MinItems sets the minItems field for object Schema.
+
 func (b *SchemaBuilder) MinItems(v int) *SchemaBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.minItems = &v
 	return b
 }
 
 // UniqueItems sets the uniqueItems field for object Schema.
+
 func (b *SchemaBuilder) UniqueItems(v bool) *SchemaBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.uniqueItems = v
 	return b
 }
 
 // MaxProperties sets the maxProperties field for object Schema.
+
 func (b *SchemaBuilder) MaxProperties(v int) *SchemaBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.maxProperties = &v
 	return b
 }
 
 // MinProperties sets the minProperties field for object Schema.
+
 func (b *SchemaBuilder) MinProperties(v int) *SchemaBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.minProperties = &v
 	return b
 }
 
 // Required sets the required field for object Schema.
+
 func (b *SchemaBuilder) Required(v ...string) *SchemaBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.required = v
 	return b
 }
 
 // Enum sets the enum field for object Schema.
+
 func (b *SchemaBuilder) Enum(v ...interface{}) *SchemaBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.enum = v
 	return b
 }
 
 // AllOf sets the allOf field for object Schema.
+
 func (b *SchemaBuilder) AllOf(v ...Schema) *SchemaBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.allOf = v
 	return b
 }
 
 // Items sets the items field for object Schema.
+
 func (b *SchemaBuilder) Items(v Schema) *SchemaBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.items = v
 	return b
 }
 
 // AdditionaProperties sets the additionaProperties field for object Schema.
+
 func (b *SchemaBuilder) AdditionaProperties(v SchemaMap) *SchemaBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.additionaProperties = v
 	return b
 }
 
 // Default sets the defaultValue field for object Schema.
+
 func (b *SchemaBuilder) Default(v interface{}) *SchemaBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.defaultValue = v
 	return b
 }
 
 // Discriminator sets the discriminator field for object Schema.
+
 func (b *SchemaBuilder) Discriminator(v string) *SchemaBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.discriminator = v
 	return b
 }
 
 // ReadOnly sets the readOnly field for object Schema.
+
 func (b *SchemaBuilder) ReadOnly(v bool) *SchemaBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.readOnly = v
 	return b
 }
 
 // ExternalDocs sets the externalDocs field for object Schema.
+
 func (b *SchemaBuilder) ExternalDocs(v ExternalDocumentation) *SchemaBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.externalDocs = v
 	return b
 }
 
 // Example sets the example field for object Schema.
+
 func (b *SchemaBuilder) Example(v interface{}) *SchemaBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.example = v
 	return b
 }
 
 // Deprecated sets the deprecated field for object Schema.
+
 func (b *SchemaBuilder) Deprecated(v bool) *SchemaBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.deprecated = v
 	return b
 }
 
 // XML sets the xml field for object Schema.
+
 func (b *SchemaBuilder) XML(v XML) *SchemaBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.xml = v
 	return b
 }
 
 // Reference sets the $ref (reference) field for object Schema.
 func (b *SchemaBuilder) Reference(v string) *SchemaBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.reference = v
 	return b
 }
@@ -227,6 +411,11 @@ func (b *SchemaBuilder) Reference(v string) *SchemaBuilder {
 // Extension sets an arbitrary element (an extension) to the
 // object Schema. The extension name should start with a "x-"
 func (b *SchemaBuilder) Extension(name string, value interface{}) *SchemaBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.extensions[name] = value
 	return b
 }

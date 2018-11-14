@@ -5,21 +5,25 @@ package openapi
 
 import (
 	"github.com/pkg/errors"
+	"sync"
 )
 
 var _ = errors.Cause
 
 // ResponseBuilder is used to build an instance of Response. The user must
 // call `Build()` after providing all the necessary information to
-// build an instance of Response
+// build an instance of Response.
+// Builders may NOT be reused. It must be created for every instance
+// of Response that you want to create
 type ResponseBuilder struct {
+	mu     sync.Mutex
 	target *response
 }
 
 // MustBuild is a convenience function for those time when you know that
 // the result of the builder must be successful
 func (b *ResponseBuilder) MustBuild(options ...Option) Response {
-	v, err := b.Build()
+	v, err := b.Build(options...)
 	if err != nil {
 		panic(err)
 	}
@@ -27,7 +31,13 @@ func (b *ResponseBuilder) MustBuild(options ...Option) Response {
 }
 
 // Build finalizes the building process for Response and returns the result
+// By default, Build() will validate if the given structure is valid
 func (b *ResponseBuilder) Build(options ...Option) (Response, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return nil, errors.New(`builder has already been used`)
+	}
 	validate := true
 	for _, option := range options {
 		switch option.Name() {
@@ -40,50 +50,86 @@ func (b *ResponseBuilder) Build(options ...Option) (Response, error) {
 			return nil, errors.Wrap(err, `validation failed`)
 		}
 	}
+	defer func() { b.target = nil }()
 	return b.target, nil
 }
 
 // NewResponse creates a new builder object for Response
 func NewResponse(description string) *ResponseBuilder {
-	return &ResponseBuilder{
-		target: &response{
-			description: description,
-		},
+	var b ResponseBuilder
+	b.target = &response{
+		description: description,
 	}
+	return &b
 }
 
 // Name sets the name field for object Response.
+
 func (b *ResponseBuilder) Name(v string) *ResponseBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.name = v
 	return b
 }
 
 // StatusCode sets the statusCode field for object Response.
+
 func (b *ResponseBuilder) StatusCode(v string) *ResponseBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.statusCode = v
 	return b
 }
 
 // Schema sets the schema field for object Response.
+
 func (b *ResponseBuilder) Schema(v Schema) *ResponseBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.schema = v
 	return b
 }
 
 // Headers sets the headers field for object Response.
+
 func (b *ResponseBuilder) Headers(v HeaderMap) *ResponseBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.headers = v
 	return b
 }
 
 // Examples sets the examples field for object Response.
+
 func (b *ResponseBuilder) Examples(v ExampleMap) *ResponseBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.examples = v
 	return b
 }
 
 // Reference sets the $ref (reference) field for object Response.
 func (b *ResponseBuilder) Reference(v string) *ResponseBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.reference = v
 	return b
 }
@@ -91,6 +137,11 @@ func (b *ResponseBuilder) Reference(v string) *ResponseBuilder {
 // Extension sets an arbitrary element (an extension) to the
 // object Response. The extension name should start with a "x-"
 func (b *ResponseBuilder) Extension(name string, value interface{}) *ResponseBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.extensions[name] = value
 	return b
 }

@@ -5,21 +5,25 @@ package openapi
 
 import (
 	"github.com/pkg/errors"
+	"sync"
 )
 
 var _ = errors.Cause
 
 // PathItemBuilder is used to build an instance of PathItem. The user must
 // call `Build()` after providing all the necessary information to
-// build an instance of PathItem
+// build an instance of PathItem.
+// Builders may NOT be reused. It must be created for every instance
+// of PathItem that you want to create
 type PathItemBuilder struct {
+	mu     sync.Mutex
 	target *pathItem
 }
 
 // MustBuild is a convenience function for those time when you know that
 // the result of the builder must be successful
 func (b *PathItemBuilder) MustBuild(options ...Option) PathItem {
-	v, err := b.Build()
+	v, err := b.Build(options...)
 	if err != nil {
 		panic(err)
 	}
@@ -27,7 +31,13 @@ func (b *PathItemBuilder) MustBuild(options ...Option) PathItem {
 }
 
 // Build finalizes the building process for PathItem and returns the result
+// By default, Build() will validate if the given structure is valid
 func (b *PathItemBuilder) Build(options ...Option) (PathItem, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return nil, errors.New(`builder has already been used`)
+	}
 	validate := true
 	for _, option := range options {
 		switch option.Name() {
@@ -40,24 +50,36 @@ func (b *PathItemBuilder) Build(options ...Option) (PathItem, error) {
 			return nil, errors.Wrap(err, `validation failed`)
 		}
 	}
+	defer func() { b.target = nil }()
 	return b.target, nil
 }
 
 // NewPathItem creates a new builder object for PathItem
 func NewPathItem() *PathItemBuilder {
-	return &PathItemBuilder{
-		target: &pathItem{},
-	}
+	var b PathItemBuilder
+	b.target = &pathItem{}
+	return &b
 }
 
 // Parameters sets the parameters field for object PathItem.
+
 func (b *PathItemBuilder) Parameters(v ...Parameter) *PathItemBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.parameters = v
 	return b
 }
 
 // Reference sets the $ref (reference) field for object PathItem.
 func (b *PathItemBuilder) Reference(v string) *PathItemBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.reference = v
 	return b
 }
@@ -65,6 +87,11 @@ func (b *PathItemBuilder) Reference(v string) *PathItemBuilder {
 // Extension sets an arbitrary element (an extension) to the
 // object PathItem. The extension name should start with a "x-"
 func (b *PathItemBuilder) Extension(name string, value interface{}) *PathItemBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.extensions[name] = value
 	return b
 }

@@ -5,21 +5,25 @@ package openapi
 
 import (
 	"github.com/pkg/errors"
+	"sync"
 )
 
 var _ = errors.Cause
 
 // ItemsBuilder is used to build an instance of Items. The user must
 // call `Build()` after providing all the necessary information to
-// build an instance of Items
+// build an instance of Items.
+// Builders may NOT be reused. It must be created for every instance
+// of Items that you want to create
 type ItemsBuilder struct {
+	mu     sync.Mutex
 	target *items
 }
 
 // MustBuild is a convenience function for those time when you know that
 // the result of the builder must be successful
 func (b *ItemsBuilder) MustBuild(options ...Option) Items {
-	v, err := b.Build()
+	v, err := b.Build(options...)
 	if err != nil {
 		panic(err)
 	}
@@ -27,7 +31,13 @@ func (b *ItemsBuilder) MustBuild(options ...Option) Items {
 }
 
 // Build finalizes the building process for Items and returns the result
+// By default, Build() will validate if the given structure is valid
 func (b *ItemsBuilder) Build(options ...Option) (Items, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return nil, errors.New(`builder has already been used`)
+	}
 	validate := true
 	for _, option := range options {
 		switch option.Name() {
@@ -40,120 +50,228 @@ func (b *ItemsBuilder) Build(options ...Option) (Items, error) {
 			return nil, errors.Wrap(err, `validation failed`)
 		}
 	}
+	defer func() { b.target = nil }()
 	return b.target, nil
 }
 
 // NewItems creates a new builder object for Items
 func NewItems() *ItemsBuilder {
-	return &ItemsBuilder{
-		target: &items{},
-	}
+	var b ItemsBuilder
+	b.target = &items{}
+	return &b
 }
 
 // Type sets the typ field for object Items.
+
 func (b *ItemsBuilder) Type(v PrimitiveType) *ItemsBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.typ = v
 	return b
 }
 
 // Format sets the format field for object Items.
+
 func (b *ItemsBuilder) Format(v string) *ItemsBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.format = v
 	return b
 }
 
 // Items sets the items field for object Items.
+
 func (b *ItemsBuilder) Items(v Items) *ItemsBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.items = v
 	return b
 }
 
 // CollectionFormat sets the collectionFormat field for object Items.
+
 func (b *ItemsBuilder) CollectionFormat(v CollectionFormat) *ItemsBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.collectionFormat = v
 	return b
 }
 
 // Default sets the defaultValue field for object Items.
+
 func (b *ItemsBuilder) Default(v interface{}) *ItemsBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.defaultValue = v
 	return b
 }
 
 // Maximum sets the maximum field for object Items.
+
 func (b *ItemsBuilder) Maximum(v float64) *ItemsBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.maximum = &v
 	return b
 }
 
 // ExclusiveMaximum sets the exclusiveMaximum field for object Items.
+
 func (b *ItemsBuilder) ExclusiveMaximum(v float64) *ItemsBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.exclusiveMaximum = &v
 	return b
 }
 
 // Minimum sets the minimum field for object Items.
+
 func (b *ItemsBuilder) Minimum(v float64) *ItemsBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.minimum = &v
 	return b
 }
 
 // ExclusiveMinimum sets the exclusiveMinimum field for object Items.
+
 func (b *ItemsBuilder) ExclusiveMinimum(v float64) *ItemsBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.exclusiveMinimum = &v
 	return b
 }
 
 // MaxLength sets the maxLength field for object Items.
+
 func (b *ItemsBuilder) MaxLength(v int) *ItemsBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.maxLength = &v
 	return b
 }
 
 // MinLength sets the minLength field for object Items.
+
 func (b *ItemsBuilder) MinLength(v int) *ItemsBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.minLength = &v
 	return b
 }
 
 // Pattern sets the pattern field for object Items.
+
 func (b *ItemsBuilder) Pattern(v string) *ItemsBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.pattern = v
 	return b
 }
 
 // MaxItems sets the maxItems field for object Items.
+
 func (b *ItemsBuilder) MaxItems(v int) *ItemsBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.maxItems = &v
 	return b
 }
 
 // MinItems sets the minItems field for object Items.
+
 func (b *ItemsBuilder) MinItems(v int) *ItemsBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.minItems = &v
 	return b
 }
 
 // UniqueItems sets the uniqueItems field for object Items.
+
 func (b *ItemsBuilder) UniqueItems(v bool) *ItemsBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.uniqueItems = v
 	return b
 }
 
 // Enum sets the enum field for object Items.
+
 func (b *ItemsBuilder) Enum(v ...interface{}) *ItemsBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.enum = v
 	return b
 }
 
 // MultipleOf sets the multipleOf field for object Items.
+
 func (b *ItemsBuilder) MultipleOf(v float64) *ItemsBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.multipleOf = &v
 	return b
 }
 
 // Reference sets the $ref (reference) field for object Items.
 func (b *ItemsBuilder) Reference(v string) *ItemsBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.reference = v
 	return b
 }
@@ -161,6 +279,11 @@ func (b *ItemsBuilder) Reference(v string) *ItemsBuilder {
 // Extension sets an arbitrary element (an extension) to the
 // object Items. The extension name should start with a "x-"
 func (b *ItemsBuilder) Extension(name string, value interface{}) *ItemsBuilder {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.target == nil {
+		return b
+	}
 	b.target.extensions[name] = value
 	return b
 }

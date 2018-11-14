@@ -481,22 +481,25 @@ func generateBuilderFromEntity(e interface{}) error {
 	var dst io.Writer = &buf
 
 	writePreamble(dst)
-	writeImports(dst, []string{"github.com/pkg/errors"})
+	writeImports(dst, []string{"sync", "github.com/pkg/errors"})
 
 	ifacename := codegen.ExportedName(rv.Type().Name())
 	structname := rv.Type().Name()
 
 	fmt.Fprintf(dst, "\n\n// %sBuilder is used to build an instance of %s. The user must", ifacename, ifacename)
 	fmt.Fprintf(dst, "\n// call `Build()` after providing all the necessary information to")
-	fmt.Fprintf(dst, "\n// build an instance of %s", ifacename)
+	fmt.Fprintf(dst, "\n// build an instance of %s.", ifacename)
+	fmt.Fprintf(dst, "\n// Builders may NOT be reused. It must be created for every instance")
+	fmt.Fprintf(dst, "\n// of %s that you want to create", ifacename)
 	fmt.Fprintf(dst, "\ntype %sBuilder struct {", ifacename)
+	fmt.Fprintf(dst, "\nmu sync.Mutex")
 	fmt.Fprintf(dst, "\ntarget *%s", structname)
 	fmt.Fprintf(dst, "\n}")
 
 	fmt.Fprintf(dst, "\n\n// MustBuild is a convenience function for those time when you know that")
 	fmt.Fprintf(dst, "\n// the result of the builder must be successful")
 	fmt.Fprintf(dst, "\nfunc (b *%[1]sBuilder) MustBuild(options ...Option) %[1]s {", ifacename)
-	fmt.Fprintf(dst, "\nv, err := b.Build()")
+	fmt.Fprintf(dst, "\nv, err := b.Build(options...)")
 	fmt.Fprintf(dst, "\nif err != nil {")
 	fmt.Fprintf(dst, "\npanic(err)")
 	fmt.Fprintf(dst, "\n}")
@@ -504,7 +507,13 @@ func generateBuilderFromEntity(e interface{}) error {
 	fmt.Fprintf(dst, "\n}")
 
 	fmt.Fprintf(dst, "\n\n// Build finalizes the building process for %s and returns the result", ifacename)
+	fmt.Fprintf(dst, "\n// By default, Build() will validate if the given structure is valid")
 	fmt.Fprintf(dst, "\nfunc (b *%[1]sBuilder) Build(options ...Option) (%[1]s, error) {", ifacename)
+	fmt.Fprintf(dst, "\nb.mu.Lock()")
+	fmt.Fprintf(dst, "\ndefer b.mu.Unlock()")
+	fmt.Fprintf(dst, "\nif b.target == nil {")
+	fmt.Fprintf(dst, "\nreturn nil, errors.New(`builder has already been used`)")
+	fmt.Fprintf(dst, "\n}")
 	fmt.Fprintf(dst, "\nvalidate := true")
 	fmt.Fprintf(dst, "\nfor _, option := range options {")
 	fmt.Fprintf(dst, "\nswitch option.Name() {")
@@ -517,6 +526,7 @@ func generateBuilderFromEntity(e interface{}) error {
 	fmt.Fprintf(dst, "\nreturn nil, errors.Wrap(err, `validation failed`)")
 	fmt.Fprintf(dst, "\n}")
 	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\ndefer func() { b.target = nil }()")
 	fmt.Fprintf(dst, "\nreturn b.target, nil")
 	fmt.Fprintf(dst, "\n}")
 
@@ -554,9 +564,8 @@ func generateBuilderFromEntity(e interface{}) error {
 		}
 	}
 	fmt.Fprintf(dst, ") *%sBuilder {", ifacename)
-	fmt.Fprintf(dst, "\nreturn &%sBuilder{", ifacename)
-	fmt.Fprintf(dst, "\ntarget: &%s{", structname)
-
+	fmt.Fprintf(dst, "\nvar b %sBuilder", ifacename)
+	fmt.Fprintf(dst, "\nb.target = &%s{", structname)
 	hasDefault := make(map[string]struct{})
 	for _, fv := range defaults {
 		hasDefault[fv.Name] = struct{}{}
@@ -565,8 +574,8 @@ func generateBuilderFromEntity(e interface{}) error {
 	for _, fv := range requireds {
 		fmt.Fprintf(dst, "\n%s: %s,", fv.Name, codegen.UnexportedName(fv.Name))
 	}
-	fmt.Fprintf(dst, "\n},")
 	fmt.Fprintf(dst, "\n}")
+	fmt.Fprintf(dst, "\nreturn &b")
 	fmt.Fprintf(dst, "\n}")
 
 	for _, fv := range optionals {
@@ -598,7 +607,12 @@ func generateBuilderFromEntity(e interface{}) error {
 			}
 			argType = "..." + argType
 		}
-		fmt.Fprintf(dst, "\nfunc (b *%sBuilder) %s(v %s) *%sBuilder {", ifacename, exportedFieldName, argType, ifacename)
+		fmt.Fprintf(dst, "\n\nfunc (b *%sBuilder) %s(v %s) *%sBuilder {", ifacename, exportedFieldName, argType, ifacename)
+		fmt.Fprintf(dst, "\nb.mu.Lock()")
+		fmt.Fprintf(dst, "\ndefer b.mu.Unlock()")
+		fmt.Fprintf(dst, "\nif b.target == nil {")
+		fmt.Fprintf(dst, "\nreturn b")
+		fmt.Fprintf(dst, "\n}")
 		if indirect {
 			fmt.Fprintf(dst, "\nb.target.%s = &v", fv.Name)
 		} else {
@@ -610,6 +624,11 @@ func generateBuilderFromEntity(e interface{}) error {
 
 	fmt.Fprintf(dst, "\n\n// Reference sets the $ref (reference) field for object %s.", ifacename)
 	fmt.Fprintf(dst, "\nfunc (b *%sBuilder) Reference(v string) *%sBuilder {", ifacename, ifacename)
+	fmt.Fprintf(dst, "\nb.mu.Lock()")
+	fmt.Fprintf(dst, "\ndefer b.mu.Unlock()")
+	fmt.Fprintf(dst, "\nif b.target == nil {")
+	fmt.Fprintf(dst, "\nreturn b")
+	fmt.Fprintf(dst, "\n}")
 	fmt.Fprintf(dst, "\nb.target.reference = v")
 	fmt.Fprintf(dst, "\nreturn b")
 	fmt.Fprintf(dst, "\n}")
@@ -617,6 +636,11 @@ func generateBuilderFromEntity(e interface{}) error {
 	fmt.Fprintf(dst, "\n\n// Extension sets an arbitrary element (an extension) to the")
 	fmt.Fprintf(dst, "\n// object %s. The extension name should start with a \"x-\"", ifacename)
 	fmt.Fprintf(dst, "\nfunc (b *%[1]sBuilder) Extension(name string, value interface{}) *%[1]sBuilder {", ifacename)
+	fmt.Fprintf(dst, "\nb.mu.Lock()")
+	fmt.Fprintf(dst, "\ndefer b.mu.Unlock()")
+	fmt.Fprintf(dst, "\nif b.target == nil {")
+	fmt.Fprintf(dst, "\nreturn b")
+	fmt.Fprintf(dst, "\n}")
 	fmt.Fprintf(dst, "\nb.target.extensions[name] = value")
 	fmt.Fprintf(dst, "\nreturn b")
 	fmt.Fprintf(dst, "\n}")
