@@ -68,7 +68,15 @@ func _main() error {
 	case "yaml":
 		output, serializeErr = yaml.Marshal(spec)
 	case "json":
+		// This is silly, but doing multiple marshaling here allows us to
+		// encode the entire thing in a sorted key order
 		output, serializeErr = json.Marshal(spec)
+		if serializeErr == nil {
+			var m map[string]interface{}
+			if serializeErr = json.Unmarshal(output, &m); serializeErr == nil {
+				output, serializeErr = json.MarshalIndent(m, "", "  ")
+			}
+		}
 	default:
 		return errors.Errorf(`invalid format %s`, format)
 	}
@@ -103,4 +111,3 @@ func parseV3(format string, input io.Reader) (interface{}, error) {
 		return nil, errors.Errorf(`invalid format %s`, format)
 	}
 }
-
