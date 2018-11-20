@@ -163,7 +163,7 @@ func mergeSchemasObjectAttributes(builder *SchemaBuilder, left, right Schema) er
 	for iter := right.Properties(); iter.Next(); {
 		name, prop := iter.Item()
 		if _, ok := props[name]; ok {
-			return errors.Errorf(`property %s already exists in destination`)
+			return errors.Errorf(`property %s already exists in destination`, name)
 		}
 		props[name] = prop
 	}
@@ -200,7 +200,6 @@ func mergeSchemasArrayAttributes(builder *SchemaBuilder, left, right Schema) err
 		Items() Schema
 
 		AllOf() *SchemaListIterator
-		Properties() *SchemaMapIterator
 		AdditionaProperties() *SchemaMapIterator
 		Default() interface{}
 		Discriminator() string
