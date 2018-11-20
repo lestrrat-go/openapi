@@ -262,11 +262,17 @@ func (m *ParameterMutator) MinItems(v int) *ParameterMutator {
 	return m
 }
 
-// UniqueItems sets the UniqueItems field for object Parameter.
-func (m *ParameterMutator) UniqueItems(v bool) *ParameterMutator {
+// ClearUniqueItems clears the uniqueItems field
+func (m *ParameterMutator) ClearUniqueItems() *ParameterMutator {
 	m.lock.Lock()
 	defer m.lock.Unlock()
-	m.proxy.uniqueItems = v
+	m.proxy.uniqueItems = nil
+	return m
+}
+
+// UniqueItems sets the uniqueItems field.
+func (m *ParameterMutator) UniqueItems(v bool) *ParameterMutator {
+	m.proxy.uniqueItems = &v
 	return m
 }
 

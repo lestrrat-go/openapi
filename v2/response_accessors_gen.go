@@ -14,6 +14,10 @@ var _ = context.Background
 var _ = sort.Strings
 var _ = errors.Cause
 
+func (v *response) IsValid() bool {
+	return v != nil
+}
+
 func (v *response) Name() string {
 	return v.name
 }
@@ -42,6 +46,7 @@ func (v *response) Headers() *HeaderMapIterator {
 		items = append(items, &mapIteratorItem{key: key, item: item})
 	}
 	var iter HeaderMapIterator
+	iter.list.size = len(items)
 	iter.list.items = items
 	return &iter
 }
@@ -58,6 +63,7 @@ func (v *response) Examples() *ExampleMapIterator {
 		items = append(items, &mapIteratorItem{key: key, item: item})
 	}
 	var iter ExampleMapIterator
+	iter.list.size = len(items)
 	iter.list.items = items
 	return &iter
 }
@@ -84,6 +90,7 @@ func (v *response) Extensions() *ExtensionsIterator {
 		items = append(items, &mapIteratorItem{key: key, item: item})
 	}
 	var iter ExtensionsIterator
+	iter.list.size = len(items)
 	iter.list.items = items
 	return &iter
 }

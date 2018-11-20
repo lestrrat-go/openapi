@@ -20,7 +20,6 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -342,66 +341,6 @@ func compileRPCs(ctx *genCtx) error {
 	return nil
 }
 
-/*
-// compileMessage takes a schema an compiles it into a Message object.
-// if the value is a built-in, then it's an error
-func compileMessage(ctx *genCtx, name string, s openapi.Schema) (message *Message, err error) {
-	if ref := s.Reference(); ref != "" {
-		// if it's a reference, the chances are it's already registered in our type registry
-		if m, ok := ctx.LookupType(ref); ok {
-			if m, ok := m.(*Message); ok {
-				return m, nil
-			}
-			return nil, errors.Errorf(`expected Message object, but %s resolved to %T`, ref, m)
-		}
-
-		log.Printf(" * Compiling %s", ref)
-		defer func() {
-			if err != nil {
-				return
-			}
-			ctx.RegisterMessage(ref, message)
-		}()
-
-		v, err := ctx.resolver.Resolve(ref)
-		if err != nil {
-			return nil, errors.Wrapf(err, `failed to resolve reference %s`, ref)
-		}
-
-		var tmp openapi.Schema
-		if err := common.RoundTripDecode(&tmp, v, openapi.SchemaFromJSON); err != nil {
-			return nil, errors.Errorf(`expected resolved object to be an openapi.Schema, but got %T`, v)
-		}
-		s = tmp
-	}
-	var m Message
-
-	log.Printf("%#v", s)
-
-	m.name = name
-
-	// objects only, please
-	if s.Type() != openapi.Object {
-		return nil, errors.Errorf(`expected openapi.Object, got %s`, s.Type())
-	}
-
-	for piter := s.Properties(); piter.Next(); {
-		name, prop := piter.Item()
-		field, err := compileField(ctx, name, prop)
-		if err != nil {
-			return nil, errors.Wrapf(err, `failed to compile property %s`, name)
-		}
-		m.fields = append(m.fields, field)
-	}
-
-	for i, f := range m.fields {
-		f.id = i + 1
-	}
-
-	return &m, nil
-}
-*/
-
 func compileBuiltin(ctx *genCtx, s openapi.Schema) (Type, error) {
 	switch s.Type() {
 	case openapi.Boolean:
@@ -450,6 +389,26 @@ func compileMessage(ctx *genCtx, schema openapi.Schema) (Type, error) {
 			return nil, errors.Wrapf(err, `expected openapi.Schema %s, got %T`, ref, typ)
 		}
 		schema = tmp
+	}
+
+	var allOfSchemas []openapi.Schema
+	for iter := schema.AllOf(); iter.Next(); {
+		allOfSchemas = append(allOfSchemas, iter.Item())
+	}
+
+	if len(allOfSchemas) > 0 {
+		ctx.log("* Merging %d schemas", len(allOfSchemas))
+		merged := allOfSchemas[0]
+		allOfSchemas = allOfSchemas[1:]
+		for _, s := range allOfSchemas {
+			m, err := openapi.MergeSchemas(merged, s)
+			if err != nil {
+				return nil, errors.Wrap(err, `failed to merge schemas`)
+			}
+			merged = m
+		}
+
+		schema = merged
 	}
 
 	// it better be an object
@@ -507,7 +466,6 @@ func compileType(ctx *genCtx, src openapi.SchemaConverter) (result Type, err err
 // appropriate type for it.
 func compileTypeWithName(ctx *genCtx, src openapi.SchemaConverter, name string) (result Type, err error) {
 	schema, err := src.ConvertToSchema()
-	json.NewEncoder(os.Stdout).Encode(schema)
 	if err != nil {
 		return nil, errors.Wrapf(err, `failed to extract schema out of %T`, src)
 	}
@@ -590,9 +548,52 @@ func compileTypeWithName(ctx *genCtx, src openapi.SchemaConverter, name string) 
 			return nil, errors.Wrap(err, `failed to compile array element`)
 		}
 		return &Array{element: typ}, nil
-	default:
-		return nil, errors.Errorf(`compileType: unsupported schema.type = %s`, schema.Type())
+	case "":
+		iter := schema.AllOf()
+		var children []openapi.Schema
+		if iter.Size() > 0 {
+			ctx.log(" * Found 'allOf' definition. Merging everything into one Schema, and generating Message")
+			children = make([]openapi.Schema, iter.Size())
+			for index := 0; iter.Next(); index++ {
+				schema := iter.Item()
+				if schema.IsUnresolved() {
+					ref := schema.Reference()
+					thing, err := ctx.resolver.Resolve(ref)
+					if err != nil {
+						return nil, errors.Wrapf(err, `failed to resolve reference %s`, ref)
+					}
+					var tmp openapi.Schema
+					if err := common.RoundTripDecode(&tmp, thing, openapi.SchemaFromJSON); err != nil {
+						return nil, errors.Errorf(`expected reference %s to resolve to a Schema`, ref)
+					}
+					schema = tmp
+				}
+				children[index] = schema
+			}
+
+			var merged openapi.Schema
+			for _, child := range children {
+				typ, err := openapi.MergeSchemas(merged, child)
+				if err != nil {
+					return nil, errors.Wrap(err, `failed to merge schemas`)
+				}
+				merged = typ
+			}
+			typ, err := compileMessage(ctx, merged)
+			if err != nil {
+				return nil, errors.Wrap(err, `failed to compile merged schema`)
+			}
+
+			if m, ok := typ.(*Message); ok {
+				m.name = codegen.MessageName(strings.TrimPrefix(name, "#/definitions/"))
+				ctx.log("* Adding message %s", m.Name())
+				ctx.parent.AddMessage(m)
+			}
+			return typ, nil
+		}
 	}
+
+	return nil, errors.Errorf(`compileType: unsupported schema.type = %s`, schema.Type())
 }
 
 func compileField(ctx *genCtx, name string, s openapi.Schema) (*Field, error) {

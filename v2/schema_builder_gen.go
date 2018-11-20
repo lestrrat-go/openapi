@@ -222,7 +222,7 @@ func (b *SchemaBuilder) UniqueItems(v bool) *SchemaBuilder {
 	if b.target == nil {
 		return b
 	}
-	b.target.uniqueItems = v
+	b.target.uniqueItems = &v
 	return b
 }
 

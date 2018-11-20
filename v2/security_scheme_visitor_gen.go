@@ -19,6 +19,11 @@ type SecuritySchemeVisitor interface {
 }
 
 func visitSecurityScheme(ctx context.Context, elem SecurityScheme) error {
+	if checker, ok := elem.(interface{ IsValid() bool }); ok {
+		if !checker.IsValid() {
+			return nil
+		}
+	}
 	select {
 	case <-ctx.Done():
 		return ctx.Err()

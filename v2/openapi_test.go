@@ -13,8 +13,32 @@ import (
 
 	"github.com/ghodss/yaml"
 	openapi "github.com/lestrrat-go/openapi/v2"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
+
+// encoding/json sorts the keys of map[string]*** data, but it doesn't
+// do the same for struct-based data (which is understandable). Here,
+// we force-sort the keys by marshaling twice -- the second time we
+// shove the data into a map, and marshal that, allowing
+// encoding/json to work its sorting magic.
+//
+// We format the value while we're at it
+func sortMarshal(t *testing.T, v interface{}) ([]byte, error) {
+	t.Helper()
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(v); err != nil {
+		return nil, errors.Wrap(err, `failed to marshal data`)
+	}
+
+	var m map[string]interface{}
+	if err := json.NewDecoder(&buf).Decode(&m); err != nil {
+		return nil, errors.Wrap(err, `failed to unmarshal data`)
+	}
+
+	return json.MarshalIndent(m, "", "  ")
+}
 
 func withLineno(t *testing.T, src io.Reader) {
 	scanner := bufio.NewScanner(src)
@@ -217,6 +241,89 @@ paths: {}
 		return
 	}
 
-	// XXX for now, just test that we can parse it
-	_ = spec
+	t.Run("Check data", func(t *testing.T) {
+		const expected = `{
+  "definitions": {
+    "Cat": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Pet"
+        },
+        {
+          "properties": {
+            "huntingSkill": {
+              "default": "lazy",
+              "description": "The measured skill for hunting",
+              "enum": [
+                "clueless",
+                "lazy",
+                "adventurous",
+                "aggressive"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "huntingSkill"
+          ],
+          "type": "object"
+        }
+      ],
+      "description": "A representation of a cat"
+    },
+    "Dog": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Pet"
+        },
+        {
+          "properties": {
+            "packSize": {
+              "default": 0,
+              "description": "the size of the pack the dog is from",
+              "format": "int32",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "packSize"
+          ],
+          "type": "object"
+        }
+      ],
+      "description": "A representation of a dog"
+    },
+    "Pet": {
+      "discriminator": "petType",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "petType": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "petType"
+      ],
+      "type": "object"
+    }
+  },
+  "info": {
+    "title": "Swagger Petstore",
+    "version": "1.0.0"
+  },
+  "paths": {},
+  "swagger": "2.0"
+}`
+		buf, err := sortMarshal(t, spec)
+		if !assert.NoError(t, err, `marshaling should succeed`) {
+			return
+		}
+		if !assert.Equal(t, []byte(expected), buf, "marshaled data should match") {
+			return
+		}
+	})
 }

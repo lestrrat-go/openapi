@@ -14,6 +14,10 @@ var _ = context.Background
 var _ = sort.Strings
 var _ = errors.Cause
 
+func (v *paths) IsValid() bool {
+	return v != nil
+}
+
 func (v *paths) Paths() *PathItemMapIterator {
 	var keys []string
 	for key := range v.paths {
@@ -26,6 +30,7 @@ func (v *paths) Paths() *PathItemMapIterator {
 		items = append(items, &mapIteratorItem{key: key, item: item})
 	}
 	var iter PathItemMapIterator
+	iter.list.size = len(items)
 	iter.list.items = items
 	return &iter
 }
@@ -52,6 +57,7 @@ func (v *paths) Extensions() *ExtensionsIterator {
 		items = append(items, &mapIteratorItem{key: key, item: item})
 	}
 	var iter ExtensionsIterator
+	iter.list.size = len(items)
 	iter.list.items = items
 	return &iter
 }

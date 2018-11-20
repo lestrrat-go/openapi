@@ -206,11 +206,17 @@ func (m *ItemsMutator) MinItems(v int) *ItemsMutator {
 	return m
 }
 
-// UniqueItems sets the UniqueItems field for object Items.
-func (m *ItemsMutator) UniqueItems(v bool) *ItemsMutator {
+// ClearUniqueItems clears the uniqueItems field
+func (m *ItemsMutator) ClearUniqueItems() *ItemsMutator {
 	m.lock.Lock()
 	defer m.lock.Unlock()
-	m.proxy.uniqueItems = v
+	m.proxy.uniqueItems = nil
+	return m
+}
+
+// UniqueItems sets the uniqueItems field.
+func (m *ItemsMutator) UniqueItems(v bool) *ItemsMutator {
+	m.proxy.uniqueItems = &v
 	return m
 }
 

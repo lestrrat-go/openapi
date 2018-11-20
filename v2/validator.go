@@ -216,6 +216,10 @@ func (val *validator) VisitResponse(ctx context.Context, v Response) error {
 }
 
 func (val *validator) VisitSchema(ctx context.Context, v Schema) error {
+	if !v.IsValid() {
+		return nil
+	}
+
 	if v.Reference() != "" {
 		return nil
 	}

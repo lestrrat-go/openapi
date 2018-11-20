@@ -14,6 +14,10 @@ var _ = context.Background
 var _ = sort.Strings
 var _ = errors.Cause
 
+func (v *swagger) IsValid() bool {
+	return v != nil
+}
+
 func (v *swagger) Version() string {
 	return v.version
 }
@@ -36,6 +40,7 @@ func (v *swagger) Schemes() *SchemeListIterator {
 		items = append(items, item)
 	}
 	var iter SchemeListIterator
+	iter.size = len(items)
 	iter.items = items
 	return &iter
 }
@@ -46,6 +51,7 @@ func (v *swagger) Consumes() *MIMETypeListIterator {
 		items = append(items, item)
 	}
 	var iter MIMETypeListIterator
+	iter.size = len(items)
 	iter.items = items
 	return &iter
 }
@@ -56,6 +62,7 @@ func (v *swagger) Produces() *MIMETypeListIterator {
 		items = append(items, item)
 	}
 	var iter MIMETypeListIterator
+	iter.size = len(items)
 	iter.items = items
 	return &iter
 }
@@ -76,6 +83,7 @@ func (v *swagger) Definitions() *InterfaceMapIterator {
 		items = append(items, &mapIteratorItem{key: key, item: item})
 	}
 	var iter InterfaceMapIterator
+	iter.list.size = len(items)
 	iter.list.items = items
 	return &iter
 }
@@ -92,6 +100,7 @@ func (v *swagger) Parameters() *ParameterMapIterator {
 		items = append(items, &mapIteratorItem{key: key, item: item})
 	}
 	var iter ParameterMapIterator
+	iter.list.size = len(items)
 	iter.list.items = items
 	return &iter
 }
@@ -108,6 +117,7 @@ func (v *swagger) Responses() *ResponseMapIterator {
 		items = append(items, &mapIteratorItem{key: key, item: item})
 	}
 	var iter ResponseMapIterator
+	iter.list.size = len(items)
 	iter.list.items = items
 	return &iter
 }
@@ -124,6 +134,7 @@ func (v *swagger) SecurityDefinitions() *SecuritySchemeMapIterator {
 		items = append(items, &mapIteratorItem{key: key, item: item})
 	}
 	var iter SecuritySchemeMapIterator
+	iter.list.size = len(items)
 	iter.list.items = items
 	return &iter
 }
@@ -134,6 +145,7 @@ func (v *swagger) Security() *SecurityRequirementListIterator {
 		items = append(items, item)
 	}
 	var iter SecurityRequirementListIterator
+	iter.size = len(items)
 	iter.items = items
 	return &iter
 }
@@ -144,6 +156,7 @@ func (v *swagger) Tags() *TagListIterator {
 		items = append(items, item)
 	}
 	var iter TagListIterator
+	iter.size = len(items)
 	iter.items = items
 	return &iter
 }
@@ -174,6 +187,7 @@ func (v *swagger) Extensions() *ExtensionsIterator {
 		items = append(items, &mapIteratorItem{key: key, item: item})
 	}
 	var iter ExtensionsIterator
+	iter.list.size = len(items)
 	iter.list.items = items
 	return &iter
 }

@@ -366,6 +366,14 @@ func generateIteratorsFromEntity(entities []interface{}) error {
 	fmt.Fprintf(dst, "\n\ntype listIterator struct {")
 	fmt.Fprintf(dst, "\nmu sync.RWMutex")
 	fmt.Fprintf(dst, "\nitems []interface{}")
+	fmt.Fprintf(dst, "\nsize int")
+	fmt.Fprintf(dst, "\n}")
+
+	fmt.Fprintf(dst, "\n\n// Size returns the size of the iterator. This size")
+	fmt.Fprintf(dst, "\n// is fixed at creation time. It does not represent")
+	fmt.Fprintf(dst, "\n// the remaining number of items")
+	fmt.Fprintf(dst, "\nfunc (iter *listIterator) Size() int {")
+	fmt.Fprintf(dst, "\nreturn iter.size")
 	fmt.Fprintf(dst, "\n}")
 
 	fmt.Fprintf(dst, "\n\n// Item returns the next item in this iterator")
@@ -676,6 +684,10 @@ func generateAccessorsFromEntity(e interface{}) error {
 
 	structname := rv.Type().Name()
 
+	fmt.Fprintf(dst, "\n\nfunc (v *%s) IsValid() bool {", structname)
+	fmt.Fprintf(dst, "\nreturn v != nil")
+	fmt.Fprintf(dst, "\n}")
+
 	var entityFields []reflect.StructField
 
 	for i := 0; i < rv.NumField(); i++ {
@@ -715,6 +727,7 @@ func generateAccessorsFromEntity(e interface{}) error {
 			fmt.Fprintf(dst, "\nitems = append(items, &mapIteratorItem{key: key, item: item})")
 			fmt.Fprintf(dst, "\n}")
 			fmt.Fprintf(dst, "\nvar iter %s", iteratorName)
+			fmt.Fprintf(dst, "\niter.list.size = len(items)")
 			fmt.Fprintf(dst, "\niter.list.items = items")
 			fmt.Fprintf(dst, "\nreturn &iter")
 			fmt.Fprintf(dst, "\n}")
@@ -726,6 +739,7 @@ func generateAccessorsFromEntity(e interface{}) error {
 			fmt.Fprintf(dst, "\nitems = append(items, item)")
 			fmt.Fprintf(dst, "\n}")
 			fmt.Fprintf(dst, "\nvar iter %s", iteratorName)
+			fmt.Fprintf(dst, "\niter.size = len(items)")
 			fmt.Fprintf(dst, "\niter.items = items")
 			fmt.Fprintf(dst, "\nreturn &iter")
 			fmt.Fprintf(dst, "\n}")
@@ -774,6 +788,7 @@ func generateAccessorsFromEntity(e interface{}) error {
 	fmt.Fprintf(dst, "\nitems = append(items, &mapIteratorItem{key: key, item: item})")
 	fmt.Fprintf(dst, "\n}")
 	fmt.Fprintf(dst, "\nvar iter ExtensionsIterator")
+	fmt.Fprintf(dst, "\niter.list.size = len(items)")
 	fmt.Fprintf(dst, "\niter.list.items = items")
 	fmt.Fprintf(dst, "\nreturn &iter")
 	fmt.Fprintf(dst, "\n}")
@@ -1479,6 +1494,11 @@ func generateVisitorsFromEntity(e interface{}) error {
 	case "Paths":
 	default:
 		fmt.Fprintf(dst, "\n\nfunc visit%[1]s(ctx context.Context, elem %[1]s) error {", ifacename)
+		fmt.Fprintf(dst, "\nif checker, ok := elem.(interface { IsValid() bool }); ok {")
+		fmt.Fprintf(dst, "\nif !checker.IsValid() {")
+		fmt.Fprintf(dst, "\nreturn nil")
+		fmt.Fprintf(dst, "\n}")
+		fmt.Fprintf(dst, "\n}")
 		fmt.Fprintf(dst, "\nselect {")
 		fmt.Fprintf(dst, "\ncase <-ctx.Done():")
 		fmt.Fprintf(dst, "\nreturn ctx.Err()")

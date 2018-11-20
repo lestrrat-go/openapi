@@ -14,6 +14,10 @@ var _ = context.Background
 var _ = sort.Strings
 var _ = errors.Cause
 
+func (v *parameter) IsValid() bool {
+	return v != nil
+}
+
 func (v *parameter) Name() string {
 	return v.name
 }
@@ -186,8 +190,19 @@ func (v *parameter) MinItems() int {
 	return *v.minItems
 }
 
+// HasUniqueItems returns true if the value for uniqueItems has been
+// explicitly specified
+func (v *parameter) HasUniqueItems() bool {
+	return v.uniqueItems != nil
+}
+
+// UniqueItems returns the value of uniqueItems. If the value has not
+// been explicitly, set, the zero value will be returned
 func (v *parameter) UniqueItems() bool {
-	return v.uniqueItems
+	if !v.HasUniqueItems() {
+		return false
+	}
+	return *v.uniqueItems
 }
 
 func (v *parameter) Enum() *InterfaceListIterator {
@@ -196,6 +211,7 @@ func (v *parameter) Enum() *InterfaceListIterator {
 		items = append(items, item)
 	}
 	var iter InterfaceListIterator
+	iter.size = len(items)
 	iter.items = items
 	return &iter
 }
@@ -237,6 +253,7 @@ func (v *parameter) Extensions() *ExtensionsIterator {
 		items = append(items, &mapIteratorItem{key: key, item: item})
 	}
 	var iter ExtensionsIterator
+	iter.list.size = len(items)
 	iter.list.items = items
 	return &iter
 }

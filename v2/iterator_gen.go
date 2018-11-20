@@ -31,6 +31,14 @@ func (iter *mapIterator) Item() *mapIteratorItem {
 type listIterator struct {
 	mu    sync.RWMutex
 	items []interface{}
+	size  int
+}
+
+// Size returns the size of the iterator. This size
+// is fixed at creation time. It does not represent
+// the remaining number of items
+func (iter *listIterator) Size() int {
+	return iter.size
 }
 
 // Item returns the next item in this iterator

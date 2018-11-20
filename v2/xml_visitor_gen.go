@@ -19,6 +19,11 @@ type XMLVisitor interface {
 }
 
 func visitXML(ctx context.Context, elem XML) error {
+	if checker, ok := elem.(interface{ IsValid() bool }); ok {
+		if !checker.IsValid() {
+			return nil
+		}
+	}
 	select {
 	case <-ctx.Done():
 		return ctx.Err()

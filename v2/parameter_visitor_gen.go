@@ -19,6 +19,11 @@ type ParameterVisitor interface {
 }
 
 func visitParameter(ctx context.Context, elem Parameter) error {
+	if checker, ok := elem.(interface{ IsValid() bool }); ok {
+		if !checker.IsValid() {
+			return nil
+		}
+	}
 	select {
 	case <-ctx.Done():
 		return ctx.Err()

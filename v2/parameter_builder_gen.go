@@ -291,7 +291,7 @@ func (b *ParameterBuilder) UniqueItems(v bool) *ParameterBuilder {
 	if b.target == nil {
 		return b
 	}
-	b.target.uniqueItems = v
+	b.target.uniqueItems = &v
 	return b
 }
 

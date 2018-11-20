@@ -14,6 +14,10 @@ var _ = context.Background
 var _ = sort.Strings
 var _ = errors.Cause
 
+func (v *pathItem) IsValid() bool {
+	return v != nil
+}
+
 func (v *pathItem) Name() string {
 	return v.name
 }
@@ -56,6 +60,7 @@ func (v *pathItem) Parameters() *ParameterListIterator {
 		items = append(items, item)
 	}
 	var iter ParameterListIterator
+	iter.size = len(items)
 	iter.items = items
 	return &iter
 }
@@ -82,6 +87,7 @@ func (v *pathItem) Extensions() *ExtensionsIterator {
 		items = append(items, &mapIteratorItem{key: key, item: item})
 	}
 	var iter ExtensionsIterator
+	iter.list.size = len(items)
 	iter.list.items = items
 	return &iter
 }

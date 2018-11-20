@@ -41,7 +41,7 @@ type parameterMarshalProxy struct {
 	Pattern          string           `json:"pattern,omitempty"`
 	MaxItems         *int             `json:"maxItems,omitempty"`
 	MinItems         *int             `json:"minItems,omitempty"`
-	UniqueItems      bool             `json:"uniqueItems,omitempty"`
+	UniqueItems      *bool            `json:"uniqueItems,omitempty"`
 	Enum             InterfaceList    `json:"enum,omitempty"`
 	MultipleOf       *float64         `json:"multipleOf,omitempty"`
 }

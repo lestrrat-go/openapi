@@ -14,6 +14,10 @@ var _ = context.Background
 var _ = sort.Strings
 var _ = errors.Cause
 
+func (v *schema) IsValid() bool {
+	return v != nil
+}
+
 func (v *schema) Name() string {
 	return v.name
 }
@@ -169,8 +173,19 @@ func (v *schema) MinItems() int {
 	return *v.minItems
 }
 
+// HasUniqueItems returns true if the value for uniqueItems has been
+// explicitly specified
+func (v *schema) HasUniqueItems() bool {
+	return v.uniqueItems != nil
+}
+
+// UniqueItems returns the value of uniqueItems. If the value has not
+// been explicitly, set, the zero value will be returned
 func (v *schema) UniqueItems() bool {
-	return v.uniqueItems
+	if !v.HasUniqueItems() {
+		return false
+	}
+	return *v.uniqueItems
 }
 
 // HasMaxProperties returns true if the value for maxProperties has been
@@ -209,6 +224,7 @@ func (v *schema) Required() *StringListIterator {
 		items = append(items, item)
 	}
 	var iter StringListIterator
+	iter.size = len(items)
 	iter.items = items
 	return &iter
 }
@@ -219,6 +235,7 @@ func (v *schema) Enum() *InterfaceListIterator {
 		items = append(items, item)
 	}
 	var iter InterfaceListIterator
+	iter.size = len(items)
 	iter.items = items
 	return &iter
 }
@@ -229,6 +246,7 @@ func (v *schema) AllOf() *SchemaListIterator {
 		items = append(items, item)
 	}
 	var iter SchemaListIterator
+	iter.size = len(items)
 	iter.items = items
 	return &iter
 }
@@ -249,6 +267,7 @@ func (v *schema) Properties() *SchemaMapIterator {
 		items = append(items, &mapIteratorItem{key: key, item: item})
 	}
 	var iter SchemaMapIterator
+	iter.list.size = len(items)
 	iter.list.items = items
 	return &iter
 }
@@ -265,6 +284,7 @@ func (v *schema) AdditionaProperties() *SchemaMapIterator {
 		items = append(items, &mapIteratorItem{key: key, item: item})
 	}
 	var iter SchemaMapIterator
+	iter.list.size = len(items)
 	iter.list.items = items
 	return &iter
 }
@@ -319,6 +339,7 @@ func (v *schema) Extensions() *ExtensionsIterator {
 		items = append(items, &mapIteratorItem{key: key, item: item})
 	}
 	var iter ExtensionsIterator
+	iter.list.size = len(items)
 	iter.list.items = items
 	return &iter
 }

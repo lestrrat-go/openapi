@@ -352,6 +352,7 @@ type Parameter interface {
 	MaxItems() int
 	HasMinItems() bool
 	MinItems() int
+	HasUniqueItems() bool
 	UniqueItems() bool
 	Enum() *InterfaceListIterator
 	HasMultipleOf() bool
@@ -393,7 +394,7 @@ type parameter struct {
 	pattern          string           `json:"pattern,omitempty"`
 	maxItems         *int             `json:"maxItems,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
 	minItems         *int             `json:"minItems,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
-	uniqueItems      bool             `json:"uniqueItems,omitempty"`
+	uniqueItems      *bool            `json:"uniqueItems,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
 	enum             InterfaceList    `json:"enum,omitempty"`
 	multipleOf       *float64         `json:"multipleOf,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
 }
@@ -421,6 +422,7 @@ type Items interface {
 	MaxItems() int
 	HasMinItems() bool
 	MinItems() int
+	HasUniqueItems() bool
 	UniqueItems() bool
 	Enum() *InterfaceListIterator
 	HasMultipleOf() bool
@@ -453,7 +455,7 @@ type items struct {
 	pattern          string           `json:"pattern,omitempty"`
 	maxItems         *int             `json:"maxItems,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
 	minItems         *int             `json:"minItems,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
-	uniqueItems      bool             `json:"uniqueItems,omitempty"`
+	uniqueItems      *bool            `json:"uniqueItems,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
 	enum             InterfaceList    `json:"enum,omitempty"`
 	multipleOf       *float64         `json:"multipleOf,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
 }
@@ -585,6 +587,7 @@ type Schema interface {
 	MaxItems() int
 	HasMinItems() bool
 	MinItems() int
+	HasUniqueItems() bool
 	UniqueItems() bool
 	HasMaxProperties() bool
 	MaxProperties() int
@@ -610,8 +613,9 @@ type Schema interface {
 	MarshalJSON() ([]byte, error)
 	Reference() string
 	Validator
-	SchemaConverter
 	IsRequiredProperty(string) bool
+	IsValid() bool
+	SchemaConverter
 }
 
 type schema struct {
@@ -632,7 +636,7 @@ type schema struct {
 	pattern             string                `json:"pattern,omitempty"`
 	maxItems            *int                  `json:"maxItems,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
 	minItems            *int                  `json:"minItems,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
-	uniqueItems         bool                  `json:"uniqueItems,omitempty"`
+	uniqueItems         *bool                 `json:"uniqueItems,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
 	maxProperties       *int                  `json:"maxProperties,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
 	minProperties       *int                  `json:"minProperties,omitempty" accessor:"indirect" builder:"indirect" mutator:"indirect"`
 	required            StringList            `json:"required,omitempty"`

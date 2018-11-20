@@ -19,6 +19,11 @@ type ItemsVisitor interface {
 }
 
 func visitItems(ctx context.Context, elem Items) error {
+	if checker, ok := elem.(interface{ IsValid() bool }); ok {
+		if !checker.IsValid() {
+			return nil
+		}
+	}
 	select {
 	case <-ctx.Done():
 		return ctx.Err()

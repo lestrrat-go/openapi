@@ -233,7 +233,7 @@ func (b *ItemsBuilder) UniqueItems(v bool) *ItemsBuilder {
 	if b.target == nil {
 		return b
 	}
-	b.target.uniqueItems = v
+	b.target.uniqueItems = &v
 	return b
 }
 

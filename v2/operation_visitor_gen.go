@@ -19,6 +19,11 @@ type OperationVisitor interface {
 }
 
 func visitOperation(ctx context.Context, elem Operation) error {
+	if checker, ok := elem.(interface{ IsValid() bool }); ok {
+		if !checker.IsValid() {
+			return nil
+		}
+	}
 	select {
 	case <-ctx.Done():
 		return ctx.Err()

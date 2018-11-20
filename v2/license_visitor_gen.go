@@ -19,6 +19,11 @@ type LicenseVisitor interface {
 }
 
 func visitLicense(ctx context.Context, elem License) error {
+	if checker, ok := elem.(interface{ IsValid() bool }); ok {
+		if !checker.IsValid() {
+			return nil
+		}
+	}
 	select {
 	case <-ctx.Done():
 		return ctx.Err()

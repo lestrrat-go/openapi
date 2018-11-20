@@ -19,6 +19,11 @@ type SwaggerVisitor interface {
 }
 
 func visitSwagger(ctx context.Context, elem Swagger) error {
+	if checker, ok := elem.(interface{ IsValid() bool }); ok {
+		if !checker.IsValid() {
+			return nil
+		}
+	}
 	select {
 	case <-ctx.Done():
 		return ctx.Err()

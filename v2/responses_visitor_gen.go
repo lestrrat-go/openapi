@@ -19,6 +19,11 @@ type ResponsesVisitor interface {
 }
 
 func visitResponses(ctx context.Context, elem Responses) error {
+	if checker, ok := elem.(interface{ IsValid() bool }); ok {
+		if !checker.IsValid() {
+			return nil
+		}
+	}
 	select {
 	case <-ctx.Done():
 		return ctx.Err()

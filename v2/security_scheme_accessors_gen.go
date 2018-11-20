@@ -14,6 +14,10 @@ var _ = context.Background
 var _ = sort.Strings
 var _ = errors.Cause
 
+func (v *securityScheme) IsValid() bool {
+	return v != nil
+}
+
 func (v *securityScheme) Type() string {
 	return v.typ
 }
@@ -54,6 +58,7 @@ func (v *securityScheme) Scopes() *StringMapIterator {
 		items = append(items, &mapIteratorItem{key: key, item: item})
 	}
 	var iter StringMapIterator
+	iter.list.size = len(items)
 	iter.list.items = items
 	return &iter
 }
@@ -80,6 +85,7 @@ func (v *securityScheme) Extensions() *ExtensionsIterator {
 		items = append(items, &mapIteratorItem{key: key, item: item})
 	}
 	var iter ExtensionsIterator
+	iter.list.size = len(items)
 	iter.list.items = items
 	return &iter
 }

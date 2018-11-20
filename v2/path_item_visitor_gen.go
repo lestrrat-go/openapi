@@ -19,6 +19,11 @@ type PathItemVisitor interface {
 }
 
 func visitPathItem(ctx context.Context, elem PathItem) error {
+	if checker, ok := elem.(interface{ IsValid() bool }); ok {
+		if !checker.IsValid() {
+			return nil
+		}
+	}
 	select {
 	case <-ctx.Done():
 		return ctx.Err()

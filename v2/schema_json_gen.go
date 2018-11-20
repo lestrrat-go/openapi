@@ -6,10 +6,11 @@ package openapi
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 	"log"
 	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 var _ = json.Unmarshal
@@ -33,7 +34,7 @@ type schemaMarshalProxy struct {
 	Pattern             string                `json:"pattern,omitempty"`
 	MaxItems            *int                  `json:"maxItems,omitempty"`
 	MinItems            *int                  `json:"minItems,omitempty"`
-	UniqueItems         bool                  `json:"uniqueItems,omitempty"`
+	UniqueItems         *bool                 `json:"uniqueItems,omitempty"`
 	MaxProperties       *int                  `json:"maxProperties,omitempty"`
 	MinProperties       *int                  `json:"minProperties,omitempty"`
 	Required            StringList            `json:"required,omitempty"`
@@ -101,6 +102,7 @@ func (v *schema) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON defines how schema is deserialized from JSON
 func (v *schema) UnmarshalJSON(data []byte) error {
+	log.Printf("schema.UnmarshalJSON %s", data)
 	var proxy map[string]json.RawMessage
 	if err := json.Unmarshal(data, &proxy); err != nil {
 		return err
@@ -300,6 +302,7 @@ func (v *schema) UnmarshalJSON(data []byte) error {
 
 	const allOfMapKey = "allOf"
 	if raw, ok := proxy[allOfMapKey]; ok {
+		log.Printf("raw = %s", raw)
 		var decoded SchemaList
 		if err := json.Unmarshal(raw, &decoded); err != nil {
 			return errors.Wrap(err, `failed to unmarshal field AllOf`)

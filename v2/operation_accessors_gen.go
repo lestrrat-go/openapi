@@ -14,6 +14,10 @@ var _ = context.Background
 var _ = sort.Strings
 var _ = errors.Cause
 
+func (v *operation) IsValid() bool {
+	return v != nil
+}
+
 func (v *operation) Verb() string {
 	return v.verb
 }
@@ -28,6 +32,7 @@ func (v *operation) Tags() *StringListIterator {
 		items = append(items, item)
 	}
 	var iter StringListIterator
+	iter.size = len(items)
 	iter.items = items
 	return &iter
 }
@@ -54,6 +59,7 @@ func (v *operation) Consumes() *MIMETypeListIterator {
 		items = append(items, item)
 	}
 	var iter MIMETypeListIterator
+	iter.size = len(items)
 	iter.items = items
 	return &iter
 }
@@ -64,6 +70,7 @@ func (v *operation) Produces() *MIMETypeListIterator {
 		items = append(items, item)
 	}
 	var iter MIMETypeListIterator
+	iter.size = len(items)
 	iter.items = items
 	return &iter
 }
@@ -74,6 +81,7 @@ func (v *operation) Parameters() *ParameterListIterator {
 		items = append(items, item)
 	}
 	var iter ParameterListIterator
+	iter.size = len(items)
 	iter.items = items
 	return &iter
 }
@@ -88,6 +96,7 @@ func (v *operation) Schemes() *SchemeListIterator {
 		items = append(items, item)
 	}
 	var iter SchemeListIterator
+	iter.size = len(items)
 	iter.items = items
 	return &iter
 }
@@ -102,6 +111,7 @@ func (v *operation) Security() *SecurityRequirementListIterator {
 		items = append(items, item)
 	}
 	var iter SecurityRequirementListIterator
+	iter.size = len(items)
 	iter.items = items
 	return &iter
 }
@@ -128,6 +138,7 @@ func (v *operation) Extensions() *ExtensionsIterator {
 		items = append(items, &mapIteratorItem{key: key, item: item})
 	}
 	var iter ExtensionsIterator
+	iter.list.size = len(items)
 	iter.list.items = items
 	return &iter
 }

@@ -19,6 +19,11 @@ type TagVisitor interface {
 }
 
 func visitTag(ctx context.Context, elem Tag) error {
+	if checker, ok := elem.(interface{ IsValid() bool }); ok {
+		if !checker.IsValid() {
+			return nil
+		}
+	}
 	select {
 	case <-ctx.Done():
 		return ctx.Err()

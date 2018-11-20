@@ -19,6 +19,11 @@ type SecurityRequirementVisitor interface {
 }
 
 func visitSecurityRequirement(ctx context.Context, elem SecurityRequirement) error {
+	if checker, ok := elem.(interface{ IsValid() bool }); ok {
+		if !checker.IsValid() {
+			return nil
+		}
+	}
 	select {
 	case <-ctx.Done():
 		return ctx.Err()

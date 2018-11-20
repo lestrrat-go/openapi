@@ -19,6 +19,11 @@ type ContactVisitor interface {
 }
 
 func visitContact(ctx context.Context, elem Contact) error {
+	if checker, ok := elem.(interface{ IsValid() bool }); ok {
+		if !checker.IsValid() {
+			return nil
+		}
+	}
 	select {
 	case <-ctx.Done():
 		return ctx.Err()

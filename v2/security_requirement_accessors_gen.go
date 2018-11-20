@@ -14,6 +14,10 @@ var _ = context.Background
 var _ = sort.Strings
 var _ = errors.Cause
 
+func (v *securityRequirement) IsValid() bool {
+	return v != nil
+}
+
 func (v *securityRequirement) Name() string {
 	return v.name
 }
@@ -30,6 +34,7 @@ func (v *securityRequirement) Scopes() *ScopesMapIterator {
 		items = append(items, &mapIteratorItem{key: key, item: item})
 	}
 	var iter ScopesMapIterator
+	iter.list.size = len(items)
 	iter.list.items = items
 	return &iter
 }
@@ -56,6 +61,7 @@ func (v *securityRequirement) Extensions() *ExtensionsIterator {
 		items = append(items, &mapIteratorItem{key: key, item: item})
 	}
 	var iter ExtensionsIterator
+	iter.list.size = len(items)
 	iter.list.items = items
 	return &iter
 }

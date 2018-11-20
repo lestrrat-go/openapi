@@ -212,11 +212,17 @@ func (m *SchemaMutator) MinItems(v int) *SchemaMutator {
 	return m
 }
 
-// UniqueItems sets the UniqueItems field for object Schema.
-func (m *SchemaMutator) UniqueItems(v bool) *SchemaMutator {
+// ClearUniqueItems clears the uniqueItems field
+func (m *SchemaMutator) ClearUniqueItems() *SchemaMutator {
 	m.lock.Lock()
 	defer m.lock.Unlock()
-	m.proxy.uniqueItems = v
+	m.proxy.uniqueItems = nil
+	return m
+}
+
+// UniqueItems sets the uniqueItems field.
+func (m *SchemaMutator) UniqueItems(v bool) *SchemaMutator {
+	m.proxy.uniqueItems = &v
 	return m
 }
 
