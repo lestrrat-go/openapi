@@ -395,7 +395,22 @@ type openapiTypeFormater interface {
 }
 
 func compileSchemaLike(ctx *compileCtx, schema openapiTypeFormater) (Type, error) {
-	switch schema.Type() {
+	if fullSchema, ok := schema.(openapi.Schema); ok {
+		v, err := openapi.MergedSchema(fullSchema, ctx.resolver)
+		if err != nil {
+			return nil, errors.Wrap(err, `failed to merge schemas`)
+		}
+		schema = v
+	}
+
+	var pt openapi.PrimitiveType
+	if fullSchema, ok := schema.(openapi.Schema); ok {
+		pt = openapi.GuessSchemaType(fullSchema)
+	} else {
+		pt = schema.Type()
+	}
+
+	switch pt {
 	case openapi.String, openapi.Integer, openapi.Boolean, openapi.Number:
 		return compileBuiltin(ctx, schema)
 	case openapi.Array:
@@ -579,29 +594,10 @@ func compileParameterType(ctx *compileCtx, param openapi.Parameter) (Type, error
 	}
 
 	if param.In() == openapi.InBody {
-		schema := param.Schema() // presence of this element should be guaranteed by calling validate
-		// If this is an array type, we create a []T  instead of type T struct { something []X }
-
-		var typ Type
-		switch schema.Type() {
-		case openapi.Array:
-			compiledTyp, err := compileSchema(ctx, schema.Items())
-			if err != nil {
-				return nil, errors.Wrap(err, `failed to compile array parameter`)
-			}
-			typ = &Array{elem: compiledTyp}
-		case openapi.Object:
-			compiledTyp, err := compileSchema(ctx, schema)
-			if err != nil {
-				return nil, errors.Wrap(err, `failed to compile object parameter`)
-			}
-			typ = compiledTyp
-		case openapi.String:
-			return compileBuiltin(ctx, schema)
-		default:
-			return nil, errors.Errorf(`unhandled parameter type %s`, strconv.Quote(string(schema.Type())))
+		typ, err := compileSchemaLike(ctx, param.Schema())
+		if err != nil {
+			return nil, errors.Wrap(err, `failed to compile body schema`)
 		}
-
 		if typ.Name() == "" {
 			typ.SetName(golang.ExportedName(ctx.currentCall.name + "_" + param.Name()))
 		}

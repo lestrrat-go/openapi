@@ -1,6 +1,7 @@
 package openapi
 
 import (
+	"github.com/lestrrat-go/openapi/internal/codegen/common"
 	"github.com/pkg/errors"
 )
 
@@ -259,4 +260,45 @@ func GuessSchemaType(s Schema) PrimitiveType {
 	}
 
 	return Invalid
+}
+
+// MergedSchema is a utility function to automatically return a merged
+// schema in presence of 'allOf' element. If it does not exist,
+// returns the given schema unchanged.
+//
+// This function requires an external resolver, as it may be the case
+// that we may need to resolve definitions
+func MergedSchema(s Schema, r Resolver) (Schema, error) {
+	iter := s.AllOf()
+	if iter.Size() == 0 {
+		return s, nil
+	}
+
+	children := make([]Schema, iter.Size())
+	for index := 0; iter.Next(); index++ {
+		schema := iter.Item()
+		if schema.IsUnresolved() {
+			ref := schema.Reference()
+			thing, err := r.Resolve(ref)
+			if err != nil {
+				return nil, errors.Wrapf(err, `failed to resolve reference %s`, ref)
+			}
+			var tmp Schema
+			if err := common.RoundTripDecode(&tmp, thing, SchemaFromJSON); err != nil {
+				return nil, errors.Errorf(`expected reference %s to resolve to a Schema`, ref)
+			}
+			schema = tmp
+		}
+		children[index] = schema
+	}
+
+	var merged Schema
+	for _, child := range children {
+		v, err := MergeSchemas(merged, child)
+		if err != nil {
+			return nil, errors.Wrap(err, `failed to merge schemas`)
+		}
+		merged = v
+	}
+	return merged, nil
 }

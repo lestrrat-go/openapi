@@ -20,7 +20,6 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -523,6 +522,12 @@ func compileTypeWithName(ctx *genCtx, src openapi.SchemaConverter, name string) 
 		}
 	}
 
+	merged, err := openapi.MergedSchema(schema, ctx.resolver)
+	if err != nil {
+		return nil, errors.Wrap(err, `failed to merge schemas`)
+	}
+	schema = merged
+
 	done := ctx.Start("* Compiling Type %s", schema.Type())
 	defer done()
 
@@ -549,53 +554,6 @@ func compileTypeWithName(ctx *genCtx, src openapi.SchemaConverter, name string) 
 			return nil, errors.Wrap(err, `failed to compile array element`)
 		}
 		return &Array{element: typ}, nil
-	case openapi.Invalid:
-		iter := schema.AllOf()
-		var children []openapi.Schema
-		if iter.Size() > 0 {
-			ctx.log("* Found 'allOf' definition. Merging everything into one Schema, and generating Message")
-			children = make([]openapi.Schema, iter.Size())
-			for index := 0; iter.Next(); index++ {
-				schema := iter.Item()
-				if schema.IsUnresolved() {
-					ref := schema.Reference()
-					thing, err := ctx.resolver.Resolve(ref)
-					if err != nil {
-						return nil, errors.Wrapf(err, `failed to resolve reference %s`, ref)
-					}
-					var tmp openapi.Schema
-					if err := common.RoundTripDecode(&tmp, thing, openapi.SchemaFromJSON); err != nil {
-						return nil, errors.Errorf(`expected reference %s to resolve to a Schema`, ref)
-					}
-					schema = tmp
-				}
-				children[index] = schema
-			}
-
-			var merged openapi.Schema
-			for _, child := range children {
-json.NewEncoder(os.Stdout).Encode(child)
-				typ, err := openapi.MergeSchemas(merged, child)
-				if err != nil {
-					return nil, errors.Wrap(err, `failed to merge schemas`)
-				}
-json.NewEncoder(os.Stdout).Encode(typ)
-				merged = typ
-			}
-
-			json.NewEncoder(os.Stdout).Encode(merged)
-			typ, err := compileMessage(ctx, merged)
-			if err != nil {
-				return nil, errors.Wrap(err, `failed to compile merged schema`)
-			}
-
-			if m, ok := typ.(*Message); ok {
-				m.name = codegen.MessageName(strings.TrimPrefix(name, "#/definitions/"))
-				ctx.log("* Adding message %s", m.Name())
-				ctx.parent.AddMessage(m)
-			}
-			return typ, nil
-		}
 	}
 
 	return nil, errors.Errorf(`compileType: unsupported schema.type = %s`, schema.Type())
