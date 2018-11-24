@@ -6,7 +6,6 @@ package openapi
 import (
 	"context"
 	"encoding/json"
-	"log"
 
 	"github.com/pkg/errors"
 )
@@ -36,7 +35,6 @@ func (v *SchemaList) Validate(recurse bool) error {
 
 // UnmarshalJSON defines how SchemaList is deserialized from JSON
 func (v *SchemaList) UnmarshalJSON(data []byte) error {
-	log.Printf("SchemaList UnmarshalJSON %s", data)
 	var proxy []*schema
 	if err := json.Unmarshal(data, &proxy); err != nil {
 		return errors.Wrap(err, `failed to unmarshal`)

@@ -20,6 +20,10 @@ func (iter *mapIterator) Next() bool {
 	return iter.list.Next()
 }
 
+func (iter *mapIterator) Size() int {
+	return iter.list.Size()
+}
+
 func (iter *mapIterator) Item() *mapIteratorItem {
 	v := iter.list.Item()
 	if v == nil {

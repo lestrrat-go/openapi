@@ -355,6 +355,10 @@ func generateIteratorsFromEntity(entities []interface{}) error {
 	fmt.Fprintf(dst, "\nreturn iter.list.Next()")
 	fmt.Fprintf(dst, "\n}")
 
+	fmt.Fprintf(dst, "\n\nfunc (iter *mapIterator) Size() int{")
+	fmt.Fprintf(dst, "\nreturn iter.list.Size()")
+	fmt.Fprintf(dst, "\n}")
+
 	fmt.Fprintf(dst, "\n\nfunc (iter *mapIterator) Item() *mapIteratorItem {")
 	fmt.Fprintf(dst, "\nv := iter.list.Item()")
 	fmt.Fprintf(dst, "\nif v == nil {")

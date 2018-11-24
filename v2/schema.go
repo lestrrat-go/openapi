@@ -1,6 +1,8 @@
 package openapi
 
-import "github.com/pkg/errors"
+import (
+	"github.com/pkg/errors"
+)
 
 func (v *schema) setName(s string) {
 	v.name = s
@@ -96,22 +98,24 @@ func MergeSchemas(left, right Schema) (Schema, error) {
 		return nil, errors.Errorf(`references are not supported`)
 	}
 
-	if err := isSupportedTypeForMergeSchemas(left.Type()); err != nil {
+	leftType := GuessSchemaType(left)
+	rightType := GuessSchemaType(right)
+	if err := isSupportedTypeForMergeSchemas(leftType); err != nil {
 		return nil, errors.Wrap(err, `type of left schema to be merged is not supported`)
 	}
 
-	if err := isSupportedTypeForMergeSchemas(right.Type()); err != nil {
+	if err := isSupportedTypeForMergeSchemas(rightType); err != nil {
 		return nil, errors.Wrap(err, `type of right schema to be merged is not supported`)
 	}
 
-	if left.Type() != right.Type() {
+	if leftType != rightType {
 		return nil, errors.Errorf(`primitive types of left and right schema do not match`)
 	}
 
 	builder := NewSchema()
 	builder.Type(left.Type())
 
-	switch left.Type() {
+	switch GuessSchemaType(left) {
 	case Object:
 		if err := mergeSchemasObjectAttributes(builder, left, right); err != nil {
 			return nil, errors.Wrap(err, `failed to merge object attributes`)
@@ -215,4 +219,44 @@ func mergeSchemasArrayAttributes(builder *SchemaBuilder, left, right Schema) err
 		IsRequiredProperty(string) bool
 	*/
 	return nil
+}
+
+// GuessSchemaType returns the type declared in the Schema, or if not
+// present, attempts to guess by the presence of certain fields.
+// In case it can't determine the type, return Invalid
+func GuessSchemaType(s Schema) PrimitiveType {
+	if t := s.Type(); t != "" {
+		return t
+	}
+
+	if iter := s.Properties(); iter.Size() > 0 {
+		return Object
+	}
+	if s.HasMaxProperties() || s.HasMinProperties() {
+		return Object
+	}
+
+	if t := s.Items(); t != nil {
+		return Array
+	}
+	if s.HasMaxItems() || s.HasMinItems() || s.HasUniqueItems() {
+		return Array
+	}
+
+	if t := s.Default(); t == "true" || t == "false" {
+		return Boolean
+	}
+
+	if t := s.Pattern(); t != "" {
+		return String
+	}
+	if s.HasMaxLength() || s.HasMinLength() {
+		return String
+	}
+
+	if s.HasMultipleOf() || s.HasMaximum() || s.HasExclusiveMaximum() || s.HasMinimum() || s.HasExclusiveMinimum() {
+		return Number
+	}
+
+	return Invalid
 }

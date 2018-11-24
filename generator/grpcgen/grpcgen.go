@@ -20,6 +20,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -269,7 +270,7 @@ func compileGlobalDefinitions(ctx *genCtx) error {
 		// If this is a message type (object), then we compile it as such.
 		// Otherwise the user is simply using it as a way to reuse components,
 		// so we ignore it
-		if tmp.Type() != openapi.Object {
+		if openapi.GuessSchemaType(tmp) != openapi.Object {
 			ctx.log(`* referenced schema is not an object, not compiling as protobuf message`)
 			typ, err := compileType(ctx, tmp)
 			if err != nil {
@@ -412,7 +413,7 @@ func compileMessage(ctx *genCtx, schema openapi.Schema) (Type, error) {
 	}
 
 	// it better be an object
-	switch schema.Type() {
+	switch typ := openapi.GuessSchemaType(schema); typ {
 	case openapi.Object:
 	case openapi.Array:
 		// special case
@@ -432,7 +433,7 @@ func compileMessage(ctx *genCtx, schema openapi.Schema) (Type, error) {
 			return nil, errors.Wrap(err, `failed to create new schema wrapping array`)
 		}
 	default:
-		return nil, errors.Errorf(`compileMessage: expected type "array" or "object", got %s`, schema.Type())
+		return nil, errors.Errorf(`compileMessage: expected type "array" or "object", got %s`, typ)
 	}
 
 	var m Message
@@ -525,7 +526,7 @@ func compileTypeWithName(ctx *genCtx, src openapi.SchemaConverter, name string) 
 	done := ctx.Start("* Compiling Type %s", schema.Type())
 	defer done()
 
-	switch schema.Type() {
+	switch openapi.GuessSchemaType(schema) {
 	case openapi.String, openapi.Number, openapi.Boolean, openapi.Integer:
 		return compileBuiltin(ctx, schema)
 	case openapi.Object:
@@ -548,11 +549,11 @@ func compileTypeWithName(ctx *genCtx, src openapi.SchemaConverter, name string) 
 			return nil, errors.Wrap(err, `failed to compile array element`)
 		}
 		return &Array{element: typ}, nil
-	case "":
+	case openapi.Invalid:
 		iter := schema.AllOf()
 		var children []openapi.Schema
 		if iter.Size() > 0 {
-			ctx.log(" * Found 'allOf' definition. Merging everything into one Schema, and generating Message")
+			ctx.log("* Found 'allOf' definition. Merging everything into one Schema, and generating Message")
 			children = make([]openapi.Schema, iter.Size())
 			for index := 0; iter.Next(); index++ {
 				schema := iter.Item()
@@ -573,12 +574,16 @@ func compileTypeWithName(ctx *genCtx, src openapi.SchemaConverter, name string) 
 
 			var merged openapi.Schema
 			for _, child := range children {
+json.NewEncoder(os.Stdout).Encode(child)
 				typ, err := openapi.MergeSchemas(merged, child)
 				if err != nil {
 					return nil, errors.Wrap(err, `failed to merge schemas`)
 				}
+json.NewEncoder(os.Stdout).Encode(typ)
 				merged = typ
 			}
+
+			json.NewEncoder(os.Stdout).Encode(merged)
 			typ, err := compileMessage(ctx, merged)
 			if err != nil {
 				return nil, errors.Wrap(err, `failed to compile merged schema`)
