@@ -167,7 +167,7 @@ func writeTypesClientOptions(ctx *Context) error {
 func allTypes(ctx *Context) []compiler.TypeDefinition {
 	// find all calls in all services, and exclude them from type
 	// definitions in this file
-	payloads:= make(map[string]struct{})
+	payloads := make(map[string]struct{})
 	for _, svc := range ctx.client.Services() {
 		for _, call := range svc.Calls() {
 			for _, typ := range []compiler.Type{call.Body(), call.Path(), call.Query(), call.Header()} {
@@ -302,6 +302,7 @@ func formatService(ctx *Context, dst io.Writer, svc *compiler.Service) error {
 	var buf bytes.Buffer
 
 	codegen.WritePreamble(&buf, ctx.packageName)
+	fmt.Fprintf(&buf, "\n\nimport axios from 'axios';")
 	fmt.Fprintf(&buf, "\n\nimport RESTResponse from '../types/response';")
 	fmt.Fprintf(&buf, "\n\nimport type { ClientOptions } from '../types/client_options';")
 
@@ -310,7 +311,7 @@ func formatService(ctx *Context, dst io.Writer, svc *compiler.Service) error {
 	typDefs := allTypes(ctx)
 	for i, typDef := range typDefs {
 		fmt.Fprintf(&buf, "%s", typDef.Type.Name())
-		if i < len(typDefs) - 1 {
+		if i < len(typDefs)-1 {
 			fmt.Fprintf(&buf, ", ")
 		}
 	}
@@ -470,6 +471,7 @@ func formatCall(ctx *Context, dst io.Writer, call *compiler.Call) error {
 	}
 
 	fmt.Fprintf(dst, "\nlet options = {")
+	fmt.Fprintf(dst, "\nurl: url,")
 	fmt.Fprintf(dst, "\nmethod: %s,", strconv.Quote(call.Verb()))
 	if call.Body() != nil {
 		fmt.Fprintf(dst, "\nheaders: {")
@@ -484,7 +486,7 @@ func formatCall(ctx *Context, dst io.Writer, call *compiler.Call) error {
 	fmt.Fprintf(dst, "\n}")
 	fmt.Fprintf(dst, "\n}")
 
-	fmt.Fprintf(dst, "\nlet promise = fetch(url, options).")
+	fmt.Fprintf(dst, "\nlet promise = axios(options).")
 	fmt.Fprintf(dst, "\nthen(response => {")
 	if len(call.Responses()) == 0 {
 		fmt.Fprintf(dst, "\nreturn Promise.resolve(new RESTResponse(response.status))")
