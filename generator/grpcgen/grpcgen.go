@@ -182,6 +182,16 @@ func (ctx *genCtx) MarkAsCompiling(path string) func() {
 }
 
 func grpcMethodName(oper openapi.Operation) string {
+	if v, ok := oper.Extension(`x-rpc-name`); ok {
+		if name, ok := v.(string); ok {
+			return strcase.ToCamel(name)
+		}
+	}
+
+	return grpcOperationID(oper)
+}
+
+func grpcOperationID(oper openapi.Operation) string {
 	if operID := oper.OperationID(); operID != "" {
 		return strcase.ToCamel(operID)
 	}
@@ -634,9 +644,11 @@ func compileRPC(ctx *genCtx, oper openapi.Operation) (*RPC, error) {
 	done := ctx.Start("* Compiling RPC %s", rpc.name)
 	defer done()
 
+	operID := grpcOperationID(oper)
+
 	paramiter := oper.Parameters()
 	if paramiter.Next() {
-		msg, err := compileRPCParameters(ctx, rpc.name+"Request", paramiter)
+		msg, err := compileRPCParameters(ctx, operID+"Request", paramiter)
 		if err != nil {
 			return nil, errors.Wrap(err, `failed to compile request parameters into message`)
 		}
@@ -659,7 +671,7 @@ func compileRPC(ctx *genCtx, oper openapi.Operation) (*RPC, error) {
 
 			var name string
 			if s.Name() == "" {
-				name = rpc.name + "Response"
+				name = operID + "Response"
 			}
 
 			typ, err := compileMessage(ctx, s)
