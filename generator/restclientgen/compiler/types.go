@@ -130,7 +130,6 @@ func (c *ClientDefinition) Services() map[string]*Service {
 }
 
 func (c *ClientDefinition) getServiceFor(name string) *Service {
-	name = name + "Service"
 	svc, ok := c.services[name]
 	if !ok {
 		svc = &Service{name: name}

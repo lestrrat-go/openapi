@@ -81,6 +81,8 @@ func Compile(spec openapi.OpenAPI, defaultServiceName string) (*ClientDefinition
 		}
 	}
 
+	log.Printf("%#v", ctx.client.services)
+
 	return ctx.client, nil
 }
 
@@ -772,16 +774,10 @@ func compileCallParameters(ctx *compileCtx, oper openapi.Operation, call *Call) 
 func compileServiceName(ctx *compileCtx, oper openapi.Operation) (string, error) {
 	svcName := ctx.defaultServiceName
 
-	// x-oagen-service, then x-service
-	for _, key := range []string{"x-oagen-service", "x-service"} {
-		rawSvcName, ok := oper.Extension(key)
-		if ok {
-			svcName, ok = rawSvcName.(string)
-			if !ok {
-				return "", errors.Errorf(`expected x-service to be a string`)
-			}
-			break
-		}
+	// tag
+	for iter := oper.Tags(); iter.Next(); {
+		svcName = iter.Item()
+		break
 	}
 
 	svcName = strcase.ToCamel(svcName)
