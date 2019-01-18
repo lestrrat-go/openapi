@@ -772,12 +772,26 @@ func compileCallParameters(ctx *compileCtx, oper openapi.Operation, call *Call) 
 }
 
 func compileServiceName(ctx *compileCtx, oper openapi.Operation) (string, error) {
-	svcName := ctx.defaultServiceName
+	// x-service dictates the service name. If not present,
+	// Use tag, then the default service, which is named after the package
+	// is used.
+	var svcName string
 
-	// tag
-	for iter := oper.Tags(); iter.Next(); {
-		svcName = iter.Item()
-		break
+	if xSvc, ok := oper.Extension(`x-service`); ok {
+		if n, ok := xSvc.(string); ok {
+			svcName = n
+		}
+	}
+
+	if svcName == "" {
+		for iter := oper.Tags(); iter.Next(); {
+			svcName = iter.Item()
+			break
+		}
+	}
+
+	if svcName == "" {
+		svcName = ctx.defaultServiceName
 	}
 
 	svcName = strcase.ToCamel(svcName)
@@ -801,10 +815,6 @@ func compileSecuritySettings(ctx *compileCtx, requirement openapi.SecurityRequir
 }
 
 func compileCall(ctx *compileCtx, oper openapi.Operation) error {
-	// x-service dictates the service name. If not present,
-	// the default service, which is named after the package
-	// is used.
-
 	call, err := createCall(ctx, oper)
 	if err != nil {
 		return errors.Wrap(err, `failed to create Call object`)
