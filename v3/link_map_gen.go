@@ -54,7 +54,7 @@ func (v LinkMap) QueryJSON(path string) (ret interface{}, ok bool) {
 func (v *LinkMap) UnmarshalJSON(data []byte) error {
 	var proxy map[string]*link
 	if err := json.Unmarshal(data, &proxy); err != nil {
-		return errors.Wrap(err, `failed to unmarshal`)
+		return errors.Wrap(err, `failed to unmarshal LinkMap`)
 	}
 	tmp := make(map[string]Link)
 	for name, value := range proxy {

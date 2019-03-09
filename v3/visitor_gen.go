@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+var _ = context.Background
 var _ = errors.Cause
 
 var ErrVisitAbort = errors.New(`visit aborted (non-error)`)

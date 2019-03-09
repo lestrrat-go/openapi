@@ -10,6 +10,7 @@ import (
 )
 
 var _ = errors.Cause
+var _ = context.Background
 
 func (v *discriminator) PropertyName() string {
 	return v.propertyName

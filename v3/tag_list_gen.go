@@ -33,7 +33,7 @@ func (v *TagList) Validate(recurse bool) error {
 func (v *TagList) UnmarshalJSON(data []byte) error {
 	var proxy []*tag
 	if err := json.Unmarshal(data, &proxy); err != nil {
-		return errors.Wrap(err, `failed to unmarshal`)
+		return errors.Wrap(err, `failed to unmarshal TagList`)
 	}
 
 	if len(proxy) == 0 {

@@ -54,7 +54,7 @@ func (v CallbackMap) QueryJSON(path string) (ret interface{}, ok bool) {
 func (v *CallbackMap) UnmarshalJSON(data []byte) error {
 	var proxy map[string]*callback
 	if err := json.Unmarshal(data, &proxy); err != nil {
-		return errors.Wrap(err, `failed to unmarshal`)
+		return errors.Wrap(err, `failed to unmarshal CallbackMap`)
 	}
 	tmp := make(map[string]Callback)
 	for name, value := range proxy {

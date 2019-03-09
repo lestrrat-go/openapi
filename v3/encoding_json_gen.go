@@ -47,7 +47,7 @@ func (v *encoding) MarshalJSON() ([]byte, error) {
 func (v *encoding) UnmarshalJSON(data []byte) error {
 	var proxy encodingUnmarshalProxy
 	if err := json.Unmarshal(data, &proxy); err != nil {
-		return err
+		return errors.Wrapf(err, `failed to unmarshal encoding`)
 	}
 	if len(proxy.Reference) > 0 {
 		v.reference = proxy.Reference

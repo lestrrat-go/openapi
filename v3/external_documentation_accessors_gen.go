@@ -10,6 +10,7 @@ import (
 )
 
 var _ = errors.Cause
+var _ = context.Background
 
 func (v *externalDocumentation) Description() string {
 	return v.description

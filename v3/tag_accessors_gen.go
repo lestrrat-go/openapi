@@ -10,6 +10,7 @@ import (
 )
 
 var _ = errors.Cause
+var _ = context.Background
 
 func (v *tag) Name() string {
 	return v.name

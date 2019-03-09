@@ -33,7 +33,7 @@ func (v *ServerList) Validate(recurse bool) error {
 func (v *ServerList) UnmarshalJSON(data []byte) error {
 	var proxy []*server
 	if err := json.Unmarshal(data, &proxy); err != nil {
-		return errors.Wrap(err, `failed to unmarshal`)
+		return errors.Wrap(err, `failed to unmarshal ServerList`)
 	}
 
 	if len(proxy) == 0 {

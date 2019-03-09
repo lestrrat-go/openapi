@@ -54,7 +54,7 @@ func (v MediaTypeMap) QueryJSON(path string) (ret interface{}, ok bool) {
 func (v *MediaTypeMap) UnmarshalJSON(data []byte) error {
 	var proxy map[string]*mediaType
 	if err := json.Unmarshal(data, &proxy); err != nil {
-		return errors.Wrap(err, `failed to unmarshal`)
+		return errors.Wrap(err, `failed to unmarshal MediaTypeMap`)
 	}
 	tmp := make(map[string]MediaType)
 	for name, value := range proxy {

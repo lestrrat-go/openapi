@@ -59,7 +59,7 @@ func (v *openAPI) MarshalJSON() ([]byte, error) {
 func (v *openAPI) UnmarshalJSON(data []byte) error {
 	var proxy openAPIUnmarshalProxy
 	if err := json.Unmarshal(data, &proxy); err != nil {
-		return err
+		return errors.Wrapf(err, `failed to unmarshal openAPI`)
 	}
 	if len(proxy.Reference) > 0 {
 		v.reference = proxy.Reference

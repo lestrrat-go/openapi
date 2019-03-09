@@ -53,7 +53,7 @@ func (v *info) MarshalJSON() ([]byte, error) {
 func (v *info) UnmarshalJSON(data []byte) error {
 	var proxy infoUnmarshalProxy
 	if err := json.Unmarshal(data, &proxy); err != nil {
-		return err
+		return errors.Wrapf(err, `failed to unmarshal info`)
 	}
 	if len(proxy.Reference) > 0 {
 		v.reference = proxy.Reference

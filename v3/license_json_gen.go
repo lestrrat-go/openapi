@@ -41,7 +41,7 @@ func (v *license) MarshalJSON() ([]byte, error) {
 func (v *license) UnmarshalJSON(data []byte) error {
 	var proxy licenseUnmarshalProxy
 	if err := json.Unmarshal(data, &proxy); err != nil {
-		return err
+		return errors.Wrapf(err, `failed to unmarshal license`)
 	}
 	if len(proxy.Reference) > 0 {
 		v.reference = proxy.Reference

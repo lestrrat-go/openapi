@@ -33,7 +33,7 @@ func (v *SecurityRequirementList) Validate(recurse bool) error {
 func (v *SecurityRequirementList) UnmarshalJSON(data []byte) error {
 	var proxy []*securityRequirement
 	if err := json.Unmarshal(data, &proxy); err != nil {
-		return errors.Wrap(err, `failed to unmarshal`)
+		return errors.Wrap(err, `failed to unmarshal SecurityRequirementList`)
 	}
 
 	if len(proxy) == 0 {

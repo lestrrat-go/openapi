@@ -44,7 +44,7 @@ func (v *mediaType) MarshalJSON() ([]byte, error) {
 func (v *mediaType) UnmarshalJSON(data []byte) error {
 	var proxy mediaTypeUnmarshalProxy
 	if err := json.Unmarshal(data, &proxy); err != nil {
-		return err
+		return errors.Wrapf(err, `failed to unmarshal mediaType`)
 	}
 	if len(proxy.Reference) > 0 {
 		v.reference = proxy.Reference

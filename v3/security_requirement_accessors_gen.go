@@ -10,6 +10,7 @@ import (
 )
 
 var _ = errors.Cause
+var _ = context.Background
 
 func (v *securityRequirement) Schemes() *StringListMapIterator {
 	var items []interface{}

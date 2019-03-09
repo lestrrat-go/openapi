@@ -41,7 +41,7 @@ func (v *externalDocumentation) MarshalJSON() ([]byte, error) {
 func (v *externalDocumentation) UnmarshalJSON(data []byte) error {
 	var proxy externalDocumentationUnmarshalProxy
 	if err := json.Unmarshal(data, &proxy); err != nil {
-		return err
+		return errors.Wrapf(err, `failed to unmarshal externalDocumentation`)
 	}
 	if len(proxy.Reference) > 0 {
 		v.reference = proxy.Reference

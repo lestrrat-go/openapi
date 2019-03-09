@@ -54,7 +54,7 @@ func (v EncodingMap) QueryJSON(path string) (ret interface{}, ok bool) {
 func (v *EncodingMap) UnmarshalJSON(data []byte) error {
 	var proxy map[string]*encoding
 	if err := json.Unmarshal(data, &proxy); err != nil {
-		return errors.Wrap(err, `failed to unmarshal`)
+		return errors.Wrap(err, `failed to unmarshal EncodingMap`)
 	}
 	tmp := make(map[string]Encoding)
 	for name, value := range proxy {

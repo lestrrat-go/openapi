@@ -71,7 +71,7 @@ func (v *pathItem) MarshalJSON() ([]byte, error) {
 func (v *pathItem) UnmarshalJSON(data []byte) error {
 	var proxy pathItemUnmarshalProxy
 	if err := json.Unmarshal(data, &proxy); err != nil {
-		return err
+		return errors.Wrapf(err, `failed to unmarshal pathItem`)
 	}
 	if len(proxy.Reference) > 0 {
 		v.reference = proxy.Reference

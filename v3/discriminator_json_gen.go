@@ -41,7 +41,7 @@ func (v *discriminator) MarshalJSON() ([]byte, error) {
 func (v *discriminator) UnmarshalJSON(data []byte) error {
 	var proxy discriminatorUnmarshalProxy
 	if err := json.Unmarshal(data, &proxy); err != nil {
-		return err
+		return errors.Wrapf(err, `failed to unmarshal discriminator`)
 	}
 	if len(proxy.Reference) > 0 {
 		v.reference = proxy.Reference

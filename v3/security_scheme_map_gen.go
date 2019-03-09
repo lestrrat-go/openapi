@@ -54,7 +54,7 @@ func (v SecuritySchemeMap) QueryJSON(path string) (ret interface{}, ok bool) {
 func (v *SecuritySchemeMap) UnmarshalJSON(data []byte) error {
 	var proxy map[string]*securityScheme
 	if err := json.Unmarshal(data, &proxy); err != nil {
-		return errors.Wrap(err, `failed to unmarshal`)
+		return errors.Wrap(err, `failed to unmarshal SecuritySchemeMap`)
 	}
 	tmp := make(map[string]SecurityScheme)
 	for name, value := range proxy {

@@ -47,7 +47,7 @@ func (v *oauthFlows) MarshalJSON() ([]byte, error) {
 func (v *oauthFlows) UnmarshalJSON(data []byte) error {
 	var proxy oauthFlowsUnmarshalProxy
 	if err := json.Unmarshal(data, &proxy); err != nil {
-		return err
+		return errors.Wrapf(err, `failed to unmarshal oauthFlows`)
 	}
 	if len(proxy.Reference) > 0 {
 		v.reference = proxy.Reference

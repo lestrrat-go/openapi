@@ -54,7 +54,7 @@ func (v ParameterMap) QueryJSON(path string) (ret interface{}, ok bool) {
 func (v *ParameterMap) UnmarshalJSON(data []byte) error {
 	var proxy map[string]*parameter
 	if err := json.Unmarshal(data, &proxy); err != nil {
-		return errors.Wrap(err, `failed to unmarshal`)
+		return errors.Wrap(err, `failed to unmarshal ParameterMap`)
 	}
 	tmp := make(map[string]Parameter)
 	for name, value := range proxy {
