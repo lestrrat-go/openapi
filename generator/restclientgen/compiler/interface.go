@@ -1,7 +1,7 @@
 package compiler
 
 import (
-	openapi "github.com/lestrrat-go/openapi/v2"
+	"github.com/lestrrat-go/openapi/openapi2"
 )
 
 type compileCtx struct {
@@ -11,10 +11,10 @@ type compileCtx struct {
 	isCompiling        map[interface{}]struct{}
 	isResolving        map[interface{}]struct{}
 	defaultServiceName string
-	resolver           openapi.Resolver
-	root               openapi.Swagger
+	resolver           openapi2.Resolver
+	root               openapi2.Swagger
 	consumes           []string
-	security           map[string]openapi.SecurityScheme
+	security           map[string]openapi2.SecurityScheme
 }
 
 // TypeDefinition gives you the context where this type was generated
@@ -88,10 +88,10 @@ type Field struct {
 	hints    Hints
 	typ      Type
 	required bool
-	in       openapi.Location
+	in       openapi2.Location
 }
 
 type SecuritySettings struct {
-	definition openapi.SecurityScheme
+	definition openapi2.SecurityScheme
 	scopes     []string
 }

@@ -6,12 +6,12 @@ import (
 	"strings"
 
 	"github.com/ghodss/yaml"
-	openapi "github.com/lestrrat-go/openapi/v2"
+	"github.com/lestrrat-go/openapi/openapi2"
 )
 
 // CallObjectName generates a Call object type name. It is NOT
 // normalized, so the caller needs to normalize it
-func CallObjectName(oper openapi.Operation) string {
+func CallObjectName(oper openapi2.Operation) string {
 	if operID := oper.OperationID(); operID != "" {
 		return operID + "_Call"
 	}
@@ -31,7 +31,7 @@ func CallObjectName(oper openapi.Operation) string {
 	return verb + "_" + oper.PathItem().Path() + "_Call"
 }
 
-func CallMethodName(oper openapi.Operation) string {
+func CallMethodName(oper openapi2.Operation) string {
 	rawMethodName, ok := oper.Extension(`x-call-method-name`)
 	if !ok {
 		return ""

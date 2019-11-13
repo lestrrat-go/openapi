@@ -15,7 +15,7 @@ import (
 
 	"github.com/lestrrat-go/openapi/generator/grpcgen"
 	"github.com/lestrrat-go/openapi/generator/restclientgen"
-	openapi "github.com/lestrrat-go/openapi/v2"
+	"github.com/lestrrat-go/openapi/openapi2"
 	"github.com/pkg/errors"
 )
 
@@ -120,7 +120,7 @@ func doProtobuf(args []string) (_err error) {
 		return errors.Wrap(err, `failed to parse options`)
 	}
 
-	var spec openapi.OpenAPI
+	var spec openapi2.OpenAPI
 
 	fn := fs.Arg(0)
 	if cmd.packageName == "" {
@@ -136,7 +136,7 @@ func doProtobuf(args []string) (_err error) {
 	}
 	defer f.Close()
 
-	parsed, err := openapi.ParseYAML(f, openapi.WithValidate(true))
+	parsed, err := openapi2.ParseYAML(f, openapi2.WithValidate(true))
 	if err != nil {
 		return errors.Wrapf(err, `failed to parse openapi spec in %s`, fn)
 	}
@@ -206,7 +206,7 @@ func doRestClient(args []string) error {
 	}
 	//	flag.StringVar(&cmd.format, "format", "", "format of file")
 
-	var spec openapi.OpenAPI
+	var spec openapi2.OpenAPI
 
 	fn := fs.Arg(0)
 	f, err := os.Open(fn)
@@ -215,7 +215,7 @@ func doRestClient(args []string) error {
 	}
 	defer f.Close()
 
-	parsed, err := openapi.ParseYAML(f)
+	parsed, err := openapi2.ParseYAML(f)
 	if err != nil {
 		return errors.Wrapf(err, `failed to parse openapi spec in %s`, fn)
 	}

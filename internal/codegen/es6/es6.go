@@ -9,7 +9,7 @@ import (
 	"github.com/lestrrat-go/openapi/internal/codegen/common"
 	"github.com/lestrrat-go/openapi/internal/codegen/restclient"
 	"github.com/lestrrat-go/openapi/internal/stringutil"
-	openapi "github.com/lestrrat-go/openapi/v2"
+	"github.com/lestrrat-go/openapi/openapi2"
 	"github.com/pkg/errors"
 )
 
@@ -29,11 +29,11 @@ func FieldName(s string) string {
 	return stringutil.LowerCamel(stringutil.Snake(s))
 }
 
-func CallObjectName(oper openapi.Operation) string {
+func CallObjectName(oper openapi2.Operation) string {
 	return ClassName(restclient.CallObjectName(oper))
 }
 
-func CallMethodName(oper openapi.Operation) string {
+func CallMethodName(oper openapi2.Operation) string {
 	if name := restclient.CallMethodName(oper); name != "" {
 		return MethodName(name)
 	}

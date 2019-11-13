@@ -14,7 +14,7 @@ import (
 
 	"github.com/lestrrat-go/openapi/generator/restclientgen/compiler"
 	codegen "github.com/lestrrat-go/openapi/internal/codegen/es6"
-	openapi "github.com/lestrrat-go/openapi/v2"
+	"github.com/lestrrat-go/openapi/openapi2"
 	"github.com/pkg/errors"
 )
 
@@ -36,7 +36,7 @@ func esType(typ compiler.Type) string {
 	return name
 }
 
-func Generate(spec openapi.Swagger, options ...Option) error {
+func Generate(spec openapi2.Swagger, options ...Option) error {
 	var clientName string
 	var dir string
 	var defaultServiceName string
@@ -74,7 +74,7 @@ func Generate(spec openapi.Swagger, options ...Option) error {
 		clientName:         clientName,
 		dir:                dir,
 		defaultServiceName: defaultServiceName,
-		resolver:           openapi.NewResolver(spec),
+		resolver:           openapi2.NewResolver(spec),
 		root:               spec,
 		client:             client,
 		types:              make(map[string]compiler.TypeDefinition),
@@ -612,7 +612,7 @@ func compileClient(ctx *Context) error {
 	return nil
 }
 
-func compileCall(ctx *Context, oper openapi.Operation) error {
+func compileCall(ctx *Context, oper openapi2.Operation) error {
 	// x-service dictates the service name. If not present,
 	// the default service, which is named after the package
 	// is used.
@@ -669,22 +669,22 @@ func compileCall(ctx *Context, oper openapi.Operation) error {
 		})
 	}
 
-	var formBuilder *openapi.SchemaBuilder
+	var formBuilder *openapi2.SchemaBuilder
 	for piter := oper.Parameters(); piter.Next(); {
 		param := piter.Item()
 
 		switch param.In() {
-		case openapi.InForm:
+		case openapi2.InForm:
 			// Use the values from the parameter to construct a schema
 			if formBuilder == nil {
-				formBuilder = openapi.NewSchema()
+				formBuilder = openapi2.NewSchema()
 			}
 
 			collectionFormat := param.CollectionFormat()
 			if collectionFormat == "" {
-				collectionFormat = openapi.CSV
+				collectionFormat = openapi2.CSV
 			}
-			b := openapi.NewSchema().
+			b := openapi2.NewSchema().
 				Type(param.Type()).
 				Format(param.Format()).
 				Pattern(param.Pattern()).
@@ -725,7 +725,7 @@ func compileCall(ctx *Context, oper openapi.Operation) error {
 			}
 
 			formBuilder.Property(param.Name(), prop)
-		case openapi.InBody:
+		case openapi2.InBody:
 			// sanity check (although this should have already been taken care
 			// of in Validate())
 			if call.Body() != nil {
@@ -775,9 +775,9 @@ func compileCall(ctx *Context, oper openapi.Operation) error {
 			}
 
 			switch param.In() {
-			case openapi.InPath:
+			case openapi2.InPath:
 				call.pathparams = append(call.pathparams, &field)
-			case openapi.InQuery:
+			case openapi2.InQuery:
 				call.queryparams = append(call.queryparams, &field)
 			}
 		}
@@ -836,7 +836,7 @@ func compileCall(ctx *Context, oper openapi.Operation) error {
 	return nil
 }
 
-func compileResponseType(ctx *Context, response openapi.Response) (string, error) {
+func compileResponseType(ctx *Context, response openapi2.Response) (string, error) {
 	if ref := response.Reference(); ref != "" {
 		// this better be resolvable via Definitions
 		thing, err := ctx.resolver.Resolve(ref)
@@ -852,8 +852,8 @@ func compileResponseType(ctx *Context, response openapi.Response) (string, error
 			return "", errors.Wrap(err, `failed to encode temporary structure to JSON`)
 		}
 
-		var newr openapi.Response
-		if err := openapi.ResponseFromJSON(encoded.Bytes(), &newr); err != nil {
+		var newr openapi2.Response
+		if err := openapi2.ResponseFromJSON(encoded.Bytes(), &newr); err != nil {
 			return "", errors.Wrap(err, `failed to decode temporary structure from JSON`)
 		}
 		response = newr
@@ -866,14 +866,14 @@ func compileResponseType(ctx *Context, response openapi.Response) (string, error
 	}
 	// If this is an array type, we create a []T  instead of type T struct { something []X }
 	switch schema.Type() {
-	case openapi.Array:
+	case openapi2.Array:
 		typ, err := compileSchema(ctx, schema.Items())
 		if err != nil {
 			return "", errors.Wrap(err, `failed to compile array response`)
 		}
 
 		return "[]*" + typ.Name(), nil
-	case "", openapi.Object:
+	case "", openapi2.Object:
 		typ, err := compileSchema(ctx, schema)
 		if err != nil {
 			return "", errors.Wrap(err, `failed to compile object response`)
@@ -888,7 +888,7 @@ func compileResponseType(ctx *Context, response openapi.Response) (string, error
 	}
 }
 
-func compileParameterType(ctx *Context, param openapi.Parameter) (Type, error) {
+func compileParameterType(ctx *Context, param openapi2.Parameter) (Type, error) {
 	if ref := param.Reference(); ref != "" {
 		// this better be resolvable via Definitions
 		thing, err := ctx.resolver.Resolve(ref)
@@ -904,25 +904,25 @@ func compileParameterType(ctx *Context, param openapi.Parameter) (Type, error) {
 			return nil, errors.Wrap(err, `failed to encode temporary structure to JSON`)
 		}
 
-		var newp openapi.Parameter
-		if err := openapi.ParameterFromJSON(encoded.Bytes(), &newp); err != nil {
+		var newp openapi2.Parameter
+		if err := openapi2.ParameterFromJSON(encoded.Bytes(), &newp); err != nil {
 			return nil, errors.Wrap(err, `failed to decode temporary structure from JSON`)
 		}
 		param = newp
 	}
 
-	if param.In() == openapi.InBody {
+	if param.In() == openapi2.InBody {
 		schema := param.Schema() // presence of this element should be guaranteed by calling validate
 		// If this is an array type, we create a []T  instead of type T struct { something []X }
 		switch schema.Type() {
-		case openapi.Array:
+		case openapi2.Array:
 			typ, err := compileSchema(ctx, schema.Items())
 			if err != nil {
 				return nil, errors.Wrap(err, `failed to compile array parameter`)
 			}
 
 			return &Array{elem: typ.Name()}, nil
-		case openapi.Object:
+		case openapi2.Object:
 			typ, err := compileSchema(ctx, schema)
 			if err != nil {
 				return nil, errors.Wrap(err, `failed to compile object parameter`)
@@ -935,7 +935,7 @@ func compileParameterType(ctx *Context, param openapi.Parameter) (Type, error) {
 			registerType(ctx, fmt.Sprintf("#/generated/%s", typ.Name()), typ, ctx.currentCall.name+" parameter")
 
 			return typ, nil
-		case openapi.String:
+		case openapi2.String:
 			return compileBuiltin(ctx, schema)
 		default:
 			return nil, errors.Errorf(`unhandled parameter type %s`, strconv.Quote(string(schema.Type())))
@@ -943,7 +943,7 @@ func compileParameterType(ctx *Context, param openapi.Parameter) (Type, error) {
 	}
 
 	switch param.Type() {
-	case openapi.Array:
+	case openapi2.Array:
 		return compileArray(ctx, param)
 	default:
 		return compilePrimitiveType(param.Type(), param.Format())
@@ -952,7 +952,7 @@ func compileParameterType(ctx *Context, param openapi.Parameter) (Type, error) {
 	return Builtin(param.Type()), nil
 }
 
-func compileStruct(ctx *Context, schema openapi.Schema) (Type, error) {
+func compileStruct(ctx *Context, schema openapi2.Schema) (Type, error) {
 	var obj Struct
 
 	for piter := schema.Properties(); piter.Next(); {
@@ -992,15 +992,15 @@ func registerType(ctx *Context, path string, t Type, where string) {
 	ctx.client.types[t.Name()] = t
 }
 
-func compileItems(ctx *Context, items openapi.Items) (t Type, err error) {
+func compileItems(ctx *Context, items openapi2.Items) (t Type, err error) {
 	return compileSchemaLike(ctx, items)
 }
 
-func compileSchema(ctx *Context, schema openapi.Schema) (t Type, err error) {
+func compileSchema(ctx *Context, schema openapi2.Schema) (t Type, err error) {
 	if ref := schema.Reference(); ref != "" {
-		var news openapi.Schema
+		var news openapi2.Schema
 		fun := func(buf []byte) error {
-			return openapi.SchemaFromJSON(buf, &news)
+			return openapi2.SchemaFromJSON(buf, &news)
 		}
 
 		if err := resolveReference(ctx, ref, fun); err != nil {
@@ -1021,16 +1021,16 @@ func compileSchema(ctx *Context, schema openapi.Schema) (t Type, err error) {
 }
 
 type openapiItemser interface {
-	Items() openapi.Items
+	Items() openapi2.Items
 }
 
 func compileBuiltin(ctx *Context, schema openapiTypeFormater) (Type, error) {
 	switch schema.Type() {
-	case openapi.Boolean:
+	case openapi2.Boolean:
 		return Builtin("bool"), nil
-	case openapi.String:
+	case openapi2.String:
 		return Builtin(schema.Type()), nil
-	case openapi.Integer:
+	case openapi2.Integer:
 		switch schema.Format() {
 		case "int64":
 			return Builtin("int64"), nil
@@ -1042,13 +1042,13 @@ func compileBuiltin(ctx *Context, schema openapiTypeFormater) (Type, error) {
 	}
 }
 
-func compilePrimitiveType(typ openapi.PrimitiveType, format string) (Type, error) {
+func compilePrimitiveType(typ openapi2.PrimitiveType, format string) (Type, error) {
 	switch typ {
-	case openapi.Number, openapi.Integer:
+	case openapi2.Number, openapi2.Integer:
 		return Builtin("number"), nil
-	case openapi.String:
+	case openapi2.String:
 		return Builtin("string"), nil
-	case openapi.Boolean:
+	case openapi2.Boolean:
 		return Builtin("boolean"), nil
 	default:
 		return nil, errors.Errorf(`primitive type %s should not have gone through CompilePrimitive`, typ)
@@ -1058,9 +1058,9 @@ func compilePrimitiveType(typ openapi.PrimitiveType, format string) (Type, error
 func compileArray(ctx *Context, schema interface{}) (Type, error) {
 	var subtyp Type
 	var err error
-	if s, ok := schema.(openapi.Schema); ok {
+	if s, ok := schema.(openapi2.Schema); ok {
 		subtyp, err = compileSchema(ctx, s.Items())
-	} else if i, ok := schema.(openapi.Parameter); ok {
+	} else if i, ok := schema.(openapi2.Parameter); ok {
 		subtyp, err = compileItems(ctx, i.Items())
 	} else {
 		return nil, errors.Wrapf(err, `cannot compile array element %T`, schema)
@@ -1074,16 +1074,16 @@ func compileArray(ctx *Context, schema interface{}) (Type, error) {
 
 func compileSchemaLike(ctx *Context, schema openapiTypeFormater) (Type, error) {
 	switch schema.Type() {
-	case openapi.String, openapi.Integer, openapi.Boolean:
+	case openapi2.String, openapi2.Integer, openapi2.Boolean:
 		return compileBuiltin(ctx, schema)
-	case openapi.Array:
+	case openapi2.Array:
 		return compileArray(ctx, schema)
 	default:
-		// In order for this to work, schema must be a full-blown openapi.Schema,
-		// not a openapi.Items
-		fullSchema, ok := schema.(openapi.Schema)
+		// In order for this to work, schema must be a full-blown openapi2.Schema,
+		// not a openapi2.Items
+		fullSchema, ok := schema.(openapi2.Schema)
 		if !ok {
-			return nil, errors.Errorf(`target must be an openapi.Schema (was %T)`, fullSchema)
+			return nil, errors.Errorf(`target must be an openapi2.Schema (was %T)`, fullSchema)
 		}
 		object, err := compileStruct(ctx, fullSchema)
 		if err != nil {
@@ -1144,7 +1144,7 @@ func resolveReference(ctx *Context, ref string, decodeFunc func([]byte) error) e
 }
 
 type openapiTyper interface {
-	Type() openapi.PrimitiveType
+	Type() openapi2.PrimitiveType
 }
 
 type openapiFormater interface {

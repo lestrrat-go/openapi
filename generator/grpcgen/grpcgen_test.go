@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/lestrrat-go/openapi/generator/grpcgen"
-	openapi "github.com/lestrrat-go/openapi/v2"
+	"github.com/lestrrat-go/openapi/openapi2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,8 +21,8 @@ func TestGenerate(t *testing.T) {
 	}
 	defer f.Close()
 
-	spec, err := openapi.ParseYAML(f)
-	if !assert.NoError(t, err, "openapi.ParseYAML should succeed") {
+	spec, err := openapi2.ParseYAML(f)
+	if !assert.NoError(t, err, "openapi2.ParseYAML should succeed") {
 		return
 	}
 
@@ -70,8 +70,8 @@ paths:
           description: success
 `
 
-	spec, err := openapi.ParseYAML(strings.NewReader(src))
-	if !assert.NoError(t, err, "openapi.ParseYAML should succeed") {
+	spec, err := openapi2.ParseYAML(strings.NewReader(src))
+	if !assert.NoError(t, err, "openapi2.ParseYAML should succeed") {
 		return
 	}
 
