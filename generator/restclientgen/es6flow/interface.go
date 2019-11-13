@@ -4,7 +4,7 @@ import (
 	"mime"
 
 	"github.com/lestrrat-go/openapi/generator/restclientgen/compiler"
-	openapi "github.com/lestrrat-go/openapi/v2"
+	"github.com/lestrrat-go/openapi/openapi2"
 	"github.com/pkg/errors"
 )
 
@@ -15,8 +15,8 @@ type Context struct {
 	dir                string
 	packageName        string
 	defaultServiceName string
-	resolver           openapi.Resolver
-	root               openapi.Swagger
+	resolver           openapi2.Resolver
+	root               openapi2.Swagger
 	types              map[string]compiler.TypeDefinition
 	consumes           []string
 	produces           []string
@@ -149,7 +149,7 @@ type Field struct {
 	inBody   bool
 }
 
-func canonicalConsumesList(iter *openapi.MIMETypeListIterator) ([]string, error) {
+func canonicalConsumesList(iter *openapi2.MIMETypeListIterator) ([]string, error) {
 	consumesSeen := map[string]struct{}{}
 
 	var consumesList []string

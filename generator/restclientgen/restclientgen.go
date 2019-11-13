@@ -3,11 +3,11 @@ package restclientgen
 import (
 	"github.com/lestrrat-go/openapi/generator/restclientgen/es6flow"
 	"github.com/lestrrat-go/openapi/generator/restclientgen/golang"
-	openapi "github.com/lestrrat-go/openapi/v2"
+	"github.com/lestrrat-go/openapi/openapi2"
 	"github.com/pkg/errors"
 )
 
-func Generate(spec openapi.Swagger, options ...Option) error {
+func Generate(spec openapi2.Swagger, options ...Option) error {
 	if err := spec.Validate(true); err != nil {
 		return errors.Wrap(err, `failed to validate spec`)
 	}

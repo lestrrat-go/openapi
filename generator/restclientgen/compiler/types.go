@@ -3,7 +3,7 @@ package compiler
 import (
 	"sort"
 
-	openapi "github.com/lestrrat-go/openapi/v2"
+	"github.com/lestrrat-go/openapi/openapi2"
 	"github.com/pkg/errors"
 )
 
@@ -174,19 +174,19 @@ func (f *Field) Type() Type {
 	return f.typ
 }
 
-func (f *Field) In() openapi.Location {
+func (f *Field) In() openapi2.Location {
 	return f.in
 }
 
 func (f *Field) ContainerName() string {
 	switch f.in {
-	case openapi.InBody, openapi.InForm:
+	case openapi2.InBody, openapi2.InForm:
 		return "body"
-	case openapi.InQuery:
+	case openapi2.InQuery:
 		return "query"
-	case openapi.InHeader:
+	case openapi2.InHeader:
 		return "header"
-	case openapi.InPath:
+	case openapi2.InPath:
 		return "path"
 	default:
 		// No error case, as it should've been handled in Validate()
@@ -194,7 +194,7 @@ func (f *Field) ContainerName() string {
 	}
 }
 
-func (ss *SecuritySettings) Definition() openapi.SecurityScheme {
+func (ss *SecuritySettings) Definition() openapi2.SecurityScheme {
 	return ss.definition
 }
 

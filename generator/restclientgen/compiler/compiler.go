@@ -14,7 +14,7 @@ import (
 	"github.com/lestrrat-go/openapi/internal/codegen/es6"
 	"github.com/lestrrat-go/openapi/internal/codegen/golang"
 	restclient "github.com/lestrrat-go/openapi/internal/codegen/restclient/golang"
-	openapi "github.com/lestrrat-go/openapi/v2"
+	"github.com/lestrrat-go/openapi/openapi2"
 	"github.com/lestrrat-go/pdebug"
 	"github.com/pkg/errors"
 )
@@ -22,13 +22,13 @@ import (
 // Takes an OpenAPI v2 structure, and compiles it into a form that all REST
 // clients share
 
-func Compile(spec openapi.OpenAPI, defaultServiceName string) (*ClientDefinition, error) {
+func Compile(spec openapi2.OpenAPI, defaultServiceName string) (*ClientDefinition, error) {
 	ctx := &compileCtx{
 		compiling:          make(map[string]struct{}),
 		defaultServiceName: defaultServiceName,
 		isCompiling:        make(map[interface{}]struct{}),
 		isResolving:        make(map[interface{}]struct{}),
-		resolver:           openapi.NewResolver(spec),
+		resolver:           openapi2.NewResolver(spec),
 		root:               spec,
 		client: &ClientDefinition{
 			services:    make(map[string]*Service),
@@ -37,7 +37,7 @@ func Compile(spec openapi.OpenAPI, defaultServiceName string) (*ClientDefinition
 		},
 	}
 
-	ctx.security = make(map[string]openapi.SecurityScheme)
+	ctx.security = make(map[string]openapi2.SecurityScheme)
 	for iter := spec.SecurityDefinitions(); iter.Next(); {
 		name, scheme := iter.Item()
 		ctx.security[name] = scheme
@@ -138,7 +138,7 @@ func compileGlobalDefaults(ctx *compileCtx) error {
 	return nil
 }
 
-func canonicalConsumesList(iter *openapi.MIMETypeListIterator) ([]string, error) {
+func canonicalConsumesList(iter *openapi2.MIMETypeListIterator) ([]string, error) {
 	consumesSeen := map[string]struct{}{}
 
 	var consumesList []string
@@ -176,7 +176,7 @@ func compileClient(ctx *compileCtx) error {
 	return nil
 }
 
-func createCall(ctx *compileCtx, oper openapi.Operation) (*Call, error) {
+func createCall(ctx *compileCtx, oper openapi2.Operation) (*Call, error) {
 	callName := restclient.CallObjectName(oper)
 	methodName := restclient.CallMethodName(oper)
 	if methodName == "" {
@@ -191,7 +191,7 @@ func createCall(ctx *compileCtx, oper openapi.Operation) (*Call, error) {
 	}, nil
 }
 
-func compileCallConsumesList(ctx *compileCtx, oper openapi.Operation) ([]string, error) {
+func compileCallConsumesList(ctx *compileCtx, oper openapi2.Operation) ([]string, error) {
 	consumesList, err := canonicalConsumesList(oper.Consumes())
 	if err != nil {
 		return nil, errors.Wrapf(err, `failed to parse consumes list for %s:%s`, oper.PathItem().Path(), oper.Verb())
@@ -284,18 +284,18 @@ func registerType(ctx *compileCtx, path string, t Type, where string) {
 
 func compileBuiltin(ctx *compileCtx, schema openapiTypeFormater) (Type, error) {
 	switch schema.Type() {
-	case openapi.Boolean:
+	case openapi2.Boolean:
 		return Builtin("bool"), nil
-	case openapi.String:
+	case openapi2.String:
 		return Builtin(schema.Type()), nil
-	case openapi.Number, openapi.Integer:
+	case openapi2.Number, openapi2.Integer:
 		return compileNumeric(schema.Type(), schema.Format())
 	default:
 		return nil, errors.Errorf(`unknown builtin %s`, schema.Type())
 	}
 }
 
-func compileItems(ctx *compileCtx, items openapi.Items) (t Type, err error) {
+func compileItems(ctx *compileCtx, items openapi2.Items) (t Type, err error) {
 	return compileSchemaLike(ctx, items)
 }
 
@@ -306,9 +306,9 @@ func compileArray(ctx *compileCtx, schema interface{}) (typ Type, err error) {
 	}
 
 	var subtyp Type
-	if s, ok := schema.(openapi.Schema); ok {
+	if s, ok := schema.(openapi2.Schema); ok {
 		subtyp, err = compileSchema(ctx, s.Items())
-	} else if i, ok := schema.(openapi.Parameter); ok {
+	} else if i, ok := schema.(openapi2.Parameter); ok {
 		subtyp, err = compileItems(ctx, i.Items())
 	} else {
 		return nil, errors.Wrapf(err, `cannot compile array element %T`, schema)
@@ -330,16 +330,16 @@ func compileArray(ctx *compileCtx, schema interface{}) (typ Type, err error) {
 	}, nil
 }
 
-func compileParameterToProperty(parentBuilder *openapi.SchemaBuilder, param openapi.Parameter) error {
+func compileParameterToProperty(parentBuilder *openapi2.SchemaBuilder, param openapi2.Parameter) error {
 	prop, err := param.ConvertToSchema()
 	if err != nil {
-		return errors.Wrap(err, `failed to convert parameter to property (openapi.Schema)`)
+		return errors.Wrap(err, `failed to convert parameter to property (openapi2.Schema)`)
 	}
 	parentBuilder.Property(param.Name(), prop)
 	return nil
 }
 
-func compileStructField(ctx *compileCtx, parent openapi.Schema, name string, prop openapi.Schema) (field *Field, err error) {
+func compileStructField(ctx *compileCtx, parent openapi2.Schema, name string, prop openapi2.Schema) (field *Field, err error) {
 	if pdebug.Enabled {
 		g := pdebug.Marker("compileStructField %s", name).BindError(&err)
 		defer g.End()
@@ -365,7 +365,7 @@ func compileStructField(ctx *compileCtx, parent openapi.Schema, name string, pro
 	}, nil
 }
 
-func compileStruct(ctx *compileCtx, schema openapi.Schema) (typ Type, err error) {
+func compileStruct(ctx *compileCtx, schema openapi2.Schema) (typ Type, err error) {
 	if pdebug.Enabled {
 		g := pdebug.Marker("compileStruct").BindError(&err)
 		defer g.End()
@@ -384,7 +384,7 @@ func compileStruct(ctx *compileCtx, schema openapi.Schema) (typ Type, err error)
 }
 
 type openapiTyper interface {
-	Type() openapi.PrimitiveType
+	Type() openapi2.PrimitiveType
 }
 
 type openapiFormater interface {
@@ -397,32 +397,32 @@ type openapiTypeFormater interface {
 }
 
 func compileSchemaLike(ctx *compileCtx, schema openapiTypeFormater) (Type, error) {
-	if fullSchema, ok := schema.(openapi.Schema); ok {
-		v, err := openapi.MergedSchema(fullSchema, ctx.resolver)
+	if fullSchema, ok := schema.(openapi2.Schema); ok {
+		v, err := openapi2.MergedSchema(fullSchema, ctx.resolver)
 		if err != nil {
 			return nil, errors.Wrap(err, `failed to merge schemas`)
 		}
 		schema = v
 	}
 
-	var pt openapi.PrimitiveType
-	if fullSchema, ok := schema.(openapi.Schema); ok {
-		pt = openapi.GuessSchemaType(fullSchema)
+	var pt openapi2.PrimitiveType
+	if fullSchema, ok := schema.(openapi2.Schema); ok {
+		pt = openapi2.GuessSchemaType(fullSchema)
 	} else {
 		pt = schema.Type()
 	}
 
 	switch pt {
-	case openapi.String, openapi.Integer, openapi.Boolean, openapi.Number:
+	case openapi2.String, openapi2.Integer, openapi2.Boolean, openapi2.Number:
 		return compileBuiltin(ctx, schema)
-	case openapi.Array:
+	case openapi2.Array:
 		return compileArray(ctx, schema)
 	default:
-		// In order for this to work, schema must be a full-blown openapi.Schema,
-		// not a openapi.Items
-		fullSchema, ok := schema.(openapi.Schema)
+		// In order for this to work, schema must be a full-blown openapi2.Schema,
+		// not a openapi2.Items
+		fullSchema, ok := schema.(openapi2.Schema)
 		if !ok {
-			return nil, errors.Errorf(`target must be an openapi.Schema (was %T)`, fullSchema)
+			return nil, errors.Errorf(`target must be an openapi2.Schema (was %T)`, fullSchema)
 		}
 		object, err := compileStruct(ctx, fullSchema)
 		if err != nil {
@@ -434,7 +434,7 @@ func compileSchemaLike(ctx *compileCtx, schema openapiTypeFormater) (Type, error
 	return nil, errors.New(`unreachable`)
 }
 
-func compileSchema(ctx *compileCtx, schema openapi.Schema) (t Type, err error) {
+func compileSchema(ctx *compileCtx, schema openapi2.Schema) (t Type, err error) {
 	if schema == nil {
 		return nil, errors.New(`nil schema`)
 	}
@@ -451,9 +451,9 @@ func compileSchema(ctx *compileCtx, schema openapi.Schema) (t Type, err error) {
 		cancel := ctx.MarkAsCompiling(ref)
 		defer cancel()
 
-		var news openapi.Schema
+		var news openapi2.Schema
 		fun := func(buf []byte) error {
-			return openapi.SchemaFromJSON(buf, &news)
+			return openapi2.SchemaFromJSON(buf, &news)
 		}
 
 		if err := resolveReference(ctx, ref, fun); err != nil {
@@ -482,7 +482,7 @@ func compileSchema(ctx *compileCtx, schema openapi.Schema) (t Type, err error) {
 	return compileSchemaLike(ctx, schema)
 }
 
-func compileResponseType(ctx *compileCtx, response openapi.Response) (string, error) {
+func compileResponseType(ctx *compileCtx, response openapi2.Response) (string, error) {
 	if ref := response.Reference(); ref != "" {
 		// this better be resolvable via Definitions
 		thing, err := ctx.resolver.Resolve(ref)
@@ -498,8 +498,8 @@ func compileResponseType(ctx *compileCtx, response openapi.Response) (string, er
 			return "", errors.Wrap(err, `failed to encode temporary structure to JSON`)
 		}
 
-		var newr openapi.Response
-		if err := openapi.ResponseFromJSON(encoded.Bytes(), &newr); err != nil {
+		var newr openapi2.Response
+		if err := openapi2.ResponseFromJSON(encoded.Bytes(), &newr); err != nil {
 			return "", errors.Wrap(err, `failed to decode temporary structure from JSON`)
 		}
 		response = newr
@@ -513,14 +513,14 @@ func compileResponseType(ctx *compileCtx, response openapi.Response) (string, er
 
 	// If this is an array type, we create a []T  instead of type T struct { something []X }
 	switch schema.Type() {
-	case openapi.Array:
+	case openapi2.Array:
 		typ, err := compileSchema(ctx, schema.Items())
 		if err != nil {
 			return "", errors.Wrap(err, `failed to compile array response`)
 		}
 
 		return "[]*" + typ.Name(), nil
-	case "", openapi.Object:
+	case "", openapi2.Object:
 		typ, err := compileSchema(ctx, schema)
 		if err != nil {
 			return "", errors.Wrap(err, `failed to compile object response`)
@@ -535,7 +535,7 @@ func compileResponseType(ctx *compileCtx, response openapi.Response) (string, er
 	}
 }
 
-func compileResponse(ctx *compileCtx, res openapi.Response) (*Response, error) {
+func compileResponse(ctx *compileCtx, res openapi2.Response) (*Response, error) {
 	typ, err := compileResponseType(ctx, res)
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to compile response type`)
@@ -547,9 +547,9 @@ func compileResponse(ctx *compileCtx, res openapi.Response) (*Response, error) {
 	}, nil
 }
 
-func compileNumeric(typ openapi.PrimitiveType, format string) (Type, error) {
+func compileNumeric(typ openapi2.PrimitiveType, format string) (Type, error) {
 	switch typ {
-	case openapi.Integer:
+	case openapi2.Integer:
 		switch format {
 		case "int", "int32", "int64":
 			return Builtin(format), nil
@@ -572,7 +572,7 @@ func compileNumeric(typ openapi.PrimitiveType, format string) (Type, error) {
 	}
 }
 
-func compileParameterType(ctx *compileCtx, param openapi.Parameter) (Type, error) {
+func compileParameterType(ctx *compileCtx, param openapi2.Parameter) (Type, error) {
 	if ref := param.Reference(); ref != "" {
 		// this better be resolvable via Definitions
 		thing, err := ctx.resolver.Resolve(ref)
@@ -588,14 +588,14 @@ func compileParameterType(ctx *compileCtx, param openapi.Parameter) (Type, error
 			return nil, errors.Wrap(err, `failed to encode temporary structure to JSON`)
 		}
 
-		var newp openapi.Parameter
-		if err := openapi.ParameterFromJSON(encoded.Bytes(), &newp); err != nil {
+		var newp openapi2.Parameter
+		if err := openapi2.ParameterFromJSON(encoded.Bytes(), &newp); err != nil {
 			return nil, errors.Wrap(err, `failed to decode temporary structure from JSON`)
 		}
 		param = newp
 	}
 
-	if param.In() == openapi.InBody {
+	if param.In() == openapi2.InBody {
 		typ, err := compileSchemaLike(ctx, param.Schema())
 		if err != nil {
 			return nil, errors.Wrap(err, `failed to compile body schema`)
@@ -608,16 +608,16 @@ func compileParameterType(ctx *compileCtx, param openapi.Parameter) (Type, error
 	}
 
 	switch param.Type() {
-	case openapi.Number:
+	case openapi2.Number:
 		return compileNumeric(param.Type(), param.Format())
-	case openapi.Array:
+	case openapi2.Array:
 		return compileArray(ctx, param)
 	}
 
 	return Builtin(param.Type()), nil
 }
 
-func setLocation(v interface{}, in openapi.Location) {
+func setLocation(v interface{}, in openapi2.Location) {
 	switch v := v.(type) {
 	case *Struct:
 		for _, field := range v.fields {
@@ -640,8 +640,8 @@ func extractFields(call *Call, v interface{}) {
 }
 
 func compileStructFromBuilder(ctx *compileCtx, builder interface {
-	Build(...openapi.Option) (openapi.Schema, error)
-}, location openapi.Location) (Type, error) {
+	Build(...openapi2.Option) (openapi2.Schema, error)
+}, location openapi2.Location) (Type, error) {
 	schema, err := builder.Build()
 	if err != nil {
 		return nil, errors.Wrap(err, `failed to build schema`)
@@ -656,44 +656,44 @@ func compileStructFromBuilder(ctx *compileCtx, builder interface {
 	return typ, nil
 }
 
-func compileCallParameters(ctx *compileCtx, oper openapi.Operation, call *Call) error {
-	var queryBuilder *openapi.SchemaBuilder
-	var pathBuilder *openapi.SchemaBuilder
-	var headerBuilder *openapi.SchemaBuilder
-	var formBuilder *openapi.SchemaBuilder
+func compileCallParameters(ctx *compileCtx, oper openapi2.Operation, call *Call) error {
+	var queryBuilder *openapi2.SchemaBuilder
+	var pathBuilder *openapi2.SchemaBuilder
+	var headerBuilder *openapi2.SchemaBuilder
+	var formBuilder *openapi2.SchemaBuilder
 	for piter := oper.Parameters(); piter.Next(); {
 		param := piter.Item()
 
 		switch param.In() {
-		case openapi.InQuery:
+		case openapi2.InQuery:
 			if queryBuilder == nil {
-				queryBuilder = openapi.NewSchema()
+				queryBuilder = openapi2.NewSchema()
 			}
 			if err := compileParameterToProperty(queryBuilder, param); err != nil {
-				return errors.Wrap(err, `failed to compile parameter into openapi.Schema`)
+				return errors.Wrap(err, `failed to compile parameter into openapi2.Schema`)
 			}
-		case openapi.InPath:
+		case openapi2.InPath:
 			if pathBuilder == nil {
-				pathBuilder = openapi.NewSchema()
+				pathBuilder = openapi2.NewSchema()
 			}
 			if err := compileParameterToProperty(pathBuilder, param); err != nil {
-				return errors.Wrap(err, `failed to compile parameter into openapi.Schema`)
+				return errors.Wrap(err, `failed to compile parameter into openapi2.Schema`)
 			}
-		case openapi.InHeader:
+		case openapi2.InHeader:
 			if headerBuilder == nil {
-				headerBuilder = openapi.NewSchema()
+				headerBuilder = openapi2.NewSchema()
 			}
 			if err := compileParameterToProperty(headerBuilder, param); err != nil {
-				return errors.Wrap(err, `failed to compile parameter into openapi.Schema`)
+				return errors.Wrap(err, `failed to compile parameter into openapi2.Schema`)
 			}
-		case openapi.InForm:
+		case openapi2.InForm:
 			if formBuilder == nil {
-				formBuilder = openapi.NewSchema()
+				formBuilder = openapi2.NewSchema()
 			}
 			if err := compileParameterToProperty(formBuilder, param); err != nil {
-				return errors.Wrap(err, `failed to compile parameter into openapi.Schema`)
+				return errors.Wrap(err, `failed to compile parameter into openapi2.Schema`)
 			}
-		case openapi.InBody:
+		case openapi2.InBody:
 			// sanity check (although this should have already been taken care
 			// of in Validate())
 			if call.body != nil {
@@ -711,7 +711,7 @@ func compileCallParameters(ctx *compileCtx, oper openapi.Operation, call *Call) 
 				return errors.Wrapf(err, `failed to compile parameter %s`, param.Name())
 			}
 
-			setLocation(typ, openapi.InBody)
+			setLocation(typ, openapi2.InBody)
 			extractFields(call, typ)
 			call.body = typ
 			registerType(ctx, fmt.Sprintf("#/generated/%s", typ.Name()), typ, call.name+" body")
@@ -721,7 +721,7 @@ func compileCallParameters(ctx *compileCtx, oper openapi.Operation, call *Call) 
 	}
 
 	if queryBuilder != nil {
-		typ, err := compileStructFromBuilder(ctx, queryBuilder, openapi.InQuery)
+		typ, err := compileStructFromBuilder(ctx, queryBuilder, openapi2.InQuery)
 		if err != nil {
 			return errors.Wrap(err, `failed to compile schema for query fields`)
 		}
@@ -732,7 +732,7 @@ func compileCallParameters(ctx *compileCtx, oper openapi.Operation, call *Call) 
 	}
 
 	if headerBuilder != nil {
-		typ, err := compileStructFromBuilder(ctx, headerBuilder, openapi.InHeader)
+		typ, err := compileStructFromBuilder(ctx, headerBuilder, openapi2.InHeader)
 		if err != nil {
 			return errors.Wrap(err, `failed to compile schema for header fields`)
 		}
@@ -743,7 +743,7 @@ func compileCallParameters(ctx *compileCtx, oper openapi.Operation, call *Call) 
 	}
 
 	if pathBuilder != nil {
-		typ, err := compileStructFromBuilder(ctx, pathBuilder, openapi.InPath)
+		typ, err := compileStructFromBuilder(ctx, pathBuilder, openapi2.InPath)
 		if err != nil {
 			return errors.Wrap(err, `failed to compile schema for path fields`)
 		}
@@ -754,7 +754,7 @@ func compileCallParameters(ctx *compileCtx, oper openapi.Operation, call *Call) 
 	}
 
 	if formBuilder != nil {
-		typ, err := compileStructFromBuilder(ctx, formBuilder, openapi.InPath)
+		typ, err := compileStructFromBuilder(ctx, formBuilder, openapi2.InPath)
 		if err != nil {
 			return errors.Wrap(err, `failed to compile schema for form fields`)
 		}
@@ -771,7 +771,7 @@ func compileCallParameters(ctx *compileCtx, oper openapi.Operation, call *Call) 
 	return nil
 }
 
-func compileServiceName(ctx *compileCtx, oper openapi.Operation) (string, error) {
+func compileServiceName(ctx *compileCtx, oper openapi2.Operation) (string, error) {
 	// x-service dictates the service name. If not present,
 	// Use tag, then the default service, which is named after the package
 	// is used.
@@ -798,7 +798,7 @@ func compileServiceName(ctx *compileCtx, oper openapi.Operation) (string, error)
 	return svcName, nil
 }
 
-func compileSecuritySettings(ctx *compileCtx, requirement openapi.SecurityRequirement) ([]*SecuritySettings, error) {
+func compileSecuritySettings(ctx *compileCtx, requirement openapi2.SecurityRequirement) ([]*SecuritySettings, error) {
 	var list []*SecuritySettings
 	for siter := requirement.Scopes(); siter.Next(); {
 		name, scopes := siter.Item()
@@ -814,7 +814,7 @@ func compileSecuritySettings(ctx *compileCtx, requirement openapi.SecurityRequir
 	return list, nil
 }
 
-func compileCall(ctx *compileCtx, oper openapi.Operation) error {
+func compileCall(ctx *compileCtx, oper openapi2.Operation) error {
 	call, err := createCall(ctx, oper)
 	if err != nil {
 		return errors.Wrap(err, `failed to create Call object`)

@@ -14,7 +14,7 @@ import (
 	"github.com/lestrrat-go/openapi/generator/restclientgen/compiler"
 	codegen "github.com/lestrrat-go/openapi/internal/codegen/golang"
 	"github.com/lestrrat-go/openapi/internal/stringutil"
-	openapi "github.com/lestrrat-go/openapi/v2"
+	"github.com/lestrrat-go/openapi/openapi2"
 	"github.com/pkg/errors"
 )
 
@@ -35,7 +35,7 @@ func goType(typ compiler.Type) string {
 	}
 }
 
-func Generate(spec openapi.Swagger, options ...Option) error {
+func Generate(spec openapi2.Swagger, options ...Option) error {
 	var dir string
 	var packageName string
 	var defaultServiceName string

@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/ghodss/yaml"
-	v2 "github.com/lestrrat-go/openapi/v2"
-	v3 "github.com/lestrrat-go/openapi/v3"
+	"github.com/lestrrat-go/openapi/openapi2"
+	"github.com/lestrrat-go/openapi/openapi3"
 	"github.com/pkg/errors"
 )
 
@@ -93,9 +93,9 @@ func _main() error {
 func parseV2(format string, input io.Reader) (interface{}, error) {
 	switch strings.ToLower(format) {
 	case "yaml":
-		return v2.ParseYAML(input, v2.WithValidate(true))
+		return openapi2.ParseYAML(input, openapi2.WithValidate(true))
 	case "json":
-		return v2.ParseJSON(input, v2.WithValidate(true))
+		return openapi2.ParseJSON(input, openapi2.WithValidate(true))
 	default:
 		return nil, errors.Errorf(`invalid format %s`, format)
 	}
@@ -104,9 +104,9 @@ func parseV2(format string, input io.Reader) (interface{}, error) {
 func parseV3(format string, input io.Reader) (interface{}, error) {
 	switch strings.ToLower(format) {
 	case "yaml":
-		return v3.ParseYAML(input, v3.WithValidate(true))
+		return openapi3.ParseYAML(input, openapi3.WithValidate(true))
 	case "json":
-		return v3.ParseJSON(input, v3.WithValidate(true))
+		return openapi3.ParseJSON(input, openapi3.WithValidate(true))
 	default:
 		return nil, errors.Errorf(`invalid format %s`, format)
 	}

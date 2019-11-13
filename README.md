@@ -16,7 +16,7 @@ import (
   "log"
   "os"
 
-  v2 "github.com/lestrrat-go/openapi/v2"
+  "github.com/lestrrat-go/openapi/openapi2"
 )
 
 func ExampleV2() {
@@ -27,7 +27,7 @@ func ExampleV2() {
     return
   }
 
-  spec, err := v2.ParseYAML(f)
+  spec, err := openapi2.ParseYAML(f)
   if err != nil {
     log.Printf(`failed to parse file %s: %s`, src, err)
     return

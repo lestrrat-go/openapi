@@ -5,7 +5,7 @@ import (
 	"io"
 
 	"github.com/lestrrat-go/openapi/internal/option"
-	openapi "github.com/lestrrat-go/openapi/v2"
+	"github.com/lestrrat-go/openapi/openapi2"
 )
 
 type Option = option.Interface
@@ -32,8 +32,8 @@ type genCtx struct {
 	isResolving map[interface{}]struct{}
 	indent      string
 	types       map[string]Type
-	resolver    openapi.Resolver
-	root        openapi.OpenAPI
+	resolver    openapi2.Resolver
+	root        openapi2.OpenAPI
 	proto       *Protobuf
 	parent      messageContainer
 }
